@@ -6,7 +6,7 @@
                     <p>The Swap Process</p>
                 </div>
                 <div class="how-it-works-text mb-2">
-                    How GlideSwap Works
+                    How ZihuBridge Works
                 </div>
                 <p class="hero-section-discription mb-5">
                     Three steps, one seamless swap.
@@ -24,7 +24,7 @@
                             <p>Deposit</p>
                         </div>
                         <div class="card-discription mt-3">
-                            Send tokens to GlideSwap
+                            Send tokens to ZihuBridge
                             <br>
                             deposit address.
                         </div>

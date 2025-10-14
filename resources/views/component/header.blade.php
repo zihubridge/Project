@@ -2,7 +2,7 @@
     <div class="container">
         <!-- Logo -->
         <a class="navbar-brand" href="#">
-            <img src="{{ asset('assets/images/logo.png') }}" alt="MyLogo" height="70" />
+            <img src="{{ asset('assets/images/logo2.png') }}" alt="MyLogo" height="70" />
         </a>
 
         <!-- Hamburger -->
@@ -14,7 +14,7 @@
         <div class="collapse navbar-collapse" id="navbarMenu">
             <ul class="navbar-nav text-center mx-auto">
                 <li class="nav-item my-1"><a class="nav-link" href="#">How It Works</a></li>
-                <li class="nav-item my-1"><a class="nav-link" href="#">Why GlideSwap</a></li>
+                <li class="nav-item my-1"><a class="nav-link" href="#">Why ZihuBridge</a></li>
                 <li class="nav-item my-1"><a class="nav-link" href="#">Roadmap</a></li>
                 <li class="nav-item my-1"><a class="nav-link" href="#">Community</a></li>
             </ul>

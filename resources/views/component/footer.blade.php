@@ -6,7 +6,7 @@
                 <div class="footer-card p-3">
                     <div class="d-flex align-items-center mb-3">
                         <img src="{{ asset('assets/images/logo2.png') }}" alt="logo" class="footer-logo me-2" />
-                        <h5 class="text-white mb-0">GlideSwap</h5>
+                        <h5 class="text-white mb-0">ZihuBridge</h5>
                     </div>
                     <p class="footer-text">
                         This is amazing individuals around the globe, find a mentor, expand your network
@@ -63,7 +63,7 @@
                         </button>
                     </div>
                     <p class="mb-2 mb-md-0 text-white small">
-                        Copyright © <span class="color-purple">GlideSwap</span>
+                        Copyright © <span class="color-purple">ZihuBridge</span>
                     </p>
                     <div>
                         <a href="#" class="footer-bottom-link">Terms & Condition</a>
