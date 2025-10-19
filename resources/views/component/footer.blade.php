@@ -62,7 +62,10 @@
                         </button>
                     </div>
                     <p class="mb-2 mb-md-0 text-white small">
-                        Copyright © <span class="color-purple">ZihuBridge</span>
+                        © 2025 <span class="color-purple">ZihuBridge</span> — A product by 
+                        <a href="https://corehives.com" target="_blank" class="text-decoration-none text-white fw-semibold hover-purple">
+                            CoreHives
+                        </a>
                     </p>
                     <div>
                         <a href="#" class="footer-bottom-link">Terms & Condition</a>
