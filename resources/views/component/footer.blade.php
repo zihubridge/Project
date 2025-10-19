@@ -9,8 +9,7 @@
                         <h5 class="text-white mb-0">ZihuBridge</h5>
                     </div>
                     <p class="footer-text">
-                        This is amazing individuals around the globe, find a mentor, expand your network
-                        and learn from incredible people.
+                        Connect with mentors, grow your network, and learn from incredible people worldwide.
                     </p>
                     <div class="input-wrapper mt-3 d-flex">
                         <input class="effect-2 asd form-control me-2" type="text" placeholder="Enter your email" />
@@ -31,10 +30,10 @@
                             <li><a href="#">Home</a></li>
                             <li><a href="#">About</a></li>
                             <li><a href="#">Contact</a></li>
-                            <li><a href="#">Blog</a></li>
+                            <li><a href="{{ asset('whitepaper.pdf') }}">Whitepaper</a></li>
                         </ul>
                     </div>
-                    <div>
+                    {{-- <div>
                         <h6 class="text-white">Feature</h6>
                         <ul class="footer-links">
                             <li><a href="#">Price</a></li>
@@ -49,7 +48,7 @@
                             <li><a href="#">Licenses</a></li>
                             <li><a href="#">Change log</a></li>
                         </ul>
-                    </div>
+                    </div> --}}
                 </div>
             </div>
 

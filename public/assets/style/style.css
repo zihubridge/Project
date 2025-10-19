@@ -305,7 +305,7 @@ p {
 .timeline-item.left .timeline-content {
     margin-left: auto;
     margin-right: 2rem;
-    text-align: right;
+    text-align: left;
 }
 
 .timeline-item.right .timeline-content {

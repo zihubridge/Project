@@ -137,31 +137,55 @@
     <div class="timeline-item right">
       <div class="timeline-content">
         <h6>Q1 2025</h6>
-        <p>Stellar ↔ Ripple live.</p>
+        <ul>
+          <li>Launch landing page & vision</li>
+          <li>Launch $ZIHU token</li>
+          <li>Build XLM ↔ XRP swap backend</li>
+          <li>Integrate Stellar & XRPL wallets</li>
+          <li>Add real-time swap tracking</li>
+        </ul>
       </div>
     </div>
 
     <!-- Q2 -->
     <div class="timeline-item left">
       <div class="timeline-content">
-        <h6>Q2 2025</h6>
-        <p>Add Solana + HBAR support.</p>
+        <h6>Q1 2026</h6>
+        <ul>
+          <li>Launch direct swap interface</li>
+          <li>Add trustline automation</li>
+          <li>Support verified asset pairs</li>
+          <li>Add swap tracking dashboard</li>
+        </ul>
       </div>
     </div>
+
 
     <!-- Q3 -->
     <div class="timeline-item right">
       <div class="timeline-content">
-        <h6>Q3 2025</h6>
-        <p>Governance design, scaling up chains.</p>
+        <h6>Q2 2026</h6>
+        <ul>
+          <li>Launch LP farming rewards</li>
+          <li>Create $ZIHU pools on Stellar</li>
+          <li>Enable token listing in $ZIHU</li>
+          <li>Design external API & test LPs</li>
+          <li>Run audits & stress tests</li>
+        </ul>
       </div>
     </div>
 
     <!-- Q4 -->
     <div class="timeline-item left">
       <div class="timeline-content">
-        <h6>Q4 2025</h6>
-        <p>Fiat on-ramp integration.</p>
+        <h6>Q3 2026</h6>
+        <ul>
+          <li>Launch $ZIHU staking program</li>
+          <li>Add Solana & Ethereum chains</li>
+          <li>Deploy smart swap aggregator</li>
+          <li>Launch liquidity analytics hub</li>
+          <li>Enhance wallet security tools</li>
+        </ul>
       </div>
     </div>
   </div>
