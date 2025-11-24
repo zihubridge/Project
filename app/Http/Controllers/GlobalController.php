@@ -253,7 +253,7 @@ class GlobalController extends Controller
         return false;
     }
 
-    private function swappingAmount(string $issueAddress, float $Amount): float|bool
+    private function swappingTokenAmount(string $issueAddress, float $Amount): float|bool
     {
         if (empty($issueAddress)) {
             return false;
@@ -271,12 +271,14 @@ class GlobalController extends Controller
 
         //Stellar
         if ($token->blockchain_id == 1) {
-            $this->getStellarPoolReserves();
+            $pollId = $token->pool_id;
+            $assetCode = $token->asset_code;
+            $issuerAddress = $token->issuer_address;
+            $this->getStellarPoolReserves($pollId, $assetCode, $issuerAddress);
         }
 
         #Ripple
         elseif ($token->blockchain_id == 2) {
-            
         }
 
         return false;
@@ -342,7 +344,7 @@ class GlobalController extends Controller
             }
 
             if ($xlm === null || $assetAmount === null) {
-                Log::warning('[LP:getPoolReserves] Could not match both XLM and '. $assetCode .' in reserves', [
+                Log::warning('[LP:getPoolReserves] Could not match both XLM and ' . $assetCode . ' in reserves', [
                     'asset'  => $assetCode,
                     'issuer' => $issuerAddress,
                     'raw'    => $rawReserves,
