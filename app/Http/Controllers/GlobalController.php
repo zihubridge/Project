@@ -47,28 +47,6 @@ class GlobalController extends Controller
         $this->rpcUrl = env('XRPL_RPC_URL', 'https://s.altnet.rippletest.net:51234');
     }
 
-    public function check_xlm_balance(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'public_wallet' => ['required', 'string'],
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 0,
-                'message' => 'Validation error',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $balance = $this->getXlmBalance($request->public_wallet);
-
-        return response()->json([
-            'status'    => 1,
-            'total_xlm' => (float) $balance,
-        ]);
-    }
-
     public function check_token_balance(Request $request)
     {
         try {
