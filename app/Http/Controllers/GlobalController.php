@@ -128,27 +128,6 @@ class GlobalController extends Controller
         }
     }
 
-
-    public function wallet_types()
-    {
-        try {
-            $wallets = WalletType::where('status', 1)
-                ->select('id', 'name', 'key', 'blockchain_id')
-                ->get();
-
-            return response()->json([
-                'status' => 'success',
-                'wallets' => $wallets,
-            ]);
-        } catch (\Throwable $e) {
-            Log::error('wallet_types error', ['message' => $e->getMessage()]);
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to fetch wallet types.',
-            ], 500);
-        }
-    }
-
     public function blockchains()
     {
         try {
@@ -177,22 +156,6 @@ class GlobalController extends Controller
             }
 
             return response()->json($payload, 500);
-        }
-    }
-
-    public function getXlmBalance(string $publicKey): float
-    {
-        try {
-            $account = $this->sdk->requestAccount($publicKey);
-
-            foreach ($account->getBalances() as $bal) {
-                if ($bal->getAssetType() === 'native') {
-                    return (float) $bal->getBalance();
-                }
-            }
-            return 0.0;
-        } catch (HorizonRequestException $e) {
-            return $e->getStatusCode() == 404 ? 0.0 : throw $e;
         }
     }
 
@@ -285,6 +248,84 @@ class GlobalController extends Controller
     }
 
     private function getStellarPoolReserves(string $poolId, string $assetCode, string $issuerAddress): ?array
+    {
+        $base = $this->isTestnet
+            ? 'https://horizon-testnet.stellar.org'
+            : 'https://horizon.stellar.org';
+
+        $url = $base . '/liquidity_pools/' . $poolId;
+
+        try {
+            $res = Http::timeout(10)->acceptJson()->get($url);
+
+            if ($res->failed()) {
+                Log::warning('[LP:getPoolReserves] Horizon request failed', [
+                    'status' => $res->status(),
+                    'body'   => mb_substr($res->body(), 0, 800),
+                ]);
+                return null;
+            }
+
+            $data = $res->json();
+
+            $rawReserves = $data['reserves'] ?? null;
+
+            if (!is_array($rawReserves)) {
+                Log::warning('[LP:getPoolReserves] reserves missing or not an array');
+                return null;
+            }
+
+            $xlm = null;
+            $assetAmount = null;
+
+            foreach ($rawReserves as $r) {
+                $asset  = $r['asset']  ?? null;
+                $amount = $r['amount'] ?? null;
+
+                if ($asset === 'native') {
+                    $xlm = $amount;
+                    continue;
+                }
+
+                if (!is_string($asset)) {
+                    continue;
+                }
+
+                $parts = explode(':', $asset);
+
+                if (count($parts) === 2) {
+                    [$code, $issuer] = $parts;
+                } elseif (count($parts) === 3) {
+                    [, $code, $issuer] = $parts;
+                } else {
+                    continue;
+                }
+
+                if ($code === $assetCode && $issuer === $issuerAddress) {
+                    $assetAmount = $amount;
+                }
+            }
+
+            if ($xlm === null || $assetAmount === null) {
+                Log::warning('[LP:getPoolReserves] Could not match both XLM and ' . $assetCode . ' in reserves', [
+                    'asset'  => $assetCode,
+                    'issuer' => $issuerAddress,
+                    'raw'    => $rawReserves,
+                ]);
+                return null;
+            }
+
+            return ['xlm' => $xlm, 'amount' => $assetAmount];
+        } catch (\Throwable $e) {
+            Log::error('[LP:getPoolReserves] Exception', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+            return null;
+        }
+    }
+
+    private function blockchainSwapFees(string $blockchainId, string $amount): ?array
     {
         $base = $this->isTestnet
             ? 'https://horizon-testnet.stellar.org'
