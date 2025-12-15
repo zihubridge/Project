@@ -11,21 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tokens', function (Blueprint $table) {
+        Schema::create('platform_wallets', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 64);
-            $table->string('asset_code', 64);
             $table->unsignedBigInteger('blockchain_id')->index();
 
-            $table->string('issuer_address', 56)->nullable();
-            $table->string('pool_id', 64)->nullable(); 
-
-            $table->string('contract_address', 128)->nullable();
-            $table->unsignedSmallInteger('decimals')->default(7);
+            $table->string('label', 50);
+            $table->string('public_address', 128)->unique();
+            $table->text('secret_encrypted')->nullable();
+            $table->boolean('is_active')->default(true);
 
             $table->json('meta')->nullable();
-            $table->tinyInteger('status')->default(1); // 1=active, 0=inactive
-
             $table->timestamps();
         });
     }
@@ -35,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tokens');
+        Schema::dropIfExists('platform_wallets');
     }
 };

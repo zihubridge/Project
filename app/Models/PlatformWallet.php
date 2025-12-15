@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Token extends Model
+class PlatformWallet extends Model
 {
     protected $guarded = [];
 }

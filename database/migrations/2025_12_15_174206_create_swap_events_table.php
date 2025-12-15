@@ -11,9 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('blockchains', function (Blueprint $table) {
+        Schema::create('swap_events', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 32);
+            $table->unsignedBigInteger('swap_id')->index();
+            $table->unsignedBigInteger('swap_event_type_id')->index();
+            $table->text('message')->nullable();
+            $table->json('meta')->nullable();
             $table->timestamps();
         });
     }
@@ -23,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('blockchains');
+        Schema::dropIfExists('swap_events');
     }
 };

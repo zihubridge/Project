@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('blockchains', function (Blueprint $table) {
+        Schema::create('chain_states', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 32);
+            $table->unsignedBigInteger('blockchain_id')->index();
+            $table->unsignedBigInteger('chain_state_key_id')->index();
+            $table->text('value');      // cursor string / ledger number
             $table->timestamps();
         });
     }
@@ -23,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('blockchains');
+        Schema::dropIfExists('chain_states');
     }
 };
