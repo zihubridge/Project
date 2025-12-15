@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('asset_code', 64);
             $table->unsignedBigInteger('blockchain_id')->index();
 
-            $table->string('issuer_address', 56)->nullable();
+            $table->string('issuer_address')->nullable();
             $table->string('pool_id', 64)->nullable(); 
 
             $table->string('contract_address', 128)->nullable();
