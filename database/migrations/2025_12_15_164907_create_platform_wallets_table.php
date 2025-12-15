@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('public_address', 128)->unique();
             $table->text('secret_encrypted')->nullable();
             $table->boolean('is_active')->default(true);
-            $table->boolean('is_Testnet')->default(false);
+            $table->boolean('is_testnet')->default(false);
 
             $table->json('meta')->nullable();
             $table->timestamps();
