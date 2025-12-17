@@ -14,6 +14,7 @@ use Soneso\StellarSDK\Exceptions\HorizonRequestException;
 use Soneso\StellarSDK\Network;
 use Soneso\StellarSDK\StellarSDK;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Http\Client\RequestException;
 
 class GlobalController extends Controller
 {
@@ -67,7 +68,11 @@ class GlobalController extends Controller
         }
 
         try {
-            $amount = $data['blockchain'] ?? null;
+            $amount = (string) ($data['amount'] ?? '0');
+
+            if (!is_numeric($amount) || bccomp($amount, '0', 7) <= 0) {
+                throw new \Exception("Invalid amount");
+            }
 
             //stellar
             if ($data['blockchain'] == 1) {
@@ -80,8 +85,42 @@ class GlobalController extends Controller
                     }
 
                     $poolId = $token->pool_id;
+
+                    if (!$token->pool_id) {
+                        throw new \Exception("Pool ID missing for token: {$token->asset_code}");
+                    }
+
                     $assetCode = $token->asset_code;
+                    if (!$assetCode) {
+                        throw new \Exception("Asset Code not found");
+                    }
                     $issuerAddress = $token->issuer_address;
+                    if (!$issuerAddress) {
+                        throw new \Exception("Issuer Address not found");
+                    }
+                    $xlmQuote = $this->estimateXlmOutFromPool($poolId, $assetCode, $issuerAddress, $amount);
+
+                    if (!$xlmQuote || empty($xlmQuote['estimated_xlm'])) {
+                        throw new \RuntimeException('Could not estimate XLM output from Stellar pool.');
+                    }
+
+                    $estimatedXlm = (string) $xlmQuote['estimated_xlm'];
+
+                    // Optional: ChangeNOW often expects a reasonable decimal format.
+                    // Keep 7 decimals (XLM standard) or trim trailing zeros if you want.
+                    $estimatedXlm = bcadd($estimatedXlm, '0', 7);
+
+                    $xrp = $this->getChangeNowEstimatedAmount(
+                        fromCurrency: 'xlm',
+                        toCurrency: 'xrp',
+                        fromNetwork: 'xlm',
+                        toNetwork: 'xrp',
+                        fromAmount: $xlm,
+                        flow: 'fixed-rate',
+                        type: 'direct',
+                        useRateId: true
+                    );
+
                     $xlm = $this->getStellarPoolReserves($poolId, $assetCode, $issuerAddress);
                 } catch (HorizonRequestException $e) {
                     if ($e->getStatusCode() === 404) {
@@ -171,8 +210,13 @@ class GlobalController extends Controller
         }
     }
 
-    private function getStellarPoolReserves(string $poolId, string $assetCode, string $issuerAddress): ?array
-    {
+    private function estimateXlmOutFromPool(
+        string $poolId,
+        string $assetCode,
+        string $issuerAddress,
+        string $amountIn,          // token amount in (string for precision)
+        string $feeBps = '30'      // fee in basis points (e.g., 30 = 0.30%). Adjust if your pool differs.
+    ): ?array {
         $base = $this->isTestnet
             ? 'https://horizon-testnet.stellar.org'
             : 'https://horizon.stellar.org';
@@ -183,7 +227,7 @@ class GlobalController extends Controller
             $res = Http::timeout(10)->acceptJson()->get($url);
 
             if ($res->failed()) {
-                Log::warning('[LP:getPoolReserves] Horizon request failed', [
+                Log::warning('[LP:estimate_XlmOut_FromPool] Horizon request failed', [
                     'status' => $res->status(),
                     'body'   => mb_substr($res->body(), 0, 800),
                 ]);
@@ -191,29 +235,26 @@ class GlobalController extends Controller
             }
 
             $data = $res->json();
-
             $rawReserves = $data['reserves'] ?? null;
 
             if (!is_array($rawReserves)) {
-                Log::warning('[LP:getPoolReserves] reserves missing or not an array');
+                Log::warning('[LP:estimate_XlmOut_FromPool] reserves missing or not an array');
                 return null;
             }
 
-            $xlm = null;
-            $assetAmount = null;
+            $xlmReserve = null;
+            $tokenReserve = null;
 
             foreach ($rawReserves as $r) {
                 $asset  = $r['asset']  ?? null;
-                $amount = $r['amount'] ?? null;
+                $amt    = $r['amount'] ?? null;
 
                 if ($asset === 'native') {
-                    $xlm = $amount;
+                    $xlmReserve = (string) $amt;
                     continue;
                 }
 
-                if (!is_string($asset)) {
-                    continue;
-                }
+                if (!is_string($asset) || $amt === null) continue;
 
                 $parts = explode(':', $asset);
 
@@ -226,12 +267,12 @@ class GlobalController extends Controller
                 }
 
                 if ($code === $assetCode && $issuer === $issuerAddress) {
-                    $assetAmount = $amount;
+                    $tokenReserve = (string) $amt;
                 }
             }
 
-            if ($xlm === null || $assetAmount === null) {
-                Log::warning('[LP:getPoolReserves] Could not match both XLM and ' . $assetCode . ' in reserves', [
+            if ($xlmReserve === null || $tokenReserve === null) {
+                Log::warning('[LP:estimate_XlmOut_FromPool] Could not match both XLM and token reserves', [
                     'asset'  => $assetCode,
                     'issuer' => $issuerAddress,
                     'raw'    => $rawReserves,
@@ -239,13 +280,128 @@ class GlobalController extends Controller
                 return null;
             }
 
-            return $xlm;
+            // ---------- AMM math (use bc for precision) ----------
+            // Stellar assets are 7 decimals; we’ll keep 7 in final output.
+            $scale = 18; // internal calc precision
+
+            if (!function_exists('bcadd')) {
+                throw new \RuntimeException('BCMath extension is required for precise AMM estimation.');
+            }
+
+            // feeBps (e.g. 30) => multiplier = (10000 - feeBps) / 10000
+            $feeMultiplier = bcdiv(bcsub('10000', (string)$feeBps, 0), '10000', $scale);
+
+            $amountInWithFee = bcmul($amountIn, $feeMultiplier, $scale);
+
+            // amountOut = (reserveOut * amountInWithFee) / (reserveIn + amountInWithFee)
+            $numerator   = bcmul($xlmReserve, $amountInWithFee, $scale);
+            $denominator = bcadd($tokenReserve, $amountInWithFee, $scale);
+
+            if (bccomp($denominator, '0', $scale) === 0) {
+                return null;
+            }
+
+            $xlmOut = bcdiv($numerator, $denominator, $scale);
+
+            // Round/display to 7 decimals for XLM
+            $xlmOut7 = bcadd($xlmOut, '0', 7);
+
+            return [
+                'pool_id'        => $poolId,
+                'token'          => $assetCode,
+                'issuer'         => $issuerAddress,
+                'amount_in'      => $amountIn,
+                'fee_bps'        => (int)$feeBps,
+                'token_reserve'  => $tokenReserve,
+                'xlm_reserve'    => $xlmReserve,
+                'estimated_xlm'  => $xlmOut7,
+            ];
         } catch (\Throwable $e) {
-            Log::error('[LP:getPoolReserves] Exception', [
+            Log::error('[LP:estimate_XlmOut_FromPool] Exception', [
                 'message' => $e->getMessage(),
-                'trace'   => $e->getTraceAsString(),
             ]);
             return null;
+        }
+    }
+
+
+    private function getChangeNowEstimatedAmount(
+        string $fromCurrency,
+        string $toCurrency,
+        ?string $fromNetwork = null,
+        ?string $toNetwork = null,
+        ?string $fromAmount = null,   // required if type=direct
+        ?string $toAmount = null,     // required if type=reverse
+        string $flow = 'standard',    // standard | fixed-rate
+        string $type = 'direct',      // direct | reverse
+        bool $useRateId = false,
+        bool $isTopUp = false
+    ): array {
+        // Basic validation
+        $type = strtolower($type);
+        $flow = strtolower($flow);
+
+        if (!in_array($type, ['direct', 'reverse'], true)) {
+            throw new \InvalidArgumentException("Invalid type. Use 'direct' or 'reverse'.");
+        }
+        if (!in_array($flow, ['standard', 'fixed-rate'], true)) {
+            throw new \InvalidArgumentException("Invalid flow. Use 'standard' or 'fixed-rate'.");
+        }
+
+        if ($type === 'direct' && (!$fromAmount || (float)$fromAmount <= 0)) {
+            throw new \InvalidArgumentException("fromAmount is required and must be > 0 for type=direct.");
+        }
+        if ($type === 'reverse' && (!$toAmount || (float)$toAmount <= 0)) {
+            throw new \InvalidArgumentException("toAmount is required and must be > 0 for type=reverse.");
+        }
+
+        $baseUrl = rtrim(config('services.changenow.base_url', env('CHANGENOW_BASE_URL', 'https://api.changenow.io')), '/');
+        $apiKey  = config('services.changenow.api_key', env('CHANGENOW_API_KEY'));
+
+        if (!$apiKey) {
+            throw new \RuntimeException('CHANGENOW_API_KEY is missing.');
+        }
+
+        $params = [
+            'fromCurrency' => strtolower($fromCurrency),
+            'toCurrency'   => strtolower($toCurrency),
+            'flow'         => $flow,
+            'type'         => $type,
+            'useRateId'    => $useRateId ? 'true' : 'false',
+            'isTopUp'      => $isTopUp ? 'true' : 'false',
+        ];
+
+        // Amount parameters depend on direction
+        if ($type === 'direct') {
+            $params['fromAmount'] = (string)$fromAmount;
+        } else {
+            $params['toAmount'] = (string)$toAmount;
+        }
+
+        // Optional networks
+        if (!empty($fromNetwork)) $params['fromNetwork'] = strtolower($fromNetwork);
+        if (!empty($toNetwork))   $params['toNetwork']   = strtolower($toNetwork);
+
+        try {
+            $res = Http::timeout(20)
+                ->acceptJson()
+                ->withHeaders([
+                    'x-changenow-api-key' => $apiKey,
+                ])
+                ->get($baseUrl . '/v2/exchange/estimated-amount', $params)
+                ->throw();
+
+            // Return full response so you can use rateId/validUntil/etc.
+            return $res->json();
+        } catch (RequestException $e) {
+            // Useful error structure for logging/handling
+            $body = optional($e->response)->json() ?? optional($e->response)->body();
+
+            throw new \RuntimeException(
+                'ChangeNOW estimate failed: ' . (is_string($body) ? $body : json_encode($body)),
+                $e->getCode(),
+                $e
+            );
         }
     }
 }
