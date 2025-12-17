@@ -19,15 +19,16 @@ class TokenSeeder extends Seeder
             [
                 'name' => 'TokenGlade',
                 'asset_code' => 'TKG',
-                'issuer_address' => 'Stellar',
                 'blockchain_id' => 1,
+                'issuer_address' => 'Stellar',
+                'pool_id' => 'cb1922681c9d2380d34577d3c056e435a8436586e776c38a80412120c2442fb5',
                 'status' => 1,
             ],
             [
                 'name' => 'Xrush',
                 'asset_code' => 'XRUSH',
-                'issuer_address' => 'Ripple',
                 'blockchain_id' => 2,
+                'issuer_address' => 'Ripple',
                 'status' => 1,
             ],
         ];
