@@ -53,11 +53,16 @@ class GlobalController extends Controller
     {
         try {
             $data = $request->validate([
-                'public_wallet' => ['required', 'string'],
-                'amount' => ['required', 'numeric'],
-                'blockchain' => ['required', 'numeric'],
-                'issuer_address' => ['required', 'numeric'],
-                'asset_code' => ['required', 'numeric'],
+                'amount' => ['required', 'numeric', 'gt:0'],
+
+                'from_blockchain' => ['required', 'integer'],
+                'to_blockchain' => ['required', 'integer'],
+
+                'from_asset_code' => ['required', 'string', 'max:64'],
+                'from_issuer_address' => ['required', 'string', 'max:128'],
+
+                'to_asset_code' => ['required', 'string', 'max:64'],
+                'to_issuer_address' => ['required', 'string', 'max:128'],
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -74,11 +79,11 @@ class GlobalController extends Controller
                 throw new \Exception("Invalid amount");
             }
 
-            //stellar
-            if ($data['blockchain'] == 1) {
+            //Stellar to Ripple 
+            if ($data['from_blockchain'] == 1 && $data['from_blockchain'] == 2) {
                 try {
 
-                    $token = Token::where('issuer_address', $data['issuer_address'])->first();
+                    $token = Token::where('issuer_address', $data['from_issuer_address'])->first();
 
                     if (!$token) {
                         throw new \Exception("Token not found for issuer address");
@@ -115,13 +120,26 @@ class GlobalController extends Controller
                         toCurrency: 'xrp',
                         fromNetwork: 'xlm',
                         toNetwork: 'xrp',
-                        fromAmount: $xlm,
+                        fromAmount: $estimatedXlm,
                         flow: 'fixed-rate',
                         type: 'direct',
                         useRateId: true
                     );
 
-                    $xlm = $this->getStellarPoolReserves($poolId, $assetCode, $issuerAddress);
+                    // ChangeNOW usually returns estimatedAmount for "to"
+                    $estimatedXrp = (string)($xrpQuote['estimatedAmount'] ?? '0');
+
+                    if (!is_numeric($estimatedXrp) || bccomp($estimatedXrp, '0', 6) <= 0) {
+                        throw new \RuntimeException('Could not estimate XRP output from ChangeNOW.');
+                    }
+
+                    // Now quote XRP -> XRPL token
+                    $xrplTokenQuote = $this->xrplQuoteXrpToToken(
+                        xrpAmount: $estimatedXrp,
+                        currency: $data['to_asset_code'],          // for XRPL this must be currency or hex
+                        issuer: $data['to_issuer_address'],        // XRPL issuer address
+                        isTestnet: $this->isTestnet
+                    );
                 } catch (HorizonRequestException $e) {
                     if ($e->getStatusCode() === 404) {
                         return response()->json([
@@ -135,6 +153,9 @@ class GlobalController extends Controller
                         'code'    => $e->getStatusCode(),
                     ], 502);
                 }
+            }
+            //Ripple to Stellar
+            else if ($data['from_blockchain'] == 2 && $data['from_blockchain'] == 1) {
             }
         } catch (\Throwable $e) {
             return response()->json([
@@ -324,6 +345,97 @@ class GlobalController extends Controller
         }
     }
 
+    private function xrplQuoteXrpToToken(
+        string $xrpAmount,            // XRP amount as string, e.g. "25.5"
+        string $currency,             // token currency, e.g. "USD" or 40-char HEX
+        string $issuer,               // r..... issuer
+        bool $isTestnet = false,
+        int $limit = 50
+    ): ?array {
+        $rpc = $isTestnet
+            ? 'https://s.altnet.rippletest.net:51234'
+            : 'https://xrplcluster.com';
+
+        // XRP in drops (1 XRP = 1,000,000 drops)
+        $xrpDrops = bcmul($xrpAmount, '1000000', 0);
+
+        $payload = [
+            'method' => 'book_offers',
+            'params' => [[
+                // We are spending XRP
+                'taker_gets' => 'XRP',
+
+                // We want the issued token
+                'taker_pays' => [
+                    'currency' => $currency,
+                    'issuer'   => $issuer,
+                ],
+
+                'limit' => $limit,
+            ]]
+        ];
+
+        $res = Http::timeout(20)->acceptJson()->post($rpc, $payload);
+
+        if ($res->failed()) {
+            return null;
+        }
+
+        $offers = data_get($res->json(), 'result.offers', []);
+        if (!is_array($offers) || count($offers) === 0) {
+            return [
+                'xrp_in' => $xrpAmount,
+                'token_out_estimated' => '0',
+                'reason' => 'no_liquidity',
+            ];
+        }
+
+        // We simulate filling offers until we spend xrpDrops
+        $remainingDrops = $xrpDrops;
+        $tokenOut = '0';
+
+        foreach ($offers as $offer) {
+            if (bccomp($remainingDrops, '0', 0) <= 0) break;
+
+            // offer taker_gets: XRP (drops)
+            // offer taker_pays: issued token amount (string)
+            $gets = $offer['TakerGets'] ?? null;
+            $pays = $offer['TakerPays'] ?? null;
+
+            if (!$gets || !$pays) continue;
+
+            // TakerGets is XRP in drops (string or int)
+            $offerXrpDrops = (string)$gets;
+
+            // TakerPays is either array for IOU or string; for IOU it’s array {currency, issuer, value}
+            $offerTokenValue = is_array($pays) ? (string)($pays['value'] ?? '0') : (string)$pays;
+
+            if (bccomp($offerXrpDrops, '0', 0) <= 0 || bccomp($offerTokenValue, '0', 18) <= 0) {
+                continue;
+            }
+
+            // If we can take whole offer
+            if (bccomp($remainingDrops, $offerXrpDrops, 0) >= 0) {
+                $remainingDrops = bcsub($remainingDrops, $offerXrpDrops, 0);
+                $tokenOut = bcadd($tokenOut, $offerTokenValue, 18);
+            } else {
+                // Partial fill proportional
+                // fraction = remainingDrops / offerXrpDrops
+                $fraction = bcdiv($remainingDrops, $offerXrpDrops, 18);
+                $partialToken = bcmul($offerTokenValue, $fraction, 18);
+
+                $tokenOut = bcadd($tokenOut, $partialToken, 18);
+                $remainingDrops = '0';
+            }
+        }
+
+        return [
+            'xrp_in' => $xrpAmount,
+            'xrp_in_drops' => $xrpDrops,
+            'token_out_estimated' => bcadd($tokenOut, '0', 8), // show 8 decimals (adjust per token)
+            'unfilled_xrp_drops' => $remainingDrops,
+        ];
+    }
 
     private function getChangeNowEstimatedAmount(
         string $fromCurrency,
