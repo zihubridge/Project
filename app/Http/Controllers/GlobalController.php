@@ -13,6 +13,7 @@ use League\Config\Exception\ValidationException;
 use Soneso\StellarSDK\Exceptions\HorizonRequestException;
 use Soneso\StellarSDK\Network;
 use Soneso\StellarSDK\StellarSDK;
+use Illuminate\Support\Facades\Crypt;
 
 class GlobalController extends Controller
 {
@@ -52,9 +53,10 @@ class GlobalController extends Controller
         try {
             $data = $request->validate([
                 'public_wallet' => ['required', 'string'],
-                'amount' => ['nullable', 'numeric'],
-                'blockchain' => ['nullable', 'numeric'],
-                'issuer_address' => ['nullable', 'numeric'],
+                'amount' => ['required', 'numeric'],
+                'blockchain' => ['required', 'numeric'],
+                'issuer_address' => ['required', 'numeric'],
+                'asset_code' => ['required', 'numeric'],
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -65,25 +67,22 @@ class GlobalController extends Controller
         }
 
         try {
-            $amount = $data['amount'] ?? null;
+            $amount = $data['blockchain'] ?? null;
 
             //stellar
-            if ($data['amount'] == 1) {
+            if ($data['blockchain'] == 1) {
                 try {
-                    $result = $this->getStellarTokenBalance($data['public_wallet'], $amount);
 
-                    if ($amount !== null) {
-                        return response()->json([
-                            'status' => 1,
-                            'hasMin' => (bool) $result,
-                            'amount'    => (float) $amount,
-                        ]);
+                    $token = Token::where('issuer_address', $data['issuer_address'])->first();
+
+                    if (!$token) {
+                        throw new \Exception("Token not found for issuer address");
                     }
 
-                    return response()->json([
-                        'status'    => 1,
-                        'balance' => (float) $result,
-                    ]);
+                    $poolId = $token->pool_id;
+                    $assetCode = $token->asset_code;
+                    $issuerAddress = $token->issuer_address;
+                    $xlm = $this->getStellarPoolReserves($poolId, $assetCode, $issuerAddress);
                 } catch (HorizonRequestException $e) {
                     if ($e->getStatusCode() === 404) {
                         return response()->json([
@@ -137,7 +136,8 @@ class GlobalController extends Controller
         }
     }
 
-    public function getStellarTokenBalance(string $publicKey, string $issuer, string $assetCode, ?float $minAmount = null): float|bool
+
+    public function checkStellarDepositAmount(string $publicKey, string $issuer, string $assetCode, ?float $minAmount = null): float|bool
     {
         if (!$issuer) {
             return $minAmount === null ? 0.0 : false;
@@ -169,60 +169,6 @@ class GlobalController extends Controller
             }
             throw $e;
         }
-    }
-
-    public function getRippleTokenBalance(string $publicKey, string $issuer, string $assetCode, ?float $minAmount = null): float|bool
-    {
-        $data = $request->validate([
-            'from' => ['required', 'string', 'regex:/^r[1-9A-HJ-NP-Za-km-z]{25,}$/'],
-        ]);
-
-        $res = \Http::post($this->rpcUrl, [
-            'method' => 'account_lines',
-            'params' => [['account' => $data['from'], 'ledger_index' => 'validated', 'peer' => $this->issuer]]
-        ])->json();
-
-
-        $lines = data_get($res, 'result.lines', []);
-        foreach ($lines as $line) {
-            if (strtoupper($line['currency'] ?? '') === $this->tokenCode) {
-                return response()->json([
-                    'balance' => $line['balance']
-                ]);
-            }
-        }
-        return false;
-    }
-
-    private function swappingTokenAmount(string $issueAddress, float $Amount): float|bool
-    {
-        if (empty($issueAddress)) {
-            return false;
-        }
-
-        if ($Amount <= 0) {
-            return false;
-        }
-
-        $token = Token::where('issuer_address', $issueAddress)->first();
-
-        if (!$token) {
-            throw new \Exception("Token not found for issuer address");
-        }
-
-        //Stellar
-        if ($token->blockchain_id == 1) {
-            $pollId = $token->pool_id;
-            $assetCode = $token->asset_code;
-            $issuerAddress = $token->issuer_address;
-            $this->getStellarPoolReserves($pollId, $assetCode, $issuerAddress);
-        }
-
-        #Ripple
-        elseif ($token->blockchain_id == 2) {
-        }
-
-        return false;
     }
 
     private function getStellarPoolReserves(string $poolId, string $assetCode, string $issuerAddress): ?array
@@ -293,85 +239,7 @@ class GlobalController extends Controller
                 return null;
             }
 
-            return ['xlm' => $xlm, 'amount' => $assetAmount];
-        } catch (\Throwable $e) {
-            Log::error('[LP:getPoolReserves] Exception', [
-                'message' => $e->getMessage(),
-                'trace'   => $e->getTraceAsString(),
-            ]);
-            return null;
-        }
-    }
-
-    private function blockchainSwapFees(string $blockchainId, string $amount): ?array
-    {
-        $base = $this->isTestnet
-            ? 'https://horizon-testnet.stellar.org'
-            : 'https://horizon.stellar.org';
-
-        $url = $base . '/liquidity_pools/' . $poolId;
-
-        try {
-            $res = Http::timeout(10)->acceptJson()->get($url);
-
-            if ($res->failed()) {
-                Log::warning('[LP:getPoolReserves] Horizon request failed', [
-                    'status' => $res->status(),
-                    'body'   => mb_substr($res->body(), 0, 800),
-                ]);
-                return null;
-            }
-
-            $data = $res->json();
-
-            $rawReserves = $data['reserves'] ?? null;
-
-            if (!is_array($rawReserves)) {
-                Log::warning('[LP:getPoolReserves] reserves missing or not an array');
-                return null;
-            }
-
-            $xlm = null;
-            $assetAmount = null;
-
-            foreach ($rawReserves as $r) {
-                $asset  = $r['asset']  ?? null;
-                $amount = $r['amount'] ?? null;
-
-                if ($asset === 'native') {
-                    $xlm = $amount;
-                    continue;
-                }
-
-                if (!is_string($asset)) {
-                    continue;
-                }
-
-                $parts = explode(':', $asset);
-
-                if (count($parts) === 2) {
-                    [$code, $issuer] = $parts;
-                } elseif (count($parts) === 3) {
-                    [, $code, $issuer] = $parts;
-                } else {
-                    continue;
-                }
-
-                if ($code === $assetCode && $issuer === $issuerAddress) {
-                    $assetAmount = $amount;
-                }
-            }
-
-            if ($xlm === null || $assetAmount === null) {
-                Log::warning('[LP:getPoolReserves] Could not match both XLM and ' . $assetCode . ' in reserves', [
-                    'asset'  => $assetCode,
-                    'issuer' => $issuerAddress,
-                    'raw'    => $rawReserves,
-                ]);
-                return null;
-            }
-
-            return ['xlm' => $xlm, 'tkg' => $assetAmount];
+            return $xlm;
         } catch (\Throwable $e) {
             Log::error('[LP:getPoolReserves] Exception', [
                 'message' => $e->getMessage(),
