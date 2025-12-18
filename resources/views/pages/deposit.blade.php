@@ -1,0 +1,171 @@
+@extends('layout.master')
+@section('content')
+
+    <div id="copyToast"
+        class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0066FF] text-white text-sm py-2 px-5 rounded-2xl flex items-center gap-2">
+        <ion-icon name="checkmark-circle-outline" class="text-lg"></ion-icon>
+        <span>Copied!</span>
+    </div>
+
+    <section class="bg-[#F6F7F9] py-10">
+        <div class="max-w-6xl mx-auto px-4 mb-5">
+            <div class="bg-white rounded-2xl p-5 flex flex-col md:flex-row md:justify-between gap-4 md:gap-0">
+                <div class="flex flex-wrap justify-center md:justify-start gap-3 items-center">
+                    <h2 class="text-lg font-bold text-black">Exchange ID:</h2>
+                    <p id="exchangeId" class="text-[#2B2B2B] break-all">we456ek2of585kf6l20k28qwr</p>
+                    <ion-icon name="copy-outline" class="cursor-pointer text-xl" onclick="copyText()"></ion-icon>
+                </div>
+                <div
+                    class="flex items-center justify-center md:justify-start gap-2 cursor-pointer text-[#0044C9] font-semibold">
+                    <ion-icon name="chatbox-ellipses-outline" class="text-xl"></ion-icon>
+                    <span>Contact support</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="max-w-6xl mx-auto px-4 mb-10">
+            <div class="bg-white rounded-2xl p-5 py-10">
+
+                <!-- Heading -->
+                <div class="w-full text-center py-5">
+                    <h2 class="text-xl font-bold text-black">Awaiting Your Deposit</h2>
+                </div>
+
+                <!-- Send Deposit -->
+                <div class="flex flex-col md:flex-row gap-5 mb-10">
+                    <!-- Label: 5/12 -->
+                    <h2 class="text-lg font-bold text-black w-full md:w-4/12">Send Deposit:</h2>
+
+                    <!-- Content: 7/12 -->
+                    <div class="flex flex-wrap items-center gap-3 w-full md:w-8/12 px-8">
+                        <img src="{{ asset('assets/new assets/eth.png') }}" alt="eth">
+                        <p class="text-black font-semibold text-xl">1.1870182 ETH</p>
+
+                        <div class="flex items-center gap-3">
+                            <span>Networking:</span>
+                            <p class="bg-[#0066FF] rounded-md text-white px-2">ETH</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Deposit Address -->
+                <div class="flex flex-col md:flex-row gap-4 md:gap-6">
+                    <!-- Label: 4/12 -->
+                    <div class="w-full md:w-4/12">
+                        <h2 class="text-lg font-bold text-black mb-3 md:mb-0">Deposit Address:</h2>
+                    </div>
+
+                    <!-- Content: 8/12 -->
+                    <div class="w-full md:w-8/12 px-8">
+                        <div class="bg-[#F7F8FA] border border-[#E3E3E3] p-5 rounded-t-xl">
+                            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+
+                                <!-- QR + Address -->
+                                <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+                                    <img src="{{ asset('assets/new assets/qr.png') }}"
+                                        class="w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0" alt="QR Code">
+
+                                    <p
+                                        class="text-sm sm:text-base break-all  tracking-wider text-gray-800 w-full sm:w-auto">
+                                        0xAC365KJU8784GTF223NMJK964JIK875NBG8795EQM25MNH414POI908
+                                    </p>
+                                </div>
+
+                                <div class="flex gap-3">
+                                    <ion-icon name="open-outline"
+                                        class="cursor-pointer text-xl bg-[#E1E8F3] text-[#859AB5] p-2 rounded-md"></ion-icon>
+                                    <ion-icon name="copy-outline"
+                                        class="cursor-pointer text-xl bg-[#E1E8F3] text-[#859AB5] p-2 rounded-md"></ion-icon>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-[#FEF7EA] text-[#F7931A] border border-[#F7931A] p-5 rounded-b-xl">
+                            Please Deposit ETH Using The Main Ethereum (ETH) Network.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="max-w-2xl mx-auto mt-10 px-4">
+            <div class="flex flex-wrap justify-between gap-4">
+                <!-- Step 1 -->
+                <div class="flex flex-col items-center flex-1 min-w-[100px] sm:min-w-[120px]">
+                    <div class="bg-[#203052] p-3 rounded-full flex justify-center items-center">
+                        <img src="{{ asset('assets/new assets/icon4.png') }}" class="w-6 sm:w-7" alt="">
+                    </div>
+                    <span class="text-black font-medium text-center text-sm sm:text-base mt-1">Pending Deposit</span>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="flex flex-col items-center flex-1 min-w-[100px] sm:min-w-[120px]">
+                    <div class="bg-[#D7E2F0] p-3 rounded-full flex justify-center items-center">
+                        <img src="{{ asset('assets/new assets/icon3.png') }}" class="w-6 sm:w-7" alt="">
+                    </div>
+                    <span class="text-black font-medium text-center text-sm sm:text-base mt-1">Confirming</span>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="flex flex-col items-center flex-1 min-w-[100px] sm:min-w-[120px]">
+                    <div class="bg-[#D7E2F0] p-3 rounded-full flex justify-center items-center">
+                        <img src="{{ asset('assets/new assets/icon2.png') }}" class="w-6 sm:w-7" alt="">
+                    </div>
+                    <span class="text-black font-medium text-center text-sm sm:text-base mt-1">Exchanging</span>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="flex flex-col items-center flex-1 min-w-[100px] sm:min-w-[120px]">
+                    <div class="bg-[#D7E2F0] p-3 rounded-full flex justify-center items-center">
+                        <img src="{{ asset('assets/new assets/icon1.png') }}" class="w-6 sm:w-7" alt="">
+                    </div>
+                    <span class="text-black font-medium text-center text-sm sm:text-base mt-1">Sending</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="customToast"
+            class=" hidden bg-white border-l-4 border-[#859AB5] shadow-lg p-4 flex items-start gap-3 mx-auto max-w-2xl my-20">
+            <!-- Icon -->
+            <div class="flex-shrink-0 text-[#859AB5]">
+                <ion-icon name="alert-circle-outline" class="text-xl"></ion-icon>
+            </div>
+
+            <!-- Text -->
+            <div class="flex-1 text-sm text-[#859AB5]">
+                If you sent the coins and the status did not change immediately, do not worry. Our system needs a few
+                minutes to detect the transaction.
+            </div>
+
+            <!-- Close button -->
+            <button id="closeToast" class="text-gray-500 hover:text-gray-800">
+                <ion-icon name="close-outline" class="text-xl"></ion-icon>
+            </button>
+        </div>
+
+    </section>
+
+@endsection
+
+<script>
+    function copyText() {
+        const text = document.getElementById("exchangeId").textContent;
+        navigator.clipboard.writeText(text);
+
+        const toast = document.getElementById("copyToast");
+        toast.classList.remove("hidden");
+
+        setTimeout(() => {
+            toast.classList.add("hidden");
+        }, 1500);
+    }
+
+    window.addEventListener('load', () => {
+        const toast = document.getElementById('customToast');
+        toast.classList.remove('hidden');
+
+        // Optional: auto-hide after 6 seconds
+        // setTimeout(() => {
+        //     toast.classList.add('hidden');
+        // }, 6000);
+    });
+</script>
