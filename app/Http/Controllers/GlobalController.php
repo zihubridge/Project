@@ -155,7 +155,101 @@ class GlobalController extends Controller
                 }
             }
             //Ripple to Stellar
-            else if ($data['from_blockchain'] == 2 && $data['from_blockchain'] == 1) {
+            else if ($data['from_blockchain'] == 2 && $data['to_blockchain'] == 1) {
+                try {
+                    $amount = (string) $data['amount'];
+
+                    if (!is_numeric($amount) || bccomp($amount, '0', 6) <= 0) {
+                        throw new \RuntimeException('Invalid amount');
+                    }
+
+                    /**
+                     * STEP 1: XRPL TOKEN → XRP (orderbook quote)
+                     */
+                    $xrpQuote = $this->xrplQuoteTokenToXrp(
+                        tokenAmount: $amount,
+                        currency: $data['from_asset_code'],
+                        issuer: $data['from_issuer_address'],
+                        isTestnet: $this->isTestnet
+                    );
+
+                    if (
+                        !$xrpQuote ||
+                        empty($xrpQuote['xrp_out_estimated']) ||
+                        bccomp($xrpQuote['xrp_out_estimated'], '0', 6) <= 0
+                    ) {
+                        throw new \RuntimeException('Could not estimate XRP from XRPL token');
+                    }
+
+                    $estimatedXrp = (string) $xrpQuote['xrp_out_estimated'];
+
+                    /**
+                     * STEP 2: XRP → XLM (ChangeNOW)
+                     */
+                    $xlmQuote = $this->getChangeNowEstimatedAmount(
+                        fromCurrency: 'xrp',
+                        toCurrency: 'xlm',
+                        fromNetwork: 'xrp',
+                        toNetwork: 'xlm',
+                        fromAmount: $estimatedXrp,
+                        flow: 'fixed-rate',
+                        type: 'direct',
+                        useRateId: true
+                    );
+
+                    $estimatedXlm = (string) ($xlmQuote['estimatedAmount'] ?? '0');
+
+                    if (!is_numeric($estimatedXlm) || bccomp($estimatedXlm, '0', 7) <= 0) {
+                        throw new \RuntimeException('Could not estimate XLM from ChangeNOW');
+                    }
+
+                    $estimatedXlm = bcadd($estimatedXlm, '0', 7);
+
+                    /**
+                     * STEP 3: XLM → STELLAR TOKEN (AMM pool)
+                     */
+                    $toToken = Token::where('blockchain_id', 1)
+                        ->where('asset_code', $data['to_asset_code'])
+                        ->where('issuer_address', $data['to_issuer_address'])
+                        ->first();
+
+                    if (!$toToken) {
+                        throw new \RuntimeException('Destination Stellar token not supported');
+                    }
+
+                    if (empty($toToken->pool_id)) {
+                        throw new \RuntimeException("Pool ID missing for token: {$toToken->asset_code}");
+                    }
+
+                    $stellarTokenQuote = $this->estimateTokenOutFromXlmPool(
+                        poolId: $toToken->pool_id,
+                        assetCode: $toToken->asset_code,
+                        issuerAddress: $toToken->issuer_address,
+                        xlmAmount: $estimatedXlm
+                    );
+
+                    if (
+                        !$stellarTokenQuote ||
+                        empty($stellarTokenQuote['estimated_token'])
+                    ) {
+                        throw new \RuntimeException('Could not estimate Stellar token output');
+                    }
+
+                    return response()->json([
+                        'status' => 1,
+                        'route' => 'xrpl_to_stellar',
+                        'quotes' => [
+                            'xrpl_token_to_xrp' => $xrpQuote,
+                            'xrp_to_xlm' => $xlmQuote,
+                            'xlm_to_stellar_token' => $stellarTokenQuote,
+                        ],
+                    ]);
+                } catch (\Throwable $e) {
+                    return response()->json([
+                        'status' => 0,
+                        'message' => $e->getMessage(),
+                    ], 422);
+                }
             }
         } catch (\Throwable $e) {
             return response()->json([
