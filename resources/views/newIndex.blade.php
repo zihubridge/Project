@@ -1,6 +1,5 @@
 @extends('layout.master')
 @section('content')
-
     <!-- Hero Section -->
     <div class="h-[50rem] w-full bg-cover bg-center relative flex items-center justify-center px-4"
         style="background-image: url('{{ asset('assets/images/bgbg.png') }}');">
@@ -35,12 +34,12 @@
         <div class="text-center text-white max-w-[55rem] w-full flex flex-col items-center">
 
             <h1 class="text-3xl md:text-5xl font-bold drop-shadow-xl leading-normal">
-                Discipline will take you places motivation can't
+                Move Value Across Chains. Without Friction
             </h1>
 
             <p class="text-base md:text-lg font-light mt-6 opacity-90 leading-relaxed w-[90%] md:w-[75%]">
-                Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint.
-                Velit officia consequat duis enim velit mollit. Exercitation veniam consequat sunt nostrud amet.
+                ZihuBridge connects Stellar and Ripple into one seamless swap experience, abstracting complexity while
+                preserving transparency and security
             </p>
 
             <!-- ===== CARD UI ===== -->
@@ -49,7 +48,7 @@
                 <h2 class="text-xl font-bold text-black">Select Blockchain</h2>
 
                 <select class="bg-[#EEF2F9] rounded-xl px-5 py-3 w-full text-black shadow-sm">
-                    <option selected>Select Blockchain</option>
+                    <option selected>From Blockchain</option>
                     <option value="ripple">Ripple</option>
                     <option value="stellar">Stellar</option>
                 </select>
@@ -59,16 +58,14 @@
                 </div>
 
                 <select class="bg-[#EEF2F9] rounded-xl px-5 py-3 w-full text-black shadow-sm">
-                    <option selected>Choose a Country</option>
-                    <option value="US">United States</option>
-                    <option value="CA">Canada</option>
-                    <option value="FR">France</option>
-                    <option value="DE">Germany</option>
+                    <option selected>To Blockchain</option>
+                    <option value="ripple">Ripple</option>
+                    <option value="stellar">Stellar</option>
                 </select>
 
                 <a href="{{ route('exchange') }}"
                     class="w-full bg-blue-600 text-white py-2 rounded-full text-lg font-semibold hover:bg-transparent hover:text-blue-600 border border-blue-600 transition">
-                    Exchange
+                    Swap Now
                 </a>
             </div>
         </div>
@@ -87,19 +84,19 @@
 
             <!-- Right column: Content -->
             <div class="p-5">
-                <h2 class="text-3xl font-bold mb-4 text-center md:text-left">Launch Your Project on Toncoin Now!</h2>
+                <h2 class="text-3xl font-bold mb-4 text-center md:text-left">Infrastructure for Cross-Chain Builders</h2>
                 <p class="text-gray-600 mb-4 text-center md:text-left">
-                    Tegro Launchpool and Farms are platforms that help project teams promote their token and get exposure to
-                    thousands of active Tegro users across the globe. We look for strong teams with clear and innovative
-                    vision in the crypto space. If you think you are one of the projects, do not wait any longer and apply
-                    below.
+                    ZihuBridge provides developers and projects with a reliable way to move liquidity between Stellar and
+                    XRPL ecosystems.
+                    Whether you’re launching a token, enabling cross-chain access, or simplifying user onboarding —
+                    ZihuBridge handles the hard parts.
                 </p>
-                <div class="flex justify-center md:justify-start">
+                {{-- <div class="flex justify-center md:justify-start">
                     <a href="#"
                         class=" bg-blue-600 text-white py-2 px-4 rounded-full text-lg font-semibold hover:bg-transparent hover:text-blue-600 border border-blue-600 transition">
-                        Apply to Launch
+                        Explore ZihuBridge
                     </a>
-                </div>
+                </div> --}}
             </div>
         </div>
     </section>
@@ -109,9 +106,9 @@
     <section class="max-w-7xl mx-auto px-4 py-12">
         <!-- Heading -->
         <div class="text-center mb-10">
-            <h2 class="text-3xl font-bold">CryptoCap Amazing Features</h2>
+            <h2 class="text-3xl font-bold">ZihuBridge Core Features</h2>
             <p class="text-gray-600 mt-2">
-                Explore sensational features to prepare your best investment in cryptocurrency
+                Built for secure, transparent, and reliable cross-chain execution
             </p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
@@ -126,8 +123,8 @@
                 </div>
 
                 <div class="mt-10">
-                    <h2 class="text-md font-bold">Sign-up is not required</h2>
-                    <p class="text-gray-500 mt-2">SimpleSwap provides cryptocurrency exchange without registration.</p>
+                    <h2 class="text-md font-bold">No Account Required</h2>
+                    <p class="text-gray-500 mt-2">ZihuBridge does not require user accounts or stored balances.</p>
                 </div>
             </div>
 
@@ -141,8 +138,9 @@
                 </div>
 
                 <div class="mt-10">
-                    <h2 class="text-md font-bold">1500 cryptocurrencies</h2>
-                    <p class="text-gray-500 mt-2">Hundreds of crypto and fiat currencies are available for exchange.</p>
+                    <h2 class="text-md font-bold">Focused Asset Support</h2>
+                    <p class="text-gray-500 mt-2">ZihuBridge supports carefully selected assets across Stellar and Ripple.
+                    </p>
                 </div>
             </div>
 
@@ -156,8 +154,8 @@
                 </div>
 
                 <div class="mt-10">
-                    <h2 class="text-md font-bold">You won’t be left alone</h2>
-                    <p class="text-gray-500 mt-2">Our support team is easy to reach and ready to answer your questions.</p>
+                    <h2 class="text-md font-bold">Execution You Can Track</h2>
+                    <p class="text-gray-500 mt-2">Every swap follows a clear execution path with visible status updates.</p>
                 </div>
             </div>
 
@@ -171,8 +169,9 @@
                 </div>
 
                 <div class="mt-10">
-                    <h2 class="text-md font-bold">Non-custodial</h2>
-                    <p class="text-gray-500 mt-2">Crypto is sent directly to your wallet, we don’t store it on our service.
+                    <h2 class="text-md font-bold">ZihuBridge does not hold user balances</h2>
+                    <p class="text-gray-500 mt-2">Funds move only for execution and are returned automatically if a swap
+                        cannot be completed.
                     </p>
                 </div>
             </div>
@@ -186,8 +185,7 @@
     <div class="pt-50 pb-30 mt-[-9rem]"
         style="background-image: url('{{ asset('assets/new assets/bg-gradient.png') }}'); background-repeat: no-repeat; background-size: cover; ">
 
-        <div
-            class="max-w-7xl mx-auto px-4 py-12 bg-[linear-gradient(135deg,#F2EEFE_0%,#F5FAFF_19%,#F6FCFF_63%,#E0ECFD_100%)] rounded-4xl flex flex-col items-center">
+        {{-- <div class="max-w-7xl mx-auto px-4 py-12 bg-[linear-gradient(135deg,#F2EEFE_0%,#F5FAFF_19%,#F6FCFF_63%,#E0ECFD_100%)] rounded-4xl flex flex-col items-center">
             <!-- Heading -->
             <h2 class="text-center text-3xl font-bold mt-10">Top Pairs on SimpleSwap</h2>
             <p class="text-center text-gray-600 mt-2 max-w-2xl">
@@ -515,20 +513,20 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> --}}
 
         <!-- Get Started Section -->
         <div class="max-w-7xl mx-auto px-4 mt-40">
             <!-- Heading -->
             <div class="text-center mb-10">
-                <h2 class="text-3xl font-bold text-white">CryptoCap Amazing Features</h2>
+                <h2 class="text-3xl font-bold text-white">How ZihuBridge Works</h2>
                 <p class="text-white mt-2">
-                    Explore sensational features to prepare your best investment in cryptocurrency
+                    A streamlined cross-chain swap flow without wallet connections or accounts
                 </p>
-                <button
+                {{-- <button
                     class="mt-10 bg-blue-600 text-white py-2 px-5 rounded-full text-lg font-semibold hover:bg-transparent hover:text-blue-600 border border-blue-600 transition">
                     Get Started
-                </button>
+                </button> --}}
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
@@ -538,9 +536,9 @@
                         <img src="{{ asset('assets/new assets/Frame5.png') }}" class="w-10 h-10">
                     </div>
                     <div>
-                        <h2 class="text-md font-bold">Create Your Account</h2>
+                        <h2 class="text-md font-bold">Select Assets & Destination</h2>
                         <p class="text-gray-500 mt-2">
-                            Your account and personal identity are guaranteed safe.
+                            Choose the source blockchain, asset, and destination wallet address.
                         </p>
                     </div>
                 </div>
@@ -551,9 +549,9 @@
                         <img src="{{ asset('assets/new assets/Frame6.png') }}" class="w-10 h-10">
                     </div>
                     <div>
-                        <h2 class="text-md font-bold">Connect Bank Account</h2>
+                        <h2 class="text-md font-bold">Send Funds to Execute</h2>
                         <p class="text-gray-500 mt-2">
-                            Connect the bank account to start transactions.
+                            ZihuBridge provides a temporary execution address for the swap.
                         </p>
                     </div>
                 </div>
@@ -564,9 +562,9 @@
                         <img src="{{ asset('assets/new assets/Frame4.png') }}" class="w-10 h-10">
                     </div>
                     <div>
-                        <h2 class="text-md font-bold">Start Build Portfolio</h2>
+                        <h2 class="text-md font-bold">Receive on Destination Chain</h2>
                         <p class="text-gray-500 mt-2">
-                            Buy and sell popular currencies and keep track of them.
+                            Assets are routed through verified liquidity and cross-chain paths.
                         </p>
                     </div>
                 </div>
@@ -575,5 +573,4 @@
         <!-- Get Started Section -->
     </div>
     <!-- Exchange Table -->
-
 @endsection
