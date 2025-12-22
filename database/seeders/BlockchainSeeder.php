@@ -16,10 +16,8 @@ class BlockchainSeeder extends Seeder
         Blockchain::truncate();
 
         $blockchains = [
-            [
-                'name' => 'Stellar',
-                'name' => 'Ripple',
-            ],
+            ['name' => 'Stellar'],
+            ['name' => 'Ripple'],
         ];
 
         foreach ($blockchains as $blockchains) {
