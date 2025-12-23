@@ -49,7 +49,7 @@
 
                 <select id="fromBlockchain"
                     class="bg-[#EEF2F9] rounded-xl px-5 py-3 w-full text-black shadow-sm">
-                    <option selected disabled>From Blockchain</option>
+                    <option value="" selected disabled>From Blockchain</option>
                 </select>
 
                 <div class="w-12 h-12 flex items-center justify-center rounded bg-[#EEF2F9] mx-auto">
@@ -58,13 +58,13 @@
 
                 <select id="toBlockchain"
                     class="bg-[#EEF2F9] rounded-xl px-5 py-3 w-full text-black shadow-sm">
-                    <option selected disabled>To Blockchain</option>
+                    <option value="" selected disabled>To Blockchain</option>
                 </select>
 
-                <a href="{{ route('exchange') }}"
+                <button id="swapBtn" type="button"
                     class="w-full bg-blue-600 text-white py-2 rounded-full text-lg font-semibold hover:bg-transparent hover:text-blue-600 border border-blue-600 transition">
                     Swap Now
-                </a>
+                </button>
             </div>
         </div>
     </div>

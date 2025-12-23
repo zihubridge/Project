@@ -14,6 +14,8 @@
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
     <link rel="stylesheet" href="{{ asset('assets/style/newStyle.css') }}">
 
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
 </head>
 
 <body class="font-sans absolute top-0 right-0 left-0 bottom-0">
@@ -21,7 +23,7 @@
     @include('layout.header')
     @yield('content')
     @include('layout.footer')
-
+    @stack('scripts')
 </body>
 
 </html>

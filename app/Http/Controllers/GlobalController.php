@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use League\Config\Exception\ValidationException;
+use Illuminate\Validation\ValidationException;
 use Soneso\StellarSDK\Exceptions\HorizonRequestException;
 use Soneso\StellarSDK\Network;
 use Soneso\StellarSDK\StellarSDK;
@@ -280,6 +280,46 @@ class GlobalController extends Controller
             $payload = [
                 'status'  => 'error',
                 'message' => 'Failed to load blockchains. Please try again later.',
+            ];
+
+            if (config('app.debug')) {
+                $payload['debug'] = $e->getMessage();
+            }
+
+            return response()->json($payload, 500);
+        }
+    }
+
+    public function tokens(Request $request)
+    {
+        try {
+            $data = $request->validate([
+                'blockchain_id' => ['required', 'integer', 'exists:blockchains,id'],
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Validation error',
+                'errors'  => $e->errors(),
+            ], 422);
+        }
+        try {
+            $tokens = Token::where('blockchain_id', $data['blockchain_id'])->get();
+
+            return response()->json([
+                'status'      => 'success',
+                'tokens' => $tokens,
+            ], 200);
+        } catch (\Throwable $e) {
+            Log::error('Failed to fetch tokens', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+            ]);
+
+            $payload = [
+                'status'  => 'error',
+                'message' => 'Failed to load tokens. Please try again later.',
             ];
 
             if (config('app.debug')) {

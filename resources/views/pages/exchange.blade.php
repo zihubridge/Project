@@ -1,6 +1,5 @@
 @extends('layout.master')
 @section('content')
-
     <section class="bg-[#F6F7F9]">
         <div class="max-w-7xl px-5 py-20 mx-auto">
             <div class="flex flex-col md:flex-row md:space-x-6">
@@ -75,11 +74,9 @@
                                     class="bg-transparent text-black text-lg sm:text-xl font-semibold text-right w-32 focus:outline-none" />
                             </div>
 
-                            <select
+                            <select id="fromToken"
                                 class="bg-[#EEF2F9] rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option>BTC</option>
-                                <option>ETH</option>
-                                <option>USDT</option>
+                                <option selected disabled>Select token</option>
                             </select>
                         </div>
 
@@ -108,11 +105,9 @@
                                     class="bg-transparent text-black text-lg sm:text-xl font-semibold text-right w-32 focus:outline-none" />
                             </div>
 
-                            <select
+                            <select id="toToken"
                                 class="bg-[#EEF2F9] rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option>BTC</option>
-                                <option>ETH</option>
-                                <option>USDT</option>
+                                <option selected disabled>Select token</option>
                             </select>
                         </div>
                     </div>
@@ -171,7 +166,7 @@
                             <input type="text" placeholder="the ETH Refund Address"
                                 class="w-full bg-transparent text-black text-sm sm:text-lg focus:outline-none" />
                             <img src="{{ asset('assets/new assets/qr-icon.png') }}" alt="qr-icon">
-                        </div>  
+                        </div>
                     </div>
 
                     <!-- Email -->
@@ -195,5 +190,61 @@
             </div>
         </div>
     </section>
-
 @endsection
+
+@push('scripts')
+<script>
+    console.log("exchange JS loaded ✅");
+
+    document.addEventListener("DOMContentLoaded", () => {
+
+        window.FROM_BLOCKCHAIN_ID = @json($fromBlockchainId);
+        window.TO_BLOCKCHAIN_ID = @json($toBlockchainId);
+
+        const fromId = window.FROM_BLOCKCHAIN_ID;
+        const toId = window.TO_BLOCKCHAIN_ID;
+
+        if (!fromId || !toId) return;
+
+        loadTokens(fromId, "fromToken");
+        loadTokens(toId, "toToken");
+    });
+
+    function loadTokens(blockchainId, selectId) {
+        console.log("Loading tokens for:", blockchainId, selectId);
+
+        fetch("/global/tokens", {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+            },
+            body: JSON.stringify({ blockchain_id: blockchainId }),
+        })
+        .then(res => {
+            console.log("Response status:", res.status);
+            return res.json();
+        })
+        .then(json => {
+            console.log("Tokens API json:", json);
+
+            const select = document.getElementById(selectId);
+            if (!select) {
+                console.error("Select not found:", selectId);
+                return;
+            }
+
+            select.innerHTML = `<option selected disabled>Select token</option>`;
+
+            (json.tokens || []).forEach(token => {
+                const opt = document.createElement("option");
+                opt.value = token.id;
+                opt.textContent = token.symbol ?? token.name;
+                select.appendChild(opt);
+            });
+        })
+        .catch(err => console.error("Token fetch failed ❌", err));
+    }
+</script>
+@endpush
