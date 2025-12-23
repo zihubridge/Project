@@ -34,7 +34,7 @@
         <div class="text-center text-white max-w-[55rem] w-full flex flex-col items-center">
 
             <h1 class="text-3xl md:text-5xl font-bold drop-shadow-xl leading-normal">
-                Move Value Across Chains. Without Friction
+                Move Value Across Chains
             </h1>
 
             <p class="text-base md:text-lg font-light mt-6 opacity-90 leading-relaxed w-[90%] md:w-[75%]">
@@ -47,20 +47,18 @@
 
                 <h2 class="text-xl font-bold text-black">Select Blockchain</h2>
 
-                <select class="bg-[#EEF2F9] rounded-xl px-5 py-3 w-full text-black shadow-sm">
-                    <option selected>From Blockchain</option>
-                    <option value="ripple">Ripple</option>
-                    <option value="stellar">Stellar</option>
+                <select id="fromBlockchain"
+                    class="bg-[#EEF2F9] rounded-xl px-5 py-3 w-full text-black shadow-sm">
+                    <option selected disabled>From Blockchain</option>
                 </select>
 
                 <div class="w-12 h-12 flex items-center justify-center rounded bg-[#EEF2F9] mx-auto">
                     <img src="{{ asset('assets/new assets/Icon.png') }}" class="w-6" alt="">
                 </div>
 
-                <select class="bg-[#EEF2F9] rounded-xl px-5 py-3 w-full text-black shadow-sm">
-                    <option selected>To Blockchain</option>
-                    <option value="ripple">Ripple</option>
-                    <option value="stellar">Stellar</option>
+                <select id="toBlockchain"
+                    class="bg-[#EEF2F9] rounded-xl px-5 py-3 w-full text-black shadow-sm">
+                    <option selected disabled>To Blockchain</option>
                 </select>
 
                 <a href="{{ route('exchange') }}"

@@ -2,19 +2,21 @@
     <nav class="flex justify-between items-center max-w-7xl mx-auto">
         <!-- Logo -->
         <div class="flex items-center">
-            <img src="{{ asset('assets/images/logo.png') }}" alt="LOGO" class="w-[65px] md:w-[80px] h-auto">
+            <a href="{{ route('home') }}">
+                <img src="{{ asset('assets/images/logo.png') }}" alt="LOGO" class="w-[65px] md:w-[80px] h-auto">
+            </a>
         </div>
 
         <!-- Desktop Menu -->
         <div class="hidden md:flex items-center">
             <ul class="flex items-center gap-8 text-gray-200 font-medium">
                 <li class="relative group">
-                    <a href="#"
+                    <a href="{{ route('home') }}"
                         class="hover:text-[#2b68e0] hover:tracking-wide hover:underline underline-offset-4 transition-all duration-300 font-light">
                         Home
                     </a>
                 </li>
-                <li class="relative group">
+                {{-- <li class="relative group">
                     <a href="#"
                         class="hover:text-[#2b68e0] hover:tracking-wide hover:underline underline-offset-4 transition-all duration-300 font-light">
                         Faculty
@@ -25,7 +27,7 @@
                         class="hover:text-[#2b68e0] hover:tracking-wide hover:underline underline-offset-4 transition-all duration-300 font-light">
                         Courses
                     </a>
-                </li>
+                </li> --}}
                 <li class="relative group">
                     <a href="#"
                         class="hover:text-[#2b68e0] hover:tracking-wide hover:underline underline-offset-4 transition-all duration-300 font-light">
