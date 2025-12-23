@@ -29,6 +29,7 @@ class TokenSeeder extends Seeder
                 'asset_code' => 'XRUSH',
                 'blockchain_id' => 2,
                 'issuer_address' => 'Ripple',
+                'pool_id' => 'cb1922681c9d2380d34577d3c056e435a8436586e776c38a80412120c2442fb5',
                 'status' => 1,
             ],
         ];

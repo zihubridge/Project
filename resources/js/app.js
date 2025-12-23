@@ -21,17 +21,21 @@ document.addEventListener("DOMContentLoaded", async () => {
         swapBtn.classList.toggle("pointer-events-none", disabled);
     }
 
-    function populateSelect(select, data, excludeId = null) {
+    function populateSelect(select, data, excludeAsset = null) {
         const placeholder = select.querySelector("option[disabled]");
 
         select.innerHTML = "";
         if (placeholder) select.appendChild(placeholder);
 
         data.forEach((chain) => {
-            if (excludeId && String(chain.id) === String(excludeId)) return;
+            if (
+                excludeAsset &&
+                String(chain.asset_code) === String(excludeAsset)
+            )
+                return;
 
             const opt = document.createElement("option");
-            opt.value = chain.id;
+            opt.value = chain.asset_code;
             opt.textContent = chain.name;
             select.appendChild(opt);
         });
@@ -67,13 +71,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         updateSwapState();
     });
 
-    swapBtn.addEventListener("click", () => {
-        const fromId = fromSelect.value;
-        const toId = toSelect.value;
+    swapBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (swapBtn.disabled) return;
 
-        if (!fromId || !toId) return;
-        if (fromId === toId) return;
+        const fromAsset = fromSelect.value;
+        const toAsset = toSelect.value;
 
-        window.location.href = `/exchange?from=${fromId}&to=${toId}`;
+        window.location.href = `/exchange?fromasset=${encodeURIComponent(
+            fromAsset
+        )}&toasset=${encodeURIComponent(toAsset)}`;
     });
 });

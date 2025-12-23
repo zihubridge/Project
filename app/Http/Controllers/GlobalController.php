@@ -294,7 +294,7 @@ class GlobalController extends Controller
     {
         try {
             $data = $request->validate([
-                'blockchain_id' => ['required', 'integer', 'exists:blockchains,id'],
+                'asset_code' => ['required', 'string', 'exists:blockchains,asset_code'],
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -304,10 +304,14 @@ class GlobalController extends Controller
             ], 422);
         }
         try {
-            $tokens = Token::where('blockchain_id', $data['blockchain_id'])->get();
+            $blockchainId = Blockchain::where('asset_code', $data['asset_code'])->value('id');
+
+            $tokens = Token::where('blockchain_id', $blockchainId)
+                ->orderBy('name')
+                ->get();
 
             return response()->json([
-                'status'      => 'success',
+                'status' => 'success',
                 'tokens' => $tokens,
             ], 200);
         } catch (\Throwable $e) {
@@ -317,16 +321,10 @@ class GlobalController extends Controller
                 'line'    => $e->getLine(),
             ]);
 
-            $payload = [
+            return response()->json([
                 'status'  => 'error',
                 'message' => 'Failed to load tokens. Please try again later.',
-            ];
-
-            if (config('app.debug')) {
-                $payload['debug'] = $e->getMessage();
-            }
-
-            return response()->json($payload, 500);
+            ], 500);
         }
     }
 

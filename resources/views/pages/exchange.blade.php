@@ -193,58 +193,46 @@
 @endsection
 
 @push('scripts')
-<script>
-    console.log("exchange JS loaded ✅");
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const fromAsset = @json($fromAsset);
+            const toAsset = @json($toAsset);
 
-    document.addEventListener("DOMContentLoaded", () => {
+            if (!fromAsset || !toAsset) return;
 
-        window.FROM_BLOCKCHAIN_ID = @json($fromBlockchainId);
-        window.TO_BLOCKCHAIN_ID = @json($toBlockchainId);
+            loadTokens(fromAsset, "fromToken");
+            loadTokens(toAsset, "toToken");
+        });
 
-        const fromId = window.FROM_BLOCKCHAIN_ID;
-        const toId = window.TO_BLOCKCHAIN_ID;
+        function loadTokens(assetCode, selectId) {
 
-        if (!fromId || !toId) return;
+            fetch("/global/tokens", {
+                    method: "POST",
+                    headers: {
+                        "Accept": "application/json",
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify({
+                        asset_code: assetCode
+                    }),
+                })
+                .then(res => res.json())
+                .then(json => {
 
-        loadTokens(fromId, "fromToken");
-        loadTokens(toId, "toToken");
-    });
+                    const select = document.getElementById(selectId);
+                    if (!select) return;
 
-    function loadTokens(blockchainId, selectId) {
-        console.log("Loading tokens for:", blockchainId, selectId);
+                    select.innerHTML = `<option value="" selected disabled>Select token</option>`;
 
-        fetch("/global/tokens", {
-            method: "POST",
-            headers: {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
-            },
-            body: JSON.stringify({ blockchain_id: blockchainId }),
-        })
-        .then(res => {
-            console.log("Response status:", res.status);
-            return res.json();
-        })
-        .then(json => {
-            console.log("Tokens API json:", json);
-
-            const select = document.getElementById(selectId);
-            if (!select) {
-                console.error("Select not found:", selectId);
-                return;
-            }
-
-            select.innerHTML = `<option selected disabled>Select token</option>`;
-
-            (json.tokens || []).forEach(token => {
-                const opt = document.createElement("option");
-                opt.value = token.id;
-                opt.textContent = token.symbol ?? token.name;
-                select.appendChild(opt);
-            });
-        })
-        .catch(err => console.error("Token fetch failed ❌", err));
-    }
-</script>
+                    (json.tokens || []).forEach(token => {
+                        const opt = document.createElement("option");
+                        opt.value = token.id;
+                        opt.textContent = token.symbol ?? token.name;
+                        select.appendChild(opt);
+                    });
+                })
+                .catch(err => console.error("Token fetch failed ❌", err));
+        }
+    </script>
 @endpush

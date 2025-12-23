@@ -11,13 +11,13 @@ Route::get('/', function () {
 
 Route::get('/exchange', function (Request $request) {
     $request->validate([
-        'from' => 'required|exists:blockchains,id',
-        'to'   => 'required|exists:blockchains,id|different:from',
+        'fromasset' => 'required|exists:blockchains,asset_code',
+        'toasset'   => 'required|exists:blockchains,asset_code|different:fromasset',
     ]);
 
     return view('pages.exchange', [
-        'fromBlockchainId' => $request->from,
-        'toBlockchainId'   => $request->to,
+        'fromAsset' => $request->query('fromasset'),
+        'toAsset'   => $request->query('toasset'),
     ]);
 })->name('exchange');
 
