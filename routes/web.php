@@ -29,4 +29,5 @@ Route::get('/deposit', function () {
 Route::prefix('global')->group(function () {
     Route::get('blockchains', [GlobalController::class, 'blockchains'])->name('global.blockchains');
     Route::post('tokens', [GlobalController::class, 'tokens'])->name('global.tokens');
+    Route::post('token_swapping_amount', [GlobalController::class, 'token_swapping_amount'])->name('global.token_swapping_amount');
 });

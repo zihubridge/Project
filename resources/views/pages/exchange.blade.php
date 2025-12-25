@@ -70,7 +70,7 @@
                                     </span>
                                 </div>
 
-                                <input type="text" placeholder="0.0"
+                                <input id="sendAmount" type="text" placeholder="0.0"
                                     class="bg-transparent text-black text-lg sm:text-xl font-semibold text-right w-32 focus:outline-none" />
                             </div>
 
@@ -101,7 +101,7 @@
                                     </span>
                                 </div>
 
-                                <input type="text" placeholder="0.0"
+                                <input id="receiveAmount" type="text" placeholder="0.0" readonly
                                     class="bg-transparent text-black text-lg sm:text-xl font-semibold text-right w-32 focus:outline-none" />
                             </div>
 
@@ -198,12 +198,81 @@
             const fromAsset = @json($fromAsset);
             const toAsset = @json($toAsset);
 
-            if (!fromAsset || !toAsset) return;
+            const fromTokenSelect = document.getElementById("fromToken");
+            const toTokenSelect = document.getElementById("toToken");
+            const sendInput = document.getElementById("sendAmount");
+            const receiveInput = document.getElementById("receiveAmount");
+
+            if (!fromTokenSelect || !toTokenSelect || !sendInput || !receiveInput) return;
 
             loadTokens(fromAsset, "fromToken");
             loadTokens(toAsset, "toToken");
+
+            // Estimate when user types OR changes tokens
+            const debouncedEstimate = debounce(estimateSwap, 400);
+            sendInput.addEventListener("input", debouncedEstimate);
+            fromTokenSelect.addEventListener("change", debouncedEstimate);
+            toTokenSelect.addEventListener("change", debouncedEstimate);
+
+            async function estimateSwap() {
+                const amount = sendInput.value.trim();
+
+                // guards
+                if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+                    receiveInput.value = "";
+                    return;
+                }
+
+                const fromOpt = fromTokenSelect.options[fromTokenSelect.selectedIndex];
+                const toOpt = toTokenSelect.options[toTokenSelect.selectedIndex];
+
+                if (!fromOpt || !toOpt) return;
+
+                const payload = {
+                    amount: amount,
+                    from_blockchain: fromAsset,
+                    to_blockchain: toAsset,
+                    from_asset_code: fromOpt.dataset.asset,
+                    from_issuer_address: fromOpt.dataset.issuer,
+                    to_asset_code: toOpt.dataset.asset,
+                    to_issuer_address: toOpt.dataset.issuer,
+                };
+
+                // must have token meta
+                if (!payload.from_asset_code || !payload.from_issuer_address || !payload.to_asset_code || !
+                    payload.to_issuer_address) {
+                    receiveInput.value = "";
+                    return;
+                }
+
+                try {
+                    const res = await fetch("/global/token_swapping_amount", {
+                        method: "POST",
+                        headers: {
+                            "Accept": "application/json",
+                            "Content-Type": "application/json",
+                            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+                        },
+                        body: JSON.stringify(payload),
+                    });
+
+                    const json = await res.json();
+
+                    // Expecting: { status: 1, estimated_amount: "123.45" }
+                    if (json.status === 1 && json.estimated_amount !== undefined) {
+                        receiveInput.value = json.estimated_amount;
+                    } else {
+                        receiveInput.value = "";
+                        console.log("Estimate response:", json);
+                    }
+                } catch (e) {
+                    console.error("Estimate failed:", e);
+                    receiveInput.value = "";
+                }
+            }
         });
 
+        // Load tokens into select and attach asset/issuer to options
         function loadTokens(assetCode, selectId) {
 
             fetch("/global/tokens", {
@@ -219,6 +288,7 @@
                 })
                 .then(res => res.json())
                 .then(json => {
+                    if (json.status !== "success") return;
 
                     const select = document.getElementById(selectId);
                     if (!select) return;
@@ -229,10 +299,23 @@
                         const opt = document.createElement("option");
                         opt.value = token.id;
                         opt.textContent = token.symbol ?? token.name;
+
+                        // IMPORTANT: used by estimate payload
+                        opt.dataset.asset = token.asset_code;
+                        opt.dataset.issuer = token.issuer_address;
+
                         select.appendChild(opt);
                     });
                 })
                 .catch(err => console.error("Token fetch failed ❌", err));
+        }
+
+        function debounce(fn, delay = 400) {
+            let t;
+            return (...args) => {
+                clearTimeout(t);
+                t = setTimeout(() => fn(...args), delay);
+            };
         }
     </script>
 @endpush
