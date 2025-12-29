@@ -134,12 +134,28 @@ class GlobalController extends Controller
                     }
 
                     // Now quote XRP -> XRPL token
-                    $xrplTokenQuote = $this->xrplQuoteXrpToToken(
+                    $xrplTokenQuote = $this->xrpToXRPToken(
                         xrpAmount: $estimatedXrp,
                         currency: $data['to_asset_code'],          // for XRPL this must be currency or hex
                         issuer: $data['to_issuer_address'],        // XRPL issuer address
                         isTestnet: $this->isTestnet
                     );
+
+                    if (!$xrplTokenQuote || empty($xrplTokenQuote['token_out_estimated'])) {
+                        return response()->json([
+                            'status' => 0,
+                            'message' => 'Could not estimate XRPL token output (AMM not found / no liquidity).'
+                        ], 422);
+                    }
+
+                    return response()->json([
+                        'status' => 1,
+                        'estimated_amount' => (string)$xrplTokenQuote['token_out_estimated'],
+                        'meta' => [
+                            'estimated_xlm' => $estimatedXlm,
+                            'estimated_xrp' => bcadd($estimatedXrp, '0', 6),
+                        ],
+                    ]);
                 } catch (HorizonRequestException $e) {
                     if ($e->getStatusCode() === 404) {
                         return response()->json([
@@ -470,44 +486,68 @@ class GlobalController extends Controller
         }
     }
 
-    private function xrplQuoteXrpToToken(
+    private function xrpToXRPToken(
         string $xrpAmount,            // XRP amount as string, e.g. "25.5"
         string $currency,             // token currency, e.g. "USD" or 40-char HEX
         string $issuer,               // r..... issuer
         bool $isTestnet = false,
-        int $limit = 50
     ): ?array {
         $rpc = $isTestnet
             ? 'https://s.altnet.rippletest.net:51234'
             : 'https://xrplcluster.com';
 
-        // XRP in drops (1 XRP = 1,000,000 drops)
-        $xrpDrops = bcmul($xrpAmount, '1000000', 0);
+        $cur = $this->xrplCurrency($currency);
 
         $payload = [
-            'method' => 'book_offers',
-            'params' => [[
-                // We are spending XRP
-                'taker_gets' => 'XRP',
-
-                // We want the issued token
-                'taker_pays' => [
-                    'currency' => $currency,
-                    'issuer'   => $issuer,
-                ],
-
-                'limit' => $limit,
+            'jsonrpc' => '2.0',
+            'id'      => 1,
+            'method'  => 'amm_info',
+            'params'  => [[
+                'asset'  => ['currency' => 'XRP'],
+                'asset2' => ['currency' => $cur, 'issuer' => $issuer],
             ]]
         ];
 
-        $res = Http::timeout(20)->acceptJson()->post($rpc, $payload);
+        $res = Http::timeout(20)
+            ->withHeaders(['Content-Type' => 'application/json'])
+            ->post($rpc, $payload);
+
 
         if ($res->failed()) {
             return null;
         }
 
-        $offers = data_get($res->json(), 'result.offers', []);
-        if (!is_array($offers) || count($offers) === 0) {
+        $amm = data_get($res->json(), 'result.amm');
+        if (!$amm) {
+            return [
+                'xrp_in' => $xrpAmount,
+                'token_out_estimated' => '0',
+                'reason' => 'amm_not_found',
+            ];
+        }
+
+        $amount  = $amm['amount']  ?? null;
+        $amount2 = $amm['amount2'] ?? null;
+
+        if ($amount === null || $amount2 === null) {
+            return null;
+        }
+
+        // We requested asset=XRP, so amount is expected to be XRP in drops (string).
+        $xrpReserveDrops = is_string($amount) ? $amount : null;
+        $tokenReserve    = is_array($amount2) ? (string)($amount2['value'] ?? '0') : '0';
+
+        if ($xrpReserveDrops === null || !ctype_digit($xrpReserveDrops)) {
+            // Some servers might return swapped ordering; handle safely:
+            if (is_string($amount2) && ctype_digit($amount2) && is_array($amount)) {
+                $xrpReserveDrops = $amount2;
+                $tokenReserve    = (string)($amount['value'] ?? '0');
+            } else {
+                return null;
+            }
+        }
+
+        if (bccomp($tokenReserve, '0', 18) <= 0) {
             return [
                 'xrp_in' => $xrpAmount,
                 'token_out_estimated' => '0',
@@ -515,51 +555,54 @@ class GlobalController extends Controller
             ];
         }
 
-        // We simulate filling offers until we spend xrpDrops
-        $remainingDrops = $xrpDrops;
-        $tokenOut = '0';
+        // Convert XRP amounts to XRP units (not drops) so math aligns with token decimals
+        $scale = 18;
 
-        foreach ($offers as $offer) {
-            if (bccomp($remainingDrops, '0', 0) <= 0) break;
+        $xrpReserve = bcdiv($xrpReserveDrops, '1000000', $scale);   // drops -> XRP
+        $xrpIn      = bcadd($xrpAmount, '0', $scale);
 
-            // offer taker_gets: XRP (drops)
-            // offer taker_pays: issued token amount (string)
-            $gets = $offer['TakerGets'] ?? null;
-            $pays = $offer['TakerPays'] ?? null;
-
-            if (!$gets || !$pays) continue;
-
-            // TakerGets is XRP in drops (string or int)
-            $offerXrpDrops = (string)$gets;
-
-            // TakerPays is either array for IOU or string; for IOU it’s array {currency, issuer, value}
-            $offerTokenValue = is_array($pays) ? (string)($pays['value'] ?? '0') : (string)$pays;
-
-            if (bccomp($offerXrpDrops, '0', 0) <= 0 || bccomp($offerTokenValue, '0', 18) <= 0) {
-                continue;
-            }
-
-            // If we can take whole offer
-            if (bccomp($remainingDrops, $offerXrpDrops, 0) >= 0) {
-                $remainingDrops = bcsub($remainingDrops, $offerXrpDrops, 0);
-                $tokenOut = bcadd($tokenOut, $offerTokenValue, 18);
-            } else {
-                // Partial fill proportional
-                // fraction = remainingDrops / offerXrpDrops
-                $fraction = bcdiv($remainingDrops, $offerXrpDrops, 18);
-                $partialToken = bcmul($offerTokenValue, $fraction, 18);
-
-                $tokenOut = bcadd($tokenOut, $partialToken, 18);
-                $remainingDrops = '0';
-            }
+        if (bccomp($xrpIn, '0', $scale) <= 0) {
+            return [
+                'xrp_in' => $xrpAmount,
+                'token_out_estimated' => '0',
+                'reason' => 'invalid_xrp_amount',
+            ];
         }
 
+        // trading_fee units: 1/100,000 (per xrpl.org)
+        $feeUnits = (string)($amm['trading_fee'] ?? 0); // e.g. 600 means 0.6%
+        $feeMultiplier = bcdiv(bcsub('100000', $feeUnits, 0), '100000', $scale);
+
+        // amountInWithFee = xrpIn * feeMultiplier
+        $xrpInWithFee = bcmul($xrpIn, $feeMultiplier, $scale);
+
+        // constant product: out = (tokenReserve * xrpInWithFee) / (xrpReserve + xrpInWithFee)
+        $numerator   = bcmul($tokenReserve, $xrpInWithFee, $scale);
+        $denominator = bcadd($xrpReserve, $xrpInWithFee, $scale);
+
+        if (bccomp($denominator, '0', $scale) === 0) {
+            return null;
+        }
+
+        $tokenOut = bcdiv($numerator, $denominator, $scale);
+
         return [
-            'xrp_in' => $xrpAmount,
-            'xrp_in_drops' => $xrpDrops,
-            'token_out_estimated' => bcadd($tokenOut, '0', 8), // show 8 decimals (adjust per token)
-            'unfilled_xrp_drops' => $remainingDrops,
+            'token_out_estimated' => bcadd($tokenOut, '0', 8), // display precision
         ];
+    }
+
+    private function xrplCurrency(string $currency): string
+    {
+        $currency = strtoupper(trim($currency));
+
+        // 3-char currency codes are allowed as-is
+        if (strlen($currency) === 3) {
+            return $currency;
+        }
+
+        // Otherwise must be 40-char HEX (ASCII bytes padded with 00)
+        $hex = strtoupper(bin2hex($currency));
+        return str_pad($hex, 40, '0', STR_PAD_RIGHT);
     }
 
     private function getChangeNowEstimatedAmount(
