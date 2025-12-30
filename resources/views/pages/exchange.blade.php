@@ -257,8 +257,7 @@
                     });
 
                     const json = await res.json();
-
-                    // Expecting: { status: 1, estimated_amount: "123.45" }
+                    
                     if (json.status === 1 && json.estimated_amount !== undefined) {
                         receiveInput.value = json.estimated_amount;
                     } else {
