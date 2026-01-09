@@ -45,8 +45,6 @@ class GlobalController extends Controller
         // 'memo'        => env('XRUSH_MEMO', 'XRUSH STAKING'),
         // 'issuer'        => env('XRPL_ISSUER', ''),
         // 'tokenCode'        => env('XRPL_TOKEN_CODE', ''),
-
-        $this->rpcUrl = env('XRPL_RPC_URL', 'https://s.altnet.rippletest.net:51234');
     }
 
     public function token_swapping_amount(Request $request)
