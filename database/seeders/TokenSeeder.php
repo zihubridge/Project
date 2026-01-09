@@ -25,8 +25,8 @@ class TokenSeeder extends Seeder
                 'status' => 1,
             ],
             [
-                'name' => 'Xrush',
-                'asset_code' => 'XRUSH',
+                'name' => 'Xyield',
+                'asset_code' => 'XYIELD',
                 'blockchain_id' => 2,
                 'issuer_address' => 'rD9Cz99tYyPkgF2cK3Bp7KpRQoK1d24kd4',
                 'status' => 1,
