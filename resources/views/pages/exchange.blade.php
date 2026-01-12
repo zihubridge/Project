@@ -47,57 +47,74 @@
                     <div class="mb-8 space-y-5 pb-10 border-b-1 border-[#D8D8D8]">
 
                         <!-- Send -->
-                        <div class="flex flex-col sm:flex-row gap-4 w-full">
-                            <div class="w-full bg-[#EEF2F9] rounded-xl px-4 sm:px-5 py-3 flex items-center justify-between">
+                        <div class="flex flex-col sm:flex-row gap-4 w-full group">
+                            <div
+                                class="w-full bg-[#EEF2F9] border border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-2xl px-5 py-4 flex items-center justify-between transition-all">
 
-                                <div class="flex flex-col">
-                                    <span class="text-gray-500 text-xs sm:text-sm">
-                                        You Send
-                                    </span>
-                                    <span class="text-xs text-gray-400 mt-1">
-                                        ≈ $3,423.51
-                                    </span>
+                                <div class="flex flex-col gap-1">
+                                    <span class="text-gray-500 text-xs font-bold uppercase tracking-wider">You Send</span>
+                                    <input id="sendAmount" type="text" placeholder="0.0"
+                                        class="bg-transparent text-black text-2xl font-bold focus:outline-none w-full" />
                                 </div>
 
-                                <input id="sendAmount" type="text" placeholder="0.0"
-                                    class="bg-transparent text-black text-lg sm:text-xl font-semibold text-right w-32 focus:outline-none" />
-                            </div>
+                                <div class="flex flex-col items-end gap-2 min-w-[140px]">
+                                    <div
+                                        class="flex items-center gap-1.5 bg-white/80 px-2 py-1 rounded-full border border-gray-200 shadow-sm">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                        <span
+                                            class="text-[10px] font-black text-gray-600 uppercase">{{ $fromAsset }}</span>
+                                    </div>
 
-                            <select id="fromToken"
-                                class="bg-[#EEF2F9] rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option selected disabled>Select token</option>
-                            </select>
+                                    <select id="fromToken"
+                                        class="bg-white hover:bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm">
+                                        <option selected disabled>Select token</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Swap Button -->
-                        <div class="flex justify-end">
+                        {{-- <div class="flex justify-end">
                             <button
                                 class="w-12 h-12 flex items-center justify-center rounded-xl bg-[#EEF2F9] hover:bg-gray-200 transition">
                                 <img src="{{ asset('assets/new assets/Icon.png') }}" class="w-5" alt="Swap">
                             </button>
-                        </div>
+                        </div> --}}
 
                         <!-- Receive -->
-                        <div class="flex flex-col sm:flex-row gap-4 w-full">
-                            <div class="w-full bg-[#EEF2F9] rounded-xl px-4 sm:px-5 py-3 flex items-center justify-between">
+                        <div class="flex flex-col sm:flex-row gap-4 w-full group">
+                            <div
+                                class="w-full bg-[#EEF2F9] border border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-2xl px-5 py-4 flex items-center justify-between transition-all">
 
-                                <div class="flex flex-col">
-                                    <span class="text-gray-500 text-xs sm:text-sm">
-                                        You Get
-                                    </span>
-                                    <span class="text-xs text-gray-400 mt-1">
-                                        ≈ $3,423.51
-                                    </span>
+                                <div class="flex flex-col gap-1">
+                                    <span class="text-gray-500 text-xs font-bold uppercase tracking-wider">You Get</span>
+                                    <input id="receiveAmount" type="text" placeholder="0.0" readonly
+                                        class="bg-transparent text-black text-2xl font-bold focus:outline-none w-full cursor-default" />
                                 </div>
 
-                                <input id="receiveAmount" type="text" placeholder="0.0" readonly
-                                    class="bg-transparent text-black text-lg sm:text-xl font-semibold text-right w-32 focus:outline-none" />
-                            </div>
+                                <div class="flex flex-col items-end gap-2 min-w-[140px]">
+                                    <div
+                                        class="flex items-center gap-1.5 bg-white/80 px-2 py-1 rounded-full border border-gray-200 shadow-sm">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                        <span
+                                            class="text-[10px] font-black text-gray-600 uppercase">{{ $toAsset }}</span>
+                                    </div>
 
-                            <select id="toToken"
-                                class="bg-[#EEF2F9] rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option selected disabled>Select token</option>
-                            </select>
+                                    <div class="relative w-full">
+                                        <select id="toToken"
+                                            class="w-full bg-white hover:bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm appearance-none pr-8">
+                                            <option selected disabled>Select token</option>
+                                        </select>
+                                        <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
@@ -318,9 +335,7 @@
                         "Content-Type": "application/json",
                         "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
                     },
-                    body: JSON.stringify({
-                        asset_code: assetCode
-                    }),
+                    body: JSON.stringify({ asset_code: assetCode }),
                 })
                 .then(res => res.json())
                 .then(json => {
@@ -329,7 +344,7 @@
                     const select = document.getElementById(selectId);
                     if (!select) return;
 
-                    select.innerHTML = `<option value="" selected disabled>Select token</option>`;
+                    select.innerHTML = `<option value="" selected disabled>Choose Asset</option>`;
 
                     (json.tokens || []).forEach(token => {
                         const opt = document.createElement("option");
