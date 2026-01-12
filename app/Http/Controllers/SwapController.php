@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Swap;
 use App\Models\SwapDeposit;
+use App\Models\Token;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,7 +15,7 @@ use Soneso\StellarSDK\StellarSDK;
 
 class SwapController extends Controller
 {
-    private $sdk, $network;
+    private $sdk, $network, $stellarWallet, $stellarWalletKey, $rippleWallet, $rippleWalletKey;
     protected string $rpcUrl, $stellarUrl;
 
     public function __construct()
@@ -24,38 +25,64 @@ class SwapController extends Controller
         if ($stellarEnv === 'public') {
             $this->sdk = StellarSDK::getPublicNetInstance();
             $this->network = Network::public();
+            $this->stellarWallet = env('STELLAR_PUBLIC_ADDRESS');
+            $this->stellarWalletKey = env('STELLAR_SECRET_KEY');
             $this->stellarUrl = env('STELLAR_HORIZON_MAINNET');
+
+            $this->rippleWallet = env('XRPL_PUBLIC_ADDRESS');
+            $this->rippleWalletKey = env('XRPL_SECRET_KEY');
             $this->rpcUrl = env('XRPL_RPC_MAINNET');
         } else {
             $this->sdk = StellarSDK::getTestNetInstance();
             $this->network = Network::testnet();
             $this->stellarUrl = env('STELLAR_HORIZON_TESTNET');
+            $this->stellarWallet = env('STELLAR_TESTNET_PUBLIC_ADDRESS');
+            $this->stellarWalletKey = env('STELLAR_TESTNET_SECRET_KEY');
+
+            $this->rippleWallet = env('XRPL_TESTNET_PUBLIC_ADDRESS');
+            $this->rippleWalletKey = env('XRPL_TESTNET_SECRET_KEY');
             $this->rpcUrl = env('XRPL_RPC_TESTNET');
         }
     }
 
     public function start_swap(Request $request)
     {
-        $data = $request->validate([
-            'from_token_id' => 'required|integer',
-            'to_token_id' => 'required|integer',
-            'amount' => 'required|numeric|gt:0',
-            'destination_address' => 'required|string',
-        ]);
-
         try {
-            $data = $request->validate([
-                'amount' => ['required', 'numeric', 'gt:0'],
+            try {
+                $data = $request->validate([
+                    'amount' => ['required', 'numeric', 'gt:0'],
 
-                'from_blockchain' => ['required'],
-                'to_blockchain' => ['required'],
+                    'from_blockchain' => ['required'],
+                    'to_blockchain' => ['required'],
 
-                'from_asset_code' => ['required', 'string', 'max:64'],
-                'from_issuer_address' => ['required', 'string', 'max:128'],
+                    'from_asset_code' => ['required', 'string', 'max:64'],
+                    'from_issuer_address' => ['required', 'string', 'max:128'],
 
-                'to_asset_code' => ['required', 'string', 'max:64'],
-                'to_issuer_address' => ['required', 'string', 'max:128'],
-            ]);
+                    'to_asset_code' => ['required', 'string', 'max:64'],
+                    'to_issuer_address' => ['required', 'string', 'max:128'],
+                ]);
+            } catch (ValidationException $e) {
+                return response()->json([
+                    'status'  => 0,
+                    'message' => 'Validation error',
+                    'errors'  => $e->errors(),
+                ], 422);
+            }
+
+            $token = Token::where('issuer_address', $data['from_issuer_address'])->first();
+
+            if (!$token) {
+                throw new \Exception("Token not found for issuer address");
+            }
+
+            $assetCode = $token->asset_code;
+            if (!$assetCode) {
+                throw new \Exception("Asset Code not found");
+            }
+            $issuerAddress = $token->issuer_address;
+            if (!$issuerAddress) {
+                throw new \Exception("Issuer Address not found");
+            }
         } catch (ValidationException $e) {
             return response()->json([
                 'status'  => 0,
