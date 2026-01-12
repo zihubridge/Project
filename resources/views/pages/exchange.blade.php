@@ -43,7 +43,7 @@
 
                 <!-- Right column: 8/12 -->
                 <div class="w-full md:w-2/3 bg-white rounded-3xl p-6 space-y-4">
-                    <h2 class="text-2xl font-bold text-center">Select token</h2>
+                    <h2 class="text-2xl font-bold text-center">Swap tokens</h2>
                     <div class="mb-8 space-y-5 pb-10 border-b-1 border-[#D8D8D8]">
 
                         <!-- Send -->
@@ -344,7 +344,7 @@
                     const select = document.getElementById(selectId);
                     if (!select) return;
 
-                    select.innerHTML = `<option value="" selected disabled>Choose Asset</option>`;
+                    select.innerHTML = `<option value="" selected disabled>Choose token</option>`;
 
                     (json.tokens || []).forEach(token => {
                         const opt = document.createElement("option");

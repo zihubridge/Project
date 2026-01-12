@@ -239,7 +239,7 @@ class GlobalController extends Controller
 
                     $tokenOut = $quote['estimated_token'] ?? '0';
 
-                    if (!$tokenOut || empty($tokenOut['estimated_token'])) {
+                    if (!$tokenOut) {
                         throw new \RuntimeException('Could not estimate XLM output from Stellar pool.');
                     }
 
