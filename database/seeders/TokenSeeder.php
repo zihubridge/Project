@@ -35,7 +35,7 @@ class TokenSeeder extends Seeder
                 'name' => 'Army',
                 'asset_code' => 'ARMY',
                 'blockchain_id' => 2,
-                'issuer_address' => 'rnsRq5ahgbFeRiAgBVvFTafyAgiS9x9Ztn',
+                'issuer_address' => 'rGG3wQ4kUzd7Jnmk1n5NWPZjjut62kCBfC',
                 'status' => 1,
             ],
         ];
