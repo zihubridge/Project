@@ -105,16 +105,18 @@
                             Enter The Destination Wallet
                         </h2>
                     </div>
-                    <div class="flex flex-col sm:flex-row gap-4 w-full mb-10">
+                    <div class="flex flex-col sm:flex-row gap-4 w-full mb-2">
                         <div class="w-full bg-[#EEF2F9] rounded-xl px-4 sm:px-5 py-3 flex items-center justify-between">
-                            <input type="text" placeholder="The Recipients Address"
+                            <input id="destinationAddress" type="text" placeholder="The Recipients Address"
                                 class="bg-transparent text-black text-lg sm:text-xl w-full focus:outline-none" />
                         </div>
                     </div>
-                    <a href="{{ route('deposit') }}"
-                        class="block w-full text-center bg-blue-600 text-white py-2 rounded-full text-lg font-semibold hover:bg-transparent hover:text-blue-600 border border-blue-600 transition mb-5">
+
+                    <p id="destError" class="text-sm text-red-600 hidden"></p>
+                    <button id="swapBtn" type="button"
+                        class="block w-full text-center bg-blue-600 text-white py-2 rounded-full text-lg font-semibold hover:bg-transparent hover:text-blue-600 border border-blue-600 transition mb-5 disabled:opacity-50 disabled:cursor-not-allowed">
                         Swap Tokens
-                    </a>
+                    </button>
                     <div class="flex justify-center font-semibold text-black mb-10">
                         By clicking Create an exchange, you agree to the Privacy and Terms of services.
                     </div>
@@ -135,8 +137,46 @@
             const sendInput = document.getElementById("sendAmount");
             const receiveInput = document.getElementById("receiveAmount");
 
-            if (!fromTokenSelect || !toTokenSelect || !sendInput || !receiveInput) return;
+            const destInput = document.getElementById("destinationAddress");
+            const destError = document.getElementById("destError");
+            const swapBtn = document.getElementById("swapBtn");
 
+            // Hard fail fast (so you notice)
+            if (!fromTokenSelect || !toTokenSelect || !sendInput || !receiveInput || !destInput || !destError || !
+                swapBtn) {
+                console.error("Missing required DOM elements", {
+                    fromTokenSelect,
+                    toTokenSelect,
+                    sendInput,
+                    receiveInput,
+                    destInput,
+                    destError,
+                    swapBtn
+                });
+                return;
+            }
+
+            // ---------- state helpers ----------
+            let destOk = false;
+
+            function setDestState(ok, message = "") {
+                destOk = ok;
+
+                if (!ok && message) {
+                    destError.textContent = message;
+                    destError.classList.remove("hidden");
+                } else {
+                    destError.textContent = "";
+                    destError.classList.add("hidden");
+                }
+
+                swapBtn.disabled = !destOk;
+            }
+
+            // initial
+            setDestState(false, "");
+
+            // ---------- load tokens ----------
             loadTokens(fromAsset, "fromToken");
             loadTokens(toAsset, "toToken");
 
@@ -144,7 +184,21 @@
             const debouncedEstimate = debounce(estimateSwap, 400);
             sendInput.addEventListener("input", debouncedEstimate);
             fromTokenSelect.addEventListener("change", debouncedEstimate);
-            toTokenSelect.addEventListener("change", debouncedEstimate);
+            toTokenSelect.addEventListener("change", () => {
+                debouncedEstimate();
+                debouncedDestCheck();
+            });
+
+            const debouncedDestCheck = debounce(checkDestination, 500);
+            destInput.addEventListener("input", debouncedDestCheck);
+
+            // Also re-check if user changes amount (optional)
+            sendInput.addEventListener("input", debouncedDestCheck);
+
+            swapBtn.addEventListener("click", () => {
+                if (!destOk) return;
+                window.location.href = "{{ route('deposit') }}";
+            });
 
             async function estimateSwap() {
                 const amount = sendInput.value.trim();
@@ -201,7 +255,58 @@
                     receiveInput.value = "";
                 }
             }
-        });
+
+            async function checkDestination() {
+                const destination = destInput.value.trim();
+
+                // empty => disable button, hide message
+                if (!destination) {
+                    setDestState(false, "");
+                    return;
+                }
+
+                const toOpt = toTokenSelect.options[toTokenSelect.selectedIndex];
+                if (!toOpt) {
+                    setDestState(false, "Select destination token first.");
+                    return;
+                }
+
+                // amount required by backend validation
+                const amount = sendInput.value.trim();
+                const safeAmount = (!amount || isNaN(Number(amount)) || Number(amount) <= 0) ? "0.0000001" :
+                    amount;
+
+                const payload = {
+                    amount: safeAmount,
+                    to_blockchain: toAsset,
+                    to_asset_code: toOpt.dataset.asset,
+                    to_issuer_address: toOpt.dataset.issuer,
+                    destination_address: destination,
+                };
+
+                try {
+                    const res = await fetch("/global/destination_wallet", {
+                        method: "POST",
+                        headers: {
+                            "Accept": "application/json",
+                            "Content-Type": "application/json",
+                            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+                        },
+                        body: JSON.stringify(payload),
+                    });
+
+                    const json = await res.json();
+
+                    if (json.status === 1 && json.valid === true && json.needs_trustline === false) {
+                        setDestState(true, "");
+                    } else {
+                        setDestState(false, json.message || "Destination wallet invalid.");
+                    }
+                } catch (e) {
+                    console.error("Destination check failed:", e);
+                    setDestState(false, "Could not validate destination wallet.");
+                }
+            }
 
         // Load tokens into select and attach asset/issuer to options
         function loadTokens(assetCode, selectId) {
@@ -248,5 +353,6 @@
                 t = setTimeout(() => fn(...args), delay);
             };
         }
+    });
     </script>
 @endpush

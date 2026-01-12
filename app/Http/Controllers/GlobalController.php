@@ -18,9 +18,9 @@ use Illuminate\Http\Client\RequestException;
 
 class GlobalController extends Controller
 {
-    private $sdk, $network;
-    protected string $rpcUrl;
     private bool $isTestnet;
+    private $sdk, $network, $stellarWallet, $stellarWalletKey, $rippleWallet, $rippleWalletKey;
+    protected string $rpcUrl, $stellarUrl;
 
     public function __construct()
     {
@@ -29,25 +29,29 @@ class GlobalController extends Controller
         if ($stellarEnv === 'public') {
             $this->sdk = StellarSDK::getPublicNetInstance();
             $this->network = Network::public();
+            $this->stellarWallet = env('STELLAR_PUBLIC_ADDRESS');
+            $this->stellarWalletKey = env('STELLAR_SECRET_KEY');
+            $this->stellarUrl = env('STELLAR_HORIZON_MAINNET');
+
+            $this->rippleWallet = env('XRPL_PUBLIC_ADDRESS');
+            $this->rippleWalletKey = env('XRPL_SECRET_KEY');
+            $this->rpcUrl = env('XRPL_RPC_MAINNET');
             $this->isTestnet = false;
         } else {
             $this->sdk = StellarSDK::getTestNetInstance();
             $this->network = Network::testnet();
+            $this->stellarUrl = env('STELLAR_HORIZON_TESTNET');
+            $this->stellarWallet = env('STELLAR_TESTNET_PUBLIC_ADDRESS');
+            $this->stellarWalletKey = env('STELLAR_TESTNET_SECRET_KEY');
+
+            $this->rippleWallet = env('XRPL_TESTNET_PUBLIC_ADDRESS');
+            $this->rippleWalletKey = env('XRPL_TESTNET_SECRET_KEY');
+            $this->rpcUrl = env('XRPL_RPC_TESTNET');
             $this->isTestnet = true;
         }
-        // 'rpc_url'     => env('XRPL_RPC_URL', 'https://s.altnet.rippletest.net:51234'),
-        // 'network'     => env('XRPL_NETWORK', 'testnet'),
-
-        // // Your pool wallet
-        // 'main_wallet' => env('XRPL_MAIN_WALLET', ''),  
-        // 'main_wallet_seed' => env('XRPL_MAIN_WALLET_SEED', ''),   
-        // 'dest_tag'  => env('XRPL_DEST_TAG', null),    
-        // 'memo'        => env('XRUSH_MEMO', 'XRUSH STAKING'),
-        // 'issuer'        => env('XRPL_ISSUER', ''),
-        // 'tokenCode'        => env('XRPL_TOKEN_CODE', ''),
     }
 
-    public function token_swapping_amount(Request $request)
+    public function tokenSwappingAmount(Request $request)
     {
         try {
             $data = $request->validate([
@@ -894,5 +898,139 @@ class GlobalController extends Controller
             ]);
             return null;
         }
+    }
+
+    public function destinationWallet(Request $request)
+    {
+        try {
+            $data = $request->validate([
+                'amount' => ['required', 'numeric', 'gt:0'],
+                'to_blockchain' => ['required', 'in:xlm,xrp'],
+                'to_asset_code' => ['required', 'string', 'max:64'],
+                'to_issuer_address' => ['nullable', 'string', 'max:128'],
+                'destination_address' => ['required', 'string', 'max:128'],
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => 0,
+                'message' => 'Validation error',
+                'errors' => $e->errors(),
+            ], 422);
+        }
+
+        $dest = $data['destination_address'];
+
+        if ($data['to_blockchain'] === 'xlm') {
+            if (!$this->isStellarAddress($dest)) {
+                return response()->json(['status' => 1, 'valid' => false, 'needs_trustline' => false, 'message' => 'Invalid Stellar address.']);
+            }
+
+            $check = $this->stellarDestinationCanReceive(
+                $dest,
+                $data['to_asset_code'],
+                (string)($data['to_issuer_address'] ?? '')
+            );
+
+            return response()->json(['status' => 1] + $check);
+        }
+
+        // XRPL
+        if (!$this->isXrplAddress($dest)) {
+            return response()->json(['status' => 1, 'valid' => false, 'needs_trustline' => false, 'message' => 'Invalid XRPL address.']);
+        }
+
+        $check = $this->xrplDestinationCanReceive(
+            $dest,
+            $data['to_asset_code'],
+            (string)($data['to_issuer_address'] ?? '')
+        );
+
+        return response()->json(['status' => 1] + $check);
+    }
+
+    private function isStellarAddress(string $address): bool
+    {
+        return str_starts_with($address, 'G') || str_starts_with($address, 'M');
+    }
+
+    private function stellarDestinationCanReceive(string $dest, string $assetCode, string $issuer): array
+    {
+        // Native XLM: account must exist
+        if ($assetCode === 'XLM' || $issuer === null || $issuer === '') {
+            $accRes = Http::timeout(15)->acceptJson()->get(rtrim($this->stellarUrl, '/') . "/accounts/{$dest}");
+            if ($accRes->status() === 404) {
+                return ['valid' => false, 'needs_trustline' => false, 'message' => 'Stellar account does not exist (needs activation).'];
+            }
+            if ($accRes->failed()) {
+                return ['valid' => false, 'needs_trustline' => false, 'message' => 'Could not check Stellar account.'];
+            }
+            return ['valid' => true, 'needs_trustline' => false, 'message' => 'OK'];
+        }
+
+        $accRes = Http::timeout(15)->acceptJson()->get(rtrim($this->stellarUrl, '/') . "/accounts/{$dest}");
+
+        if ($accRes->status() === 404) {
+            return ['valid' => false, 'needs_trustline' => true, 'message' => 'Destination Stellar account does not exist (cannot hold tokens yet).'];
+        }
+        if ($accRes->failed()) {
+            return ['valid' => false, 'needs_trustline' => false, 'message' => 'Could not check Stellar destination account.'];
+        }
+
+        $balances = data_get($accRes->json(), 'balances', []);
+        $expectedType = strlen($assetCode) <= 4 ? 'credit_alphanum4' : 'credit_alphanum12';
+
+        foreach ($balances as $b) {
+            if (($b['asset_type'] ?? '') === $expectedType &&
+                ($b['asset_code'] ?? '') === $assetCode &&
+                ($b['asset_issuer'] ?? '') === $issuer
+            ) {
+                return ['valid' => true, 'needs_trustline' => false, 'message' => 'OK'];
+            }
+        }
+
+        return ['valid' => false, 'needs_trustline' => true, 'message' => "Destination wallet is missing trustline for {$assetCode}."];
+    }
+
+    private function isXrplAddress(string $address): bool
+    {
+        return str_starts_with($address, 'r');
+    }
+
+    private function xrplDestinationCanReceive(string $dest, string $currency, string $issuer): array
+    {
+        if (strtoupper($currency) === 'XRP') {
+            return ['valid' => true, 'needs_trustline' => false, 'message' => 'OK'];
+        }
+
+        $payload = [
+            'method' => 'account_lines',
+            'params' => [[
+                'account' => $dest,
+                'limit' => 400,
+            ]]
+        ];
+
+        $res = Http::timeout(20)->post($this->rpcUrl, $payload);
+
+        if ($res->failed()) {
+            return ['valid' => false, 'needs_trustline' => false, 'message' => 'Could not check XRPL destination.'];
+        }
+
+        $result = $res->json('result');
+
+        if (($result['status'] ?? '') !== 'success') {
+            return ['valid' => false, 'needs_trustline' => false, 'message' => $result['error_message'] ?? 'XRPL check failed.'];
+        }
+
+        $lines = $result['lines'] ?? [];
+        $cur = $this->xrplCurrency($currency);
+
+        foreach ($lines as $l) {
+            if (($l['currency'] ?? '') === $cur && ($l['account'] ?? '') === $issuer) {
+                return ['valid' => true, 'needs_trustline' => false, 'message' => 'OK'];
+            }
+        }
+
+        return ['valid' => false, 'needs_trustline' => true, 'message' => "Destination wallet is missing trustline for {$currency}."];
     }
 }
