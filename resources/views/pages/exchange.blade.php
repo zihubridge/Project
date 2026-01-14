@@ -73,14 +73,6 @@
                             </div>
                         </div>
 
-                        <!-- Swap Button -->
-                        {{-- <div class="flex justify-end">
-                            <button
-                                class="w-12 h-12 flex items-center justify-center rounded-xl bg-[#EEF2F9] hover:bg-gray-200 transition">
-                                <img src="{{ asset('assets/new assets/Icon.png') }}" class="w-5" alt="Swap">
-                            </button>
-                        </div> --}}
-
                         <!-- Receive -->
                         <div class="flex flex-col sm:flex-row gap-4 w-full group">
                             <div
@@ -158,27 +150,18 @@
             const destError = document.getElementById("destError");
             const swapBtn = document.getElementById("swapBtn");
 
-            // Hard fail fast (so you notice)
             if (!fromTokenSelect || !toTokenSelect || !sendInput || !receiveInput || !destInput || !destError || !
                 swapBtn) {
-                console.error("Missing required DOM elements", {
-                    fromTokenSelect,
-                    toTokenSelect,
-                    sendInput,
-                    receiveInput,
-                    destInput,
-                    destError,
-                    swapBtn
-                });
+                console.error("Missing required DOM elements");
                 return;
             }
 
-            // ---------- state helpers ----------
             let destOk = false;
+            let estimating = false;
+            let estimateReqId = 0;
 
             function setDestState(ok, message = "") {
                 destOk = ok;
-
                 if (!ok && message) {
                     destError.textContent = message;
                     destError.classList.remove("hidden");
@@ -186,50 +169,62 @@
                     destError.textContent = "";
                     destError.classList.add("hidden");
                 }
-
-                swapBtn.disabled = !destOk;
+                swapBtn.disabled = !(destOk && !estimating);
             }
 
-            // initial
-            setDestState(false, "");
+            function setEstimateLoading(on) { 
+                estimating = on;
 
-            // ---------- load tokens ----------
+                if (on) {
+                    receiveInput.value = "Loading estimated amount...";
+                }
+
+                swapBtn.disabled = !(destOk && !estimating);
+            }
+
+            setDestState(false, "");
+            setEstimateLoading(false);
+
             loadTokens(fromAsset, "fromToken");
             loadTokens(toAsset, "toToken");
 
-            // Estimate when user types OR changes tokens
             const debouncedEstimate = debounce(estimateSwap, 400);
-            sendInput.addEventListener("input", debouncedEstimate);
-            fromTokenSelect.addEventListener("change", debouncedEstimate);
+            const debouncedDestCheck = debounce(checkDestination, 500);
+
+            sendInput.addEventListener("input", () => {
+                debouncedEstimate();
+                debouncedDestCheck();
+            });
+
+            fromTokenSelect.addEventListener("change", () => {
+                debouncedEstimate();
+                debouncedDestCheck();
+            });
+
             toTokenSelect.addEventListener("change", () => {
                 debouncedEstimate();
                 debouncedDestCheck();
             });
 
-            const debouncedDestCheck = debounce(checkDestination, 500);
+            destInput.addEventp;
             destInput.addEventListener("input", debouncedDestCheck);
 
-            // Also re-check if user changes amount (optional)
-            sendInput.addEventListener("input", debouncedDestCheck);
-
             swapBtn.addEventListener("click", () => {
-                if (!destOk) return;
+                if (swapBtn.disabled) return;
                 window.location.href = "{{ route('deposit') }}";
             });
 
             async function estimateSwap() {
                 const amount = sendInput.value.trim();
-
-                // guards
-                if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
-                    receiveInput.value = "";
-                    return;
-                }
-
                 const fromOpt = fromTokenSelect.options[fromTokenSelect.selectedIndex];
                 const toOpt = toTokenSelect.options[toTokenSelect.selectedIndex];
 
-                if (!fromOpt || !toOpt) return;
+                // If not ready, clear the output (don’t show loading forever)
+                if (!amount || isNaN(Number(amount)) || Number(amount) <= 0 || !fromOpt || !toOpt) {
+                    receiveInput.value = "";
+                    setEstimateLoading(false);
+                    return;
+                }
 
                 const payload = {
                     amount: amount,
@@ -241,12 +236,16 @@
                     to_issuer_address: toOpt.dataset.issuer,
                 };
 
-                // must have token meta
                 if (!payload.from_asset_code || !payload.from_issuer_address || !payload.to_asset_code || !
                     payload.to_issuer_address) {
                     receiveInput.value = "";
+                    setEstimateLoading(false);
                     return;
                 }
+
+                // NEW: show loading instantly
+                const myReqId = ++estimateReqId;
+                setEstimateLoading(true);
 
                 try {
                     const res = await fetch("/global/token_swapping_amount", {
@@ -260,7 +259,9 @@
                     });
 
                     const json = await res.json();
-                    
+
+                    if (myReqId !== estimateReqId) return;
+
                     if (json.status === 1 && json.estimated_amount !== undefined) {
                         receiveInput.value = json.estimated_amount;
                     } else {
@@ -268,8 +269,11 @@
                         console.log("Estimate response:", json);
                     }
                 } catch (e) {
+                    if (myReqId !== estimateReqId) return;
                     console.error("Estimate failed:", e);
                     receiveInput.value = "";
+                } finally {
+                    if (myReqId === estimateReqId) setEstimateLoading(false);
                 }
             }
 
