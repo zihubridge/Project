@@ -61,8 +61,7 @@
                                     <div
                                         class="flex items-center gap-1.5 bg-white/80 px-2 py-1 rounded-full border border-gray-200 shadow-sm">
                                         <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                                        <span
-                                            class="text-[10px] font-black text-gray-600 uppercase">{{ $fromAsset }}</span>
+                                        <span class="text-[10px] font-black text-gray-600 uppercase">{{ $fromAsset }}</span>
                                     </div>
 
                                     <select id="fromToken"
@@ -120,6 +119,29 @@
                                 class="bg-transparent text-black text-lg sm:text-xl w-full focus:outline-none" />
                         </div>
                     </div>
+
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <h2 class="text-base sm:text-lg font-bold text-center sm:text-left">
+                            Deposit Memo (Required)
+                        </h2>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-4 w-full mb-2">
+                        <div
+                            class="w-full bg-[#F1F5F9] border border-dashed border-gray-300 rounded-xl px-4 sm:px-5 py-3 flex items-center justify-between">
+                            <input
+                                id="depositMemo"
+                                type="text"
+                                value="{{ $memo }}"
+                                readonly
+                                class="bg-transparent text-gray-800 text-lg sm:text-xl w-full focus:outline-none select-all cursor-not-allowed"
+                            />
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-gray-500 mb-4">
+                        This memo is required to identify your swap
+                    </p>
 
                     <p id="destError" class="text-sm text-red-600 hidden"></p>
                     <button id="swapBtn" type="button"

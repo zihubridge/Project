@@ -15,9 +15,12 @@ Route::get('/exchange', function (Request $request) {
         'toasset'   => 'required|exists:blockchains,asset_code|different:fromasset',
     ]);
 
+    $memo = (string) random_int(100000000, 999999999);
+
     return view('pages.exchange', [
         'fromAsset' => $request->query('fromasset'),
         'toAsset'   => $request->query('toasset'),
+        'memo'   => $memo,
     ]);
 })->name('exchange');
 
