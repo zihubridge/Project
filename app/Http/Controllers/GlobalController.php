@@ -639,10 +639,6 @@ class GlobalController extends Controller
         $params = [
             'fromCurrency' => strtolower($fromCurrency),
             'toCurrency'   => strtolower($toCurrency),
-            // 'flow'         => $flow,
-            // 'type'         => $type,
-            // 'useRateId'    => $useRateId ? 'true' : 'false',
-            // 'isTopUp'      => $isTopUp ? 'true' : 'false',
         ];
 
         // Amount parameters depend on direction
