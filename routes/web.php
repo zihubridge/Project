@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\GlobalController;
-
+use App\Http\Controllers\SwapController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
@@ -34,4 +34,8 @@ Route::prefix('global')->group(function () {
     Route::post('tokens', [GlobalController::class, 'tokens'])->name('global.tokens');
     Route::post('token_swapping_amount', [GlobalController::class, 'tokenSwappingAmount'])->name('global.tokenSwappingAmount');
     Route::post('destination_wallet', [GlobalController::class, 'destinationWallet'])->name('global.destinationWallet');
+});
+
+Route::prefix('swap')->group(function () {
+    Route::post('start', [SwapController::class, 'start'])->name('swap.start');
 });
