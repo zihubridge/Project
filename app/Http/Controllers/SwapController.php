@@ -85,7 +85,7 @@ class SwapController extends Controller
                 throw new \Exception("Token not found for issuer address");
             }
 
-            $to_token = Token::where('issuer_address', $data['from_issuer_address'])->first();
+            $to_token = Token::where('issuer_address', $data['to_issuer_address'])->first();
 
             if (!$to_token) {
                 throw new \Exception("Token not found for issuer address");
@@ -110,6 +110,7 @@ class SwapController extends Controller
             ], 422);
         }
     }
+
     public function createSwap($from_blockchain, $to_blockchain, $from_token_id, $to_token_id, $from_amount, $destination_address, $memo)
     {
         DB::beginTransaction();
