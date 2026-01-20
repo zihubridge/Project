@@ -24,10 +24,6 @@ Route::get('/exchange', function (Request $request) {
     ]);
 })->name('exchange');
 
-Route::get('/deposit', function () {
-    return view('pages.deposit');
-})->name("deposit");
-
 
 Route::prefix('global')->group(function () {
     Route::get('blockchains', [GlobalController::class, 'blockchains'])->name('global.blockchains');
