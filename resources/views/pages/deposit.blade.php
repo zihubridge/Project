@@ -1,6 +1,5 @@
 @extends('layout.master')
 @section('content')
-
     <div id="copyToast"
         class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0066FF] text-white text-sm py-2 px-5 rounded-2xl flex items-center gap-2">
         <ion-icon name="checkmark-circle-outline" class="text-lg"></ion-icon>
@@ -38,8 +37,9 @@
 
                     <!-- Content: 7/12 -->
                     <div class="flex flex-wrap items-center gap-3 w-full md:w-8/12 px-8">
-                        <img src="{{ asset('assets/new assets/eth.png') }}" alt="eth">
-                        <p class="text-black font-semibold text-xl">1.1870182 {{ $from_blockchain_asset_code }}</p>
+                        {{-- <img src="{{ asset('assets/new assets/eth.png') }}" alt="eth"> --}}
+                        <p class="text-black font-semibold text-xl">{{ $amount }} {{ $from_blockchain_asset_code }}
+                        </p>
 
                         <div class="flex items-center gap-3">
                             <span>Networking:</span>
@@ -80,7 +80,8 @@
                             </div>
                         </div>
                         <div class="bg-[#FEF7EA] text-[#F7931A] border border-[#F7931A] p-5 rounded-b-xl">
-                            Please Deposit {{ $from_blockchain_asset_code }} Using The Main {{ $from_blockchain_name }} ({{ $from_blockchain_asset_code }}) Network.
+                            Please Deposit {{ $from_blockchain_asset_code }} Using The Main {{ $from_blockchain_name }}
+                            ({{ $from_blockchain_asset_code }}) Network.
                         </div>
                     </div>
                 </div>
@@ -143,7 +144,6 @@
         </div>
 
     </section>
-
 @endsection
 
 <script>
