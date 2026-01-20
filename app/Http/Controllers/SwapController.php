@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ScanDepositJob;
+use App\Models\Blockchain;
 use App\Models\Swap;
 use App\Models\SwapDeposit;
 use App\Models\Token;
@@ -13,13 +15,6 @@ use Illuminate\Support\Str;
 use Soneso\StellarSDK\Network;
 use Soneso\StellarSDK\StellarSDK;
 use Illuminate\Http\Client\RequestException;
-use Soneso\StellarSDK\Asset;
-use Soneso\StellarSDK\AssetTypeCreditAlphanum12;
-use Soneso\StellarSDK\AssetTypeCreditAlphanum4;
-use Soneso\StellarSDK\AssetTypeNative;
-use Soneso\StellarSDK\Crypto\KeyPair;
-use Soneso\StellarSDK\PathPaymentStrictSendOperation;
-use Soneso\StellarSDK\TransactionBuilder;
 
 class SwapController extends Controller
 {
@@ -72,46 +67,55 @@ class SwapController extends Controller
                     'memo' => ['required', 'string', 'max:128'],
                 ]);
             } catch (ValidationException $e) {
-                return response()->json([
-                    'status'  => 0,
-                    'message' => 'Validation error',
-                    'errors'  => $e->errors(),
-                ], 422);
+                return redirect()->back()
+                    ->withErrors($e->validator)
+                    ->withInput();
             }
 
-            $from_token = Token::where('issuer_address', $data['from_issuer_address'])->first();
+            $from_blockchain = Blockchain::find($data['from_blockchain']);
 
-            if (!$from_token) {
-                throw new \Exception("Token not found for issuer address");
-            }
+            $from_token = Token::where('issuer_address', $data['from_issuer_address'])->firstOrFail();
 
-            $to_token = Token::where('issuer_address', $data['to_issuer_address'])->first();
-
-            if (!$to_token) {
-                throw new \Exception("Token not found for issuer address");
-            }
+            $to_token = Token::where('issuer_address', $data['to_issuer_address'])->firstOrFail();
 
             $assetCode = $from_token->asset_code;
             if (!$assetCode) {
                 throw new \Exception("Asset Code not found");
             }
+
             $issuerAddress = $from_token->issuer_address;
             if (!$issuerAddress) {
                 throw new \Exception("Issuer Address not found");
             }
 
-            $this->createSwap($data['from_blockchain'], $data['to_blockchain'], $from_token->id, $to_token->id, $data['amount'], $data['destination_address'], $data['memo']);
-            $this->detectDeposits();
+            $deposit_address = null;
+            if ($data['from_blockchain'] == 1) {
+                $deposit_address = $this->stellarWallet;
+            } else {
+                $deposit_address = $this->rippleWallet;
+            }
+            $swap = $this->createSwap($data['from_blockchain'], $data['to_blockchain'], $from_token->id, $to_token->id, $data['amount'], $data['destination_address'], $data['memo'], $deposit_address);
+            ScanDepositJob::dispatch($swap->id);
+
+            return view('pages.deposit', [
+                'uuid' => $swap->swap_uuid,
+                'deposit_address' => config('bridge.stellar_wallet_address'),
+                'memo' => $swap->routing_value,
+                'amount' => $swap->from_amount,
+                'expires_at' => $swap->expires_at,
+
+                'from_blockchain_name' => $from_blockchain->name,
+                'from_blockchain_asset_code' => $from_blockchain->asset_code,
+                'from_token' => $from_token->asset_code,
+            ]);
         } catch (ValidationException $e) {
-            return response()->json([
-                'status'  => 0,
-                'message' => 'Validation error',
-                'errors'  => $e->errors(),
-            ], 422);
+            return redirect()->back()
+                ->withErrors($e->validator)
+                ->withInput();
         }
     }
 
-    public function createSwap($from_blockchain, $to_blockchain, $from_token_id, $to_token_id, $from_amount, $destination_address, $memo)
+    public function createSwap($from_blockchain, $to_blockchain, $from_token_id, $to_token_id, $from_amount, $destination_address, $memo, $deposit_address)
     {
         DB::beginTransaction();
 
@@ -134,8 +138,7 @@ class SwapController extends Controller
             // Create swap deposit instruction
             SwapDeposit::create([
                 'swap_id' => $swap->id,
-                'platform_wallet_id' => config('bridge.stellar_wallet_id'),
-                'deposit_address' => config('bridge.stellar_wallet_address'),
+                'deposit_address' => $deposit_address,
                 'routing_type' => 'memo_id',
                 'routing_value' => $memo,
                 'expected_token_id' => $from_token_id,
@@ -147,260 +150,13 @@ class SwapController extends Controller
             DB::commit();
 
             // Return instructions to frontend
-            return response()->json([
-                'swap_id' => $swap->swap_uuid,
-                'deposit_address' => config('bridge.stellar_wallet_address'),
-                'memo' => $memo,
-                'memo_type' => 'MEMO_ID',
-                'amount' => $from_amount,
-                'expires_at' => $swap->expires_at,
-            ]);
+            return $swap;
         } catch (\Throwable $e) {
             DB::rollBack();
             throw $e;
         }
     }
 
-    public function detectDeposits(): void
-    {
-        $pendingDeposits = SwapDeposit::query()
-            ->where('status', 'waiting')
-            ->whereHas(
-                'swap',
-                fn($q) =>
-                $q->where('expires_at', '>', now())
-            )
-            ->get();
-
-        foreach ($pendingDeposits as $deposit) {
-            $this->scanDeposit($deposit);
-        }
-    }
-
-    private function scanDeposit(SwapDeposit $deposit): void
-    {
-        $blockchain = $deposit->swap->fromBlockchain->slug;
-
-        match ($blockchain) {
-            'stellar' => $this->scanStellarDeposit($deposit),
-            'xrpl'    => $this->scanXrplDeposit($deposit),
-            default   => throw new \RuntimeException("Unsupported blockchain: {$blockchain}")
-        };
-    }
-
-    private function scanStellarDeposit(SwapDeposit $deposit): void
-    {
-        $address = $deposit->deposit_address;
-
-        $url = rtrim($this->stellarUrl, '/') .
-            "/accounts/{$address}/payments?order=desc&limit=100";
-
-        $res = Http::timeout(15)->get($url);
-        if ($res->failed()) return;
-
-        $payments = data_get($res->json(), '_embedded.records', []);
-
-        foreach ($payments as $p) {
-            if (($p['to'] ?? null) !== $address) continue;
-
-            // asset match
-            if (($p['asset_code'] ?? null) !== $deposit->expectedToken->asset_code) continue;
-            if (($p['asset_issuer'] ?? null) !== $deposit->expectedToken->issuer_address) continue;
-
-            // amount match
-            if (bccomp((string)$p['amount'], (string)$deposit->expected_amount, 7) < 0) continue;
-
-            // fetch tx to check memo
-            $txHash = $p['transaction_hash'];
-
-            $txRes = Http::timeout(15)->acceptJson()->get(
-                rtrim($this->stellarUrl, '/') . '/transactions/' . $txHash
-            );
-
-            if ($txRes->failed()) continue;
-
-            $tx = $txRes->json();
-
-            // memo validation (required)
-            if (($tx['memo_type'] ?? null) !== 'id') continue;
-            if ((string)($tx['memo'] ?? '') !== (string)$deposit->deposit_memo) continue;
-
-            DB::transaction(function () use ($deposit, $p, $txHash) {
-                $deposit->update([
-                    'received_amount' => $p['amount'],
-                    'tx_hash' => $txHash,
-                    'sender_address' => $p['from'] ?? null,
-                    'received_at' => now(),
-                    'deposit_state_id' => 3, // confirmed
-                ]);
-
-                $deposit->swap->update([
-                    'swap_state_id' => 2, // deposit_detected
-                ]);
-            });
-
-            return;
-        }
-    }
-
-    private function scanXrplDeposit(SwapDeposit $deposit): void
-    {
-        $res = Http::timeout(20)->post($this->rpcUrl, [
-            'method' => 'account_tx',
-            'params' => [[
-                'account' => $deposit->deposit_address,
-                'limit' => 50,
-            ]]
-        ]);
-
-        if ($res->failed()) return;
-
-        $txs = data_get($res->json(), 'result.transactions', []);
-
-        foreach ($txs as $entry) {
-            $tx = $entry['tx'] ?? null;
-            if (!$tx) continue;
-
-            if (($tx['Destination'] ?? null) !== $deposit->deposit_address) continue;
-
-            // Destination Tag match (this is your memo)
-            if (($tx['DestinationTag'] ?? null) != (int)$deposit->routing_value) continue;
-
-            // XRP vs IOU handling
-            if (is_string($tx['Amount'])) {
-                // XRP payment
-                $amount = bcdiv($tx['Amount'], '1000000', 6);
-                if (bccomp($amount, $deposit->expected_amount, 6) < 0) continue;
-            } else {
-                // IOU token
-                if (($tx['Amount']['currency'] ?? null) !== $deposit->expectedToken->asset_code) continue;
-                if (($tx['Amount']['issuer'] ?? null) !== $deposit->expectedToken->issuer_address) continue;
-                if (bccomp($tx['Amount']['value'], $deposit->expected_amount, 18) < 0) continue;
-            }
-
-            DB::transaction(function () use ($deposit, $tx) {
-                $deposit->update([
-                    'received_amount' => is_string($tx['Amount'])
-                        ? bcdiv($tx['Amount'], '1000000', 6)
-                        : $tx['Amount']['value'],
-                    'tx_hash' => $tx['hash'],
-                    'sender_address' => $tx['Account'],
-                    'received_at' => now(),
-                    'deposit_state_id' => 3, // confirmed
-                ]);
-
-                $deposit->swap->update([
-                    'swap_state_id' => 2, // deposit_detected
-                ]);
-            });
-
-            return;
-        }
-    }
-
-    private function stellarAsset(string $code, string $issuer): Asset
-    {
-        if ($code === 'XLM' || $code === 'native') {
-            return new AssetTypeNative();
-        }
-
-        $len = strlen($code);
-        if ($len <= 4) return new AssetTypeCreditAlphanum4($code, $issuer);
-        if ($len <= 12) return new AssetTypeCreditAlphanum12($code, $issuer);
-
-        throw new \InvalidArgumentException("Invalid Stellar asset code length: {$code}");
-    }
-
-    private function stellarSubmitTx(array $ops, ?string $memoText = null): string
-    {
-        $seed = env('STELLAR_HOT_WALLET_SEED');
-        $kp = KeyPair::fromSeed($seed);
-        $accountId = $kp->getAccountId();
-
-        $server = $this->sdk->getServer(); // Soneso server instance
-        $account = $server->accounts()->account($accountId);
-
-        $builder = new TransactionBuilder($account);
-        foreach ($ops as $op) $builder->addOperation($op);
-
-        $builder->setTimeout(60);
-
-        if ($memoText) {
-            // memo text max 28 bytes on Stellar
-            $builder->addMemoText(substr($memoText, 0, 28));
-        }
-
-        $tx = $builder->build();
-        $tx->sign($kp, $this->network);
-
-        $resp = $server->submitTransaction($tx);
-
-        // returns hash
-        return (string)($resp->getHash() ?? '');
-    }
-
-    private function xlmToXlmToken(
-        string $tokenCode,
-        string $tokenIssuer,
-        string $xlmAmountIn,
-        string $minTokenOut,     // enforce slippage protection
-        ?string $memo = null
-    ): array {
-        // You are swapping from your hot wallet to your hot wallet
-        $seed = env('STELLAR_HOT_WALLET_SEED');
-        $kp = KeyPair::fromSeed($seed);
-        $hot = $kp->getAccountId();
-
-        $sendAsset = new AssetTypeNative();
-        $destAsset = $this->stellarAsset($tokenCode, $tokenIssuer);
-
-        $op = new PathPaymentStrictSendOperation(
-            $sendAsset,
-            $xlmAmountIn,     // send XLM
-            $hot,             // destination = hot wallet
-            $destAsset,
-            $minTokenOut,     // minimum token out
-            []                // let Stellar find best path
-        );
-
-        $hash = $this->stellarSubmitTx([$op], $memo);
-
-        return [
-            'tx_hash' => $hash,
-            'min_out' => $minTokenOut,
-        ];
-    }
-
-    private function xlmTokenToXlm(
-        string $tokenCode,
-        string $tokenIssuer,
-        string $tokenAmountIn,
-        string $minXlmOut,       // slippage protection
-        ?string $memo = null
-    ): array {
-        $seed = env('STELLAR_HOT_WALLET_SEED');
-        $kp = KeyPair::fromSeed($seed);
-        $hot = $kp->getAccountId();
-
-        $sendAsset = $this->stellarAsset($tokenCode, $tokenIssuer);
-        $destAsset = new AssetTypeNative();
-
-        $op = new PathPaymentStrictSendOperation(
-            $sendAsset,
-            $tokenAmountIn,
-            $hot,
-            $destAsset,
-            $minXlmOut,
-            []
-        );
-
-        $hash = $this->stellarSubmitTx([$op], $memo);
-
-        return [
-            'tx_hash' => $hash,
-            'min_out' => $minXlmOut,
-        ];
-    }
 
     private function xrplPost(array $payload): array
     {
