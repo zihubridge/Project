@@ -12,7 +12,7 @@
             <div class="bg-white rounded-2xl p-5 flex flex-col md:flex-row md:justify-between gap-4 md:gap-0">
                 <div class="flex flex-wrap justify-center md:justify-start gap-3 items-center">
                     <h2 class="text-lg font-bold text-black">Exchange ID:</h2>
-                    <p id="exchangeId" class="text-[#2B2B2B] break-all">we456ek2of585kf6l20k28qwr</p>
+                    <p id="exchangeId" class="text-[#2B2B2B] break-all">{{ $uuid }}</p>
                     <ion-icon name="copy-outline" class="cursor-pointer text-xl" onclick="copyText()"></ion-icon>
                 </div>
                 <div
@@ -39,11 +39,11 @@
                     <!-- Content: 7/12 -->
                     <div class="flex flex-wrap items-center gap-3 w-full md:w-8/12 px-8">
                         <img src="{{ asset('assets/new assets/eth.png') }}" alt="eth">
-                        <p class="text-black font-semibold text-xl">1.1870182 ETH</p>
+                        <p class="text-black font-semibold text-xl">1.1870182 {{ $from_blockchain_asset_code }}</p>
 
                         <div class="flex items-center gap-3">
                             <span>Networking:</span>
-                            <p class="bg-[#0066FF] rounded-md text-white px-2">ETH</p>
+                            <p class="bg-[#0066FF] rounded-md text-white px-2">{{ $from_blockchain_asset_code }}</p>
                         </div>
                     </div>
                 </div>
@@ -62,12 +62,12 @@
 
                                 <!-- QR + Address -->
                                 <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-                                    <img src="{{ asset('assets/new assets/qr.png') }}"
-                                        class="w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0" alt="QR Code">
+                                    {{-- <img src="{{ asset('assets/new assets/qr.png') }}"
+                                        class="w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0" alt="QR Code"> --}}
 
                                     <p
                                         class="text-sm sm:text-base break-all  tracking-wider text-gray-800 w-full sm:w-auto">
-                                        0xAC365KJU8784GTF223NMJK964JIK875NBG8795EQM25MNH414POI908
+                                        {{ $deposit_address }}
                                     </p>
                                 </div>
 
@@ -80,7 +80,7 @@
                             </div>
                         </div>
                         <div class="bg-[#FEF7EA] text-[#F7931A] border border-[#F7931A] p-5 rounded-b-xl">
-                            Please Deposit ETH Using The Main Ethereum (ETH) Network.
+                            Please Deposit {{ $from_blockchain_asset_code }} Using The Main {{ $from_blockchain_name }} ({{ $from_blockchain_asset_code }}) Network.
                         </div>
                     </div>
                 </div>
