@@ -154,6 +154,22 @@
                 </div>
             </div>
         </div>
+
+        <form id="realSwapForm" action="{{ route('swap.start') }}" method="POST" style="display: none;">
+            @csrf
+            <input type="hidden" name="amount" id="post_amount">
+            <input type="hidden" name="from_blockchain" id="post_from_blockchain">
+            <input type="hidden" name="to_blockchain" id="post_to_blockchain">
+
+            <input type="hidden" name="from_asset_code" id="post_from_asset_code">
+            <input type="hidden" name="from_issuer_address" id="post_from_issuer_address">
+
+            <input type="hidden" name="to_asset_code" id="post_to_asset_code">
+            <input type="hidden" name="to_issuer_address" id="post_to_issuer_address">
+
+            <input type="hidden" name="destination_address" id="post_destination_address">
+            <input type="hidden" name="memo" id="post_memo">
+        </form>
     </section>
 @endsection
 
@@ -233,7 +249,33 @@
 
             swapBtn.addEventListener("click", () => {
                 if (swapBtn.disabled) return;
-                window.location.href = "{{ route('deposit') }}";
+
+                const fromOption = fromTokenSelect.options[fromTokenSelect.selectedIndex];
+                const toOption = toTokenSelect.options[toTokenSelect.selectedIndex];
+
+                // Get the values safely
+                document.getElementById('post_amount').value = sendInput.value;
+
+                // Ensure these match the setAttribute names in loadTokens
+                document.getElementById('post_from_blockchain').value = fromOption.getAttribute(
+                    'data-blockchain-id') || "";
+                document.getElementById('post_to_blockchain').value = toOption.getAttribute(
+                    'data-blockchain-id') || "";
+
+                document.getElementById('post_from_asset_code').value = fromOption.getAttribute(
+                    'data-asset-code') || "";
+                document.getElementById('post_from_issuer_address').value = fromOption.getAttribute(
+                    'data-issuer') || "";
+
+                document.getElementById('post_to_asset_code').value = toOption.getAttribute(
+                    'data-asset-code') || "";
+                document.getElementById('post_to_issuer_address').value = toOption.getAttribute(
+                    'data-issuer') || "";
+
+                document.getElementById('post_destination_address').value = destInput.value;
+                document.getElementById('post_memo').value = document.getElementById('depositMemo').value;
+
+                document.getElementById('realSwapForm').submit();
             });
 
             async function estimateSwap() {
@@ -375,11 +417,14 @@
                     (json.tokens || []).forEach(token => {
                         const opt = document.createElement("option");
                         opt.value = token.id;
-                        opt.textContent = token.symbol ?? token.name;
+                        opt.text = token.asset_code;
 
-                        // IMPORTANT: used by estimate payload
                         opt.dataset.asset = token.asset_code;
                         opt.dataset.issuer = token.issuer_address;
+
+                        opt.setAttribute('data-blockchain-id', token.blockchain_id);
+                        opt.setAttribute('data-asset-code', token.asset_code);
+                        opt.setAttribute('data-issuer', token.issuer_address);
 
                         select.appendChild(opt);
                     });
