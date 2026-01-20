@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('swap_id')->index();
 
-            $table->unsignedBigInteger('platform_wallet_id')->index();
+            // $table->unsignedBigInteger('platform_wallet_id')->index();
 
             // where user sent funds
             $table->string('deposit_address', 128);

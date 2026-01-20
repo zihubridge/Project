@@ -41,7 +41,6 @@ return new class extends Migration
             $table->unsignedBigInteger('fee_token_id')->nullable();
 
             $table->unsignedSmallInteger('swap_state_id')->default(1);
-            $table->unsignedBigInteger('execution_type_id')->index();
 
             $table->string('failure_reason', 255)->nullable();
             $table->timestamp('expires_at')->nullable();
