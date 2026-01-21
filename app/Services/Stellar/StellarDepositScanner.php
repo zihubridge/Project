@@ -11,7 +11,7 @@ class StellarDepositScanner
     {
         $address = $deposit->deposit_address;
 
-        $url = rtrim(config('services.stellar.horizon'), '/')
+        $url = rtrim(env('STELLAR_PUBLIC_ADDRESS'), '/')
             . "/accounts/{$address}/payments?order=desc&limit=100";
 
         $res = Http::timeout(15)->get($url);
@@ -32,7 +32,7 @@ class StellarDepositScanner
             $txHash = $p['transaction_hash'];
 
             $tx = Http::timeout(15)->get(
-                rtrim(config('services.stellar.horizon'), '/') . "/transactions/{$txHash}"
+                rtrim(env('STELLAR_PUBLIC_ADDRESS'), '/') . "/transactions/{$txHash}"
             )->json();
 
             if (($tx['memo_type'] ?? null) !== 'id') continue;
