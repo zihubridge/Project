@@ -29,7 +29,7 @@ return new class extends Migration
 
             // deposit routing (memo / tag)
             $table->string('routing_type', 16);
-            $table->string('routing_value', 64);
+            $table->string('routing_value', 64)->unique();
 
             // destination
             $table->string('destination_address', 128);

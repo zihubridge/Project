@@ -22,7 +22,7 @@ return new class extends Migration
 
             // routing identity (memo / tag / muxed)
             $table->string('routing_type', 16);   // memo_id | destination_tag
-            $table->string('routing_value', 64);
+            $table->string('routing_value', 64)->unique();
 
             $table->unsignedBigInteger('expected_token_id')->index();
             $table->decimal('expected_amount', 36, 18);
