@@ -48,43 +48,89 @@
                     </div>
                 </div>
 
-                <!-- Deposit Address -->
+                <!-- Deposit Address & Memo -->
                 <div class="flex flex-col md:flex-row gap-4 md:gap-6">
-                    <!-- Label: 4/12 -->
+
+                    <!-- Label -->
                     <div class="w-full md:w-4/12">
-                        <h2 class="text-lg font-bold text-black mb-3 md:mb-0">Deposit Address:</h2>
+                        <h2 class="text-lg font-bold text-black mb-3 md:mb-0">
+                            Deposit Details:
+                        </h2>
                     </div>
 
-                    <!-- Content: 8/12 -->
+                    <!-- Content -->
                     <div class="w-full md:w-8/12 px-8">
-                        <div class="bg-[#F7F8FA] border border-[#E3E3E3] p-5 rounded-t-xl">
-                            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
 
-                                <!-- QR + Address -->
-                                <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-                                    {{-- <img src="{{ asset('assets/new assets/qr.png') }}"
-                                        class="w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0" alt="QR Code"> --}}
+                        <!-- Unified Deposit Card -->
+                        <div class="border border-[#E3E3E3] rounded-xl overflow-hidden">
 
-                                    <p
-                                        class="text-sm sm:text-base break-all  tracking-wider text-gray-800 w-full sm:w-auto">
-                                        {{ $deposit_address }}
+                            <!-- Deposit Address -->
+                            <div class="bg-[#F7F8FA] p-5">
+                                <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+
+                                    <div>
+                                        <p class="text-xs font-semibold text-gray-500 mb-1">
+                                            Deposit Address
+                                        </p>
+                                        <p class="text-sm sm:text-base break-all tracking-wider text-gray-900 font-medium">
+                                            {{ $deposit_address }}
+                                        </p>
+                                    </div>
+
+                                    <div class="flex gap-2">
+                                        <ion-icon name="open-outline"
+                                            class="cursor-pointer text-xl bg-[#E1E8F3] text-[#859AB5] p-2 rounded-md">
+                                        </ion-icon>
+
+                                        <ion-icon name="copy-outline"
+                                            onclick="navigator.clipboard.writeText('{{ $deposit_address }}')"
+                                            class="cursor-pointer text-xl bg-[#E1E8F3] text-[#859AB5] p-2 rounded-md">
+                                        </ion-icon>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <!-- Divider -->
+                            <div class="h-px bg-[#E5E7EB]"></div>
+
+                            <!-- Memo / Destination Tag -->
+                            <div class="bg-white p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+                                <div>
+                                    <p class="text-sm font-bold text-red-600">
+                                        {{ $from_blockchain_asset_code === 'XRP' ? 'Destination Tag (REQUIRED)' : 'Memo ID (REQUIRED)' }}
+                                    </p>
+                                    <p class="text-xs text-gray-500">
+                                        Funds sent without this will NOT be credited.
                                     </p>
                                 </div>
 
-                                <div class="flex gap-3">
-                                    <ion-icon name="open-outline"
-                                        class="cursor-pointer text-xl bg-[#E1E8F3] text-[#859AB5] p-2 rounded-md"></ion-icon>
+                                <div
+                                    class="flex items-center gap-3 bg-[#F9FAFB] border border-red-300 rounded-lg px-4 py-2">
+                                    <span class="font-mono text-sm font-semibold text-gray-900 select-all">
+                                        {{ $memo }}
+                                    </span>
                                     <ion-icon name="copy-outline"
-                                        class="cursor-pointer text-xl bg-[#E1E8F3] text-[#859AB5] p-2 rounded-md"></ion-icon>
+                                        onclick="navigator.clipboard.writeText('{{ $memo }}')"
+                                        class="cursor-pointer text-lg text-red-500">
+                                    </ion-icon>
                                 </div>
+
                             </div>
+
+                            <!-- Network Warning -->
+                            <div class="bg-[#FEF7EA] text-[#F7931A] border-t border-[#F7931A] p-4 text-sm">
+                                Please deposit using the
+                                <strong>Main {{ $from_blockchain_name }} ({{ $from_blockchain_asset_code }})
+                                    network</strong>.
+                            </div>
+
                         </div>
-                        <div class="bg-[#FEF7EA] text-[#F7931A] border border-[#F7931A] p-5 rounded-b-xl">
-                            Please Deposit {{ $from_blockchain_asset_code }} Using The Main {{ $from_blockchain_name }}
-                            ({{ $from_blockchain_asset_code }}) Network.
-                        </div>
+
                     </div>
                 </div>
+
             </div>
         </div>
 
@@ -133,7 +179,7 @@
 
             <!-- Text -->
             <div class="flex-1 text-sm text-[#859AB5]">
-                If you sent the coins and the status did not change immediately, do not worry. Our system needs a few
+                If you sent the tokens and the status did not change immediately, do not worry. Our system needs a few
                 minutes to detect the transaction.
             </div>
 
@@ -162,10 +208,5 @@
     window.addEventListener('load', () => {
         const toast = document.getElementById('customToast');
         toast.classList.remove('hidden');
-
-        // Optional: auto-hide after 6 seconds
-        // setTimeout(() => {
-        //     toast.classList.add('hidden');
-        // }, 6000);
     });
 </script>

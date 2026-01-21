@@ -18,33 +18,24 @@ use Illuminate\Http\Client\RequestException;
 
 class SwapController extends Controller
 {
-    private $sdk, $network, $stellarWallet, $stellarWalletKey, $rippleWallet, $rippleWalletKey;
-    protected string $rpcUrl, $stellarUrl;
+    private $stellarWallet, $stellarWalletKey, $rippleWallet, $rippleWalletKey;
 
     public function __construct()
     {
         $stellarEnv = env('VITE_STELLAR_ENVIRONMENT');
 
         if ($stellarEnv === 'public') {
-            $this->sdk = StellarSDK::getPublicNetInstance();
-            $this->network = Network::public();
             $this->stellarWallet = env('STELLAR_PUBLIC_ADDRESS');
             $this->stellarWalletKey = env('STELLAR_SECRET_KEY');
-            $this->stellarUrl = env('STELLAR_HORIZON_MAINNET');
 
             $this->rippleWallet = env('XRPL_PUBLIC_ADDRESS');
             $this->rippleWalletKey = env('XRPL_SECRET_KEY');
-            $this->rpcUrl = env('XRPL_RPC_MAINNET');
         } else {
-            $this->sdk = StellarSDK::getTestNetInstance();
-            $this->network = Network::testnet();
-            $this->stellarUrl = env('STELLAR_HORIZON_TESTNET');
             $this->stellarWallet = env('STELLAR_TESTNET_PUBLIC_ADDRESS');
             $this->stellarWalletKey = env('STELLAR_TESTNET_SECRET_KEY');
 
             $this->rippleWallet = env('XRPL_TESTNET_PUBLIC_ADDRESS');
             $this->rippleWalletKey = env('XRPL_TESTNET_SECRET_KEY');
-            $this->rpcUrl = env('XRPL_RPC_TESTNET');
         }
     }
 
@@ -64,7 +55,6 @@ class SwapController extends Controller
                     'to_asset_code' => ['required', 'string', 'max:64'],
                     'to_issuer_address' => ['required', 'string', 'max:128'],
                     'destination_address' => ['required', 'string', 'max:128'],
-                    'memo' => ['required', 'string', 'max:128'],
                 ]);
             } catch (ValidationException $e) {
                 return redirect()->back()
@@ -94,18 +84,21 @@ class SwapController extends Controller
             } else {
                 $deposit_address = $this->rippleWallet;
             }
-            $swap = $this->createSwap($data['from_blockchain'], $data['to_blockchain'], $from_token->id, $to_token->id, $data['amount'], $data['destination_address'], $data['memo'], $deposit_address);
+            
+            $memo = (string) random_int(100000000, 999999999);
+
+            $swap = $this->createSwap($data['from_blockchain'], $data['to_blockchain'], $from_token->id, $to_token->id, $data['amount'], $data['destination_address'], $memo, $deposit_address);
             ScanDepositJob::dispatch($swap->id);
 
             return view('pages.deposit', [
                 'uuid' => $swap->swap_uuid,
-                'deposit_address' => config('bridge.stellar_wallet_address'),
+                'deposit_address' => $deposit_address,
                 'memo' => $swap->routing_value,
                 'amount' => $swap->from_amount,
                 'expires_at' => $swap->expires_at,
 
                 'from_blockchain_name' => $from_blockchain->name,
-                'from_blockchain_asset_code' => $from_blockchain->asset_code,
+                'from_blockchain_asset_code' => strtoupper($from_blockchain->asset_code),
                 'from_token' => $from_token->asset_code,
             ]);
         } catch (ValidationException $e) {
