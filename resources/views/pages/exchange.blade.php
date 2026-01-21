@@ -120,29 +120,6 @@
                         </div>
                     </div>
 
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                        <h2 class="text-base sm:text-lg font-bold text-center sm:text-left">
-                            Deposit Memo (Required)
-                        </h2>
-                    </div>
-
-                    <div class="flex flex-col sm:flex-row gap-4 w-full mb-2">
-                        <div
-                            class="w-full bg-[#F1F5F9] border border-dashed border-gray-300 rounded-xl px-4 sm:px-5 py-3 flex items-center justify-between">
-                            <input
-                                id="depositMemo"
-                                type="text"
-                                value="{{ $memo }}"
-                                readonly
-                                class="bg-transparent text-gray-800 text-lg sm:text-xl w-full focus:outline-none select-all cursor-not-allowed"
-                            />
-                        </div>
-                    </div>
-
-                    <p class="text-xs text-gray-500 mb-4">
-                        This memo is required to identify your swap
-                    </p>
-
                     <p id="destError" class="text-sm text-red-600 hidden"></p>
                     <button id="swapBtn" type="button"
                         class="block w-full text-center bg-blue-600 text-white py-2 rounded-full text-lg font-semibold hover:bg-transparent hover:text-blue-600 border border-blue-600 transition mb-5 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -168,7 +145,6 @@
             <input type="hidden" name="to_issuer_address" id="post_to_issuer_address">
 
             <input type="hidden" name="destination_address" id="post_destination_address">
-            <input type="hidden" name="memo" id="post_memo">
         </form>
     </section>
 @endsection
@@ -273,7 +249,6 @@
                     'data-issuer') || "";
 
                 document.getElementById('post_destination_address').value = destInput.value;
-                document.getElementById('post_memo').value = document.getElementById('depositMemo').value;
 
                 document.getElementById('realSwapForm').submit();
             });
