@@ -371,7 +371,7 @@
         // Load tokens into select and attach asset/issuer to options
         function loadTokens(assetCode, selectId) {
 
-            fetch("/global/tokens", {
+            return fetch("/global/tokens", {
                     method: "POST",
                     headers: {
                         "Accept": "application/json",
@@ -382,10 +382,8 @@
                 })
                 .then(res => res.json())
                 .then(json => {
-                    if (json.status !== "success") return;
-
                     const select = document.getElementById(selectId);
-                    if (!select) return;
+                    if (!select || json.status !== "success") return;
 
                     select.innerHTML = `<option value="" selected disabled>Choose token</option>`;
 
@@ -403,8 +401,7 @@
 
                         select.appendChild(opt);
                     });
-                })
-                .catch(err => console.error("Token fetch failed ❌", err));
+                });
         }
 
         function debounce(fn, delay = 400) {
