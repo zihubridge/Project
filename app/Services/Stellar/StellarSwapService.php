@@ -2,7 +2,6 @@
 
 namespace App\Services\Stellar;
 
-use Illuminate\Support\Facades\Http;
 use Soneso\StellarSDK\Asset;
 use Soneso\StellarSDK\AssetTypeNative;
 use Soneso\StellarSDK\AssetTypeCreditAlphanum4;
@@ -19,10 +18,8 @@ class StellarSwapService
 
     public function __construct()
     {
-        // Determine environment from config
         $isPublic = config('services.stellar.horizon_url') === config('services.stellar.horizon_mainnet_url_check', 'https://horizon.stellar.org');
 
-        // Use the VITE environment variable check we set in config/services.php
         if (env('ENVIRONMENT') === 'public') {
             $this->sdk = StellarSDK::getPublicNetInstance();
             $this->network = Network::public();
