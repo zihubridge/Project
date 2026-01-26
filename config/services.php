@@ -35,4 +35,37 @@ return [
         ],
     ],
 
+    'stellar' => [
+        'horizon_url' => env('VITE_STELLAR_ENVIRONMENT') === 'public'
+            ? env('STELLAR_HORIZON_MAINNET')
+            : env('STELLAR_HORIZON_TESTNET'),
+
+        'wallet' => env('VITE_STELLAR_ENVIRONMENT') === 'public'
+            ? env('STELLAR_PUBLIC_ADDRESS')
+            : env('STELLAR_TESTNET_PUBLIC_ADDRESS'),
+
+        'seed' => env('VITE_STELLAR_ENVIRONMENT') === 'public'
+            ? env('STELLAR_SECRET_KEY')
+            : env('STELLAR_TESTNET_SECRET_KEY'),
+    ],
+
+    'xrpl' => [
+        'rpc' => env('VITE_STELLAR_ENVIRONMENT') === 'public'
+            ? env('XRPL_RPC_MAINNET')
+            : env('XRPL_RPC_TESTNET'),
+
+        'wallet' => env('VITE_STELLAR_ENVIRONMENT') === 'public'
+            ? env('XRPL_PUBLIC_ADDRESS')
+            : env('XRPL_TESTNET_PUBLIC_ADDRESS'),
+
+        'seed' => env('VITE_STELLAR_ENVIRONMENT') === 'public'
+            ? env('XRPL_SECRET_KEY')
+            : env('XRPL_TESTNET_SECRET_KEY'),
+    ],
+
+    'changenow' => [
+        'base_url' => env('CHANGENOW_BASE_URL', 'https://api.changenow.io'),
+        'api_key'  => env('CHANGENOW_API_KEY'),
+    ],
+
 ];

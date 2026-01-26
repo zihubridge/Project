@@ -18,17 +18,8 @@ class SwapController extends Controller
 
     public function __construct()
     {
-        $stellarEnv = env('VITE_STELLAR_ENVIRONMENT');
-
-        if ($stellarEnv === 'public') {
-            $this->stellarWallet = env('STELLAR_PUBLIC_ADDRESS');
-
-            $this->rippleWallet = env('XRPL_PUBLIC_ADDRESS');
-        } else {
-            $this->stellarWallet = env('STELLAR_TESTNET_PUBLIC_ADDRESS');
-
-            $this->rippleWallet = env('XRPL_TESTNET_PUBLIC_ADDRESS');
-        }
+        $this->stellarWallet = config('services.stellar.wallet');
+        $this->rippleWallet  = config('services.xrpl.wallet');
     }
 
     public function start(Request $request)

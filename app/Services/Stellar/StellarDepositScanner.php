@@ -11,8 +11,10 @@ class StellarDepositScanner
     {
         $address = $deposit->deposit_address;
 
-        $url = rtrim(env('STELLAR_HORIZON_MAINNET'), '/')
-            . "/accounts/{$address}/payments?order=desc&limit=100";
+        $baseUrl = config('services.stellar.horizon_url');
+
+        // Fetch recent payments for this account
+        $url = rtrim($baseUrl, '/') . "/accounts/{$address}/payments?order=desc&limit=100";
 
         $res = Http::timeout(15)->get($url);
         if ($res->failed()) {
@@ -29,20 +31,17 @@ class StellarDepositScanner
             if (($p['asset_code'] ?? null) !== $deposit->expectedToken->asset_code) continue;
             if (($p['asset_issuer'] ?? null) !== $deposit->expectedToken->issuer_address) continue;
 
-            // Verify Amount (Using bccomp for high-precision math)
+            // Verify Amount (Matches exactly or more)
             if (bccomp((string)$p['amount'], (string)$deposit->expected_amount, 7) < 0) continue;
 
             // Fetch Transaction Details to check the Memo
             $txHash = $p['transaction_hash'];
 
-            // Note: Ensure 'services.stellar.horizon_url' is set in config/services.php
-            $baseUrl = config('services.stellar.horizon_url', 'https://horizon.stellar.org');
-
+            // We call the transaction endpoint because the payments endpoint 
+            // does not always include the memo in the basic record
             $tx = Http::timeout(15)->get(rtrim($baseUrl, '/') . "/transactions/{$txHash}")->json();
 
-
-            // Verify Memo
-            // We allow both 'id' and 'text' because different wallets send numeric memos differently
+            // Verify Memo Logic
             $validMemoTypes = ['id', 'text'];
             $memoType = $tx['memo_type'] ?? null;
             $memoValue = (string)($tx['memo'] ?? '');
@@ -56,8 +55,7 @@ class StellarDepositScanner
                 continue;
             }
 
-            // Success: Return payment details
-
+            // Success: Return payment details for the Job to process
             return [
                 'tx_hash' => $txHash,
                 'sender' => $p['from'] ?? null,
