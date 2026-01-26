@@ -38,7 +38,7 @@
                     <!-- Content: 7/12 -->
                     <div class="flex flex-wrap items-center gap-3 w-full md:w-8/12 px-8">
                         {{-- <img src="{{ asset('assets/new assets/eth.png') }}" alt="eth"> --}}
-                        <p class="text-black font-semibold text-xl">{{ $amount }} {{ $from_blockchain_asset_code }}
+                        <p class="text-black font-semibold text-xl">{{ $amount }} {{ $from_token }}
                         </p>
 
                         <div class="flex items-center gap-3">
