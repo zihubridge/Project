@@ -4,12 +4,13 @@ namespace App\Jobs;
 
 use App\Models\SwapDeposit;
 use App\Services\Stellar\StellarDepositScanner;
-use App\Services\Xrpl\XrplDepositScanner;
+use App\Services\Ripple\XrplDepositScanner;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 
 class ScanDepositJob implements ShouldQueue
 {
@@ -18,7 +19,6 @@ class ScanDepositJob implements ShouldQueue
     public int $depositId;
 
     public int $tries = 45;        // 45 × 20s ≈ 15 minutes
-    public int $timeout = 20;
 
     public function __construct(int $depositId)
     {
@@ -29,7 +29,7 @@ class ScanDepositJob implements ShouldQueue
         StellarDepositScanner $stellarScanner,
         XrplDepositScanner $xrplScanner
     ): void {
-        $deposit = SwapDeposit::with(['swap', 'expectedToken'])->find($this->depositId);
+        $deposit = SwapDeposit::with(['swap.fromBlockchain', 'expectedToken'])->find($this->depositId);
 
         // Deposit removed or already processed
         if (!$deposit || $deposit->deposit_state_id !== 1) {
@@ -49,17 +49,31 @@ class ScanDepositJob implements ShouldQueue
             return;
         }
 
-        $blockchain = $deposit->swap->fromBlockchain->slug;
+        $blockchainId = $deposit->swap->fromBlockchain->id;
 
-        $found = match ($blockchain) {
-            'stellar' => $stellarScanner->scan($deposit),
-            'xrpl'    => $xrplScanner->scan($deposit),
+        $found = match ($blockchainId) {
+            1 => $stellarScanner->scan($deposit),
+            2 => $xrplScanner->scan($deposit),
             default   => false,
         };
 
-        // If not found, retry after delay
-        if (!$found) {
-            self::dispatch($this->depositId)->delay(now()->addSeconds(20));
+        // Handle Results
+        if ($found) {
+            $deposit->update([
+                'deposit_state_id' => 3, // confirmed
+                'tx_hash' => $found['tx_hash'],
+                'sender_address' => $found['sender'],
+                'received_amount' => $found['amount'],
+                'received_at' => now(),
+            ]);
+
+            $deposit->swap->update(['swap_state_id' => 2]);
+
+            // ExecuteSwapJob::dispatch($deposit->swap_id);
+            return; // Job finished successfully
         }
+
+        // If not found, release back to queue for retry
+        $this->release(now()->addSeconds(20));
     }
 }
