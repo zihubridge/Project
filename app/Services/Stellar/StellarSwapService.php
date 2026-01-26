@@ -15,33 +15,20 @@ use Soneso\StellarSDK\StellarSDK;
 
 class StellarSwapService
 {
-    private $sdk, $network, $stellarWallet, $stellarWalletKey, $rippleWallet, $rippleWalletKey;
-    protected string $rpcUrl, $stellarUrl;
+    private $sdk, $network;
 
     public function __construct()
     {
-        $stellarEnv = env('VITE_STELLAR_ENVIRONMENT');
+        // Determine environment from config
+        $isPublic = config('services.stellar.horizon_url') === config('services.stellar.horizon_mainnet_url_check', 'https://horizon.stellar.org');
 
-        if ($stellarEnv === 'public') {
+        // Use the VITE environment variable check we set in config/services.php
+        if (env('ENVIRONMENT') === 'public') {
             $this->sdk = StellarSDK::getPublicNetInstance();
             $this->network = Network::public();
-            $this->stellarWallet = env('STELLAR_PUBLIC_ADDRESS');
-            $this->stellarWalletKey = env('STELLAR_SECRET_KEY');
-            $this->stellarUrl = env('STELLAR_HORIZON_MAINNET');
-
-            $this->rippleWallet = env('XRPL_PUBLIC_ADDRESS');
-            $this->rippleWalletKey = env('XRPL_SECRET_KEY');
-            $this->rpcUrl = env('XRPL_RPC_MAINNET');
         } else {
             $this->sdk = StellarSDK::getTestNetInstance();
             $this->network = Network::testnet();
-            $this->stellarUrl = env('STELLAR_HORIZON_TESTNET');
-            $this->stellarWallet = env('STELLAR_TESTNET_PUBLIC_ADDRESS');
-            $this->stellarWalletKey = env('STELLAR_TESTNET_SECRET_KEY');
-
-            $this->rippleWallet = env('XRPL_TESTNET_PUBLIC_ADDRESS');
-            $this->rippleWalletKey = env('XRPL_TESTNET_SECRET_KEY');
-            $this->rpcUrl = env('XRPL_RPC_TESTNET');
         }
     }
 
@@ -97,7 +84,7 @@ class StellarSwapService
         string $minXlmOut,
         ?string $memo = null
     ): array {
-        $kp = KeyPair::fromSeed(config('stellar.hot_wallet_seed'));
+        $kp = KeyPair::fromSeed(config('services.stellar.seed'));
         $hot = $kp->getAccountId();
 
         $op = new PathPaymentStrictSendOperation(
@@ -124,7 +111,7 @@ class StellarSwapService
         string $minTokenOut,
         ?string $memo = null
     ): array {
-        $kp = KeyPair::fromSeed(config('stellar.hot_wallet_seed'));
+        $kp = KeyPair::fromSeed(config('services.stellar.seed'));
         $hot = $kp->getAccountId();
 
         $op = new PathPaymentStrictSendOperation(

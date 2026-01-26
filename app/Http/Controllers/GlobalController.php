@@ -4,51 +4,32 @@ namespace App\Http\Controllers;
 
 use App\Models\Blockchain;
 use App\Models\Token;
-use App\Models\WalletType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Soneso\StellarSDK\Exceptions\HorizonRequestException;
 use Soneso\StellarSDK\Network;
 use Soneso\StellarSDK\StellarSDK;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Http\Client\RequestException;
 
 class GlobalController extends Controller
 {
     private bool $isTestnet;
-    private $sdk, $network, $stellarWallet, $stellarWalletKey, $rippleWallet, $rippleWalletKey;
+    private $sdk, $network;
     protected string $rpcUrl, $stellarUrl;
 
     public function __construct()
     {
-        $stellarEnv = env('VITE_STELLAR_ENVIRONMENT');
+        $this->isTestnet = env('ENVIRONMENT') !== 'public';
 
-        if ($stellarEnv === 'public') {
-            $this->sdk = StellarSDK::getPublicNetInstance();
-            $this->network = Network::public();
-            $this->stellarWallet = env('STELLAR_PUBLIC_ADDRESS');
-            $this->stellarWalletKey = env('STELLAR_SECRET_KEY');
-            $this->stellarUrl = env('STELLAR_HORIZON_MAINNET');
+        // Stellar
+        $this->sdk        = $this->isTestnet ? StellarSDK::getTestNetInstance() : StellarSDK::getPublicNetInstance();
+        $this->network    = $this->isTestnet ? Network::testnet() : Network::public();
+        $this->stellarUrl = config('services.stellar.horizon_url');
 
-            $this->rippleWallet = env('XRPL_PUBLIC_ADDRESS');
-            $this->rippleWalletKey = env('XRPL_SECRET_KEY');
-            $this->rpcUrl = env('XRPL_RPC_MAINNET');
-            $this->isTestnet = false;
-        } else {
-            $this->sdk = StellarSDK::getTestNetInstance();
-            $this->network = Network::testnet();
-            $this->stellarUrl = env('STELLAR_HORIZON_TESTNET');
-            $this->stellarWallet = env('STELLAR_TESTNET_PUBLIC_ADDRESS');
-            $this->stellarWalletKey = env('STELLAR_TESTNET_SECRET_KEY');
-
-            $this->rippleWallet = env('XRPL_TESTNET_PUBLIC_ADDRESS');
-            $this->rippleWalletKey = env('XRPL_TESTNET_SECRET_KEY');
-            $this->rpcUrl = env('XRPL_RPC_TESTNET');
-            $this->isTestnet = true;
-        }
+        // Ripple
+        $this->rpcUrl          = config('services.xrpl.rpc');
     }
 
     public function tokenSwappingAmount(Request $request)
@@ -380,11 +361,8 @@ class GlobalController extends Controller
         string $amountIn,          // token amount in (string for precision)
         string $feeBps = '30'      // fee in basis points (e.g., 30 = 0.30%). Adjust if your pool differs.
     ): ?array {
-        $base = $this->isTestnet
-            ? 'https://horizon-testnet.stellar.org'
-            : 'https://horizon.stellar.org';
 
-        $url = $base . '/liquidity_pools/' . $poolId;
+        $url = $this->stellarUrl . '/liquidity_pools/' . $poolId;
 
         try {
             $res = Http::timeout(10)->acceptJson()->get($url);
@@ -486,9 +464,6 @@ class GlobalController extends Controller
         string $issuer,               // r..... issuer
         bool $isTestnet = false,
     ): ?array {
-        $rpc = $isTestnet
-            ? 'https://s.altnet.rippletest.net:51234'
-            : 'https://xrplcluster.com';
 
         $cur = $this->xrplCurrency($currency);
 
@@ -504,7 +479,7 @@ class GlobalController extends Controller
 
         $res = Http::timeout(20)
             ->withHeaders(['Content-Type' => 'application/json'])
-            ->post($rpc, $payload);
+            ->post($this->rpcUrl, $payload);
 
 
         if ($res->failed()) {
@@ -684,10 +659,6 @@ class GlobalController extends Controller
             throw new \RuntimeException('BCMath extension is required.');
         }
 
-        $rpc = $isTestnet
-            ? 'https://s.altnet.rippletest.net:51234'
-            : 'https://xrplcluster.com';
-
         $cur = $this->xrplCurrency($currency);
 
         // Query AMM reserves for XRP <-> Token
@@ -703,7 +674,7 @@ class GlobalController extends Controller
 
         $res = Http::timeout(20)
             ->withHeaders(['Content-Type' => 'application/json'])
-            ->post($rpc, $payload);
+            ->post($this->rpcUrl, $payload);
 
         if ($res->failed()) {
             return null;
@@ -796,11 +767,8 @@ class GlobalController extends Controller
         string $xlmAmountIn,      // XLM amount in (string for precision)
         string $feeBps = '30'     // fee in basis points (e.g. 30 = 0.30%)
     ): ?array {
-        $base = $this->isTestnet
-            ? 'https://horizon-testnet.stellar.org'
-            : 'https://horizon.stellar.org';
 
-        $url = $base . '/liquidity_pools/' . $poolId;
+        $url = $this->stellarUrl . '/liquidity_pools/' . $poolId;
 
         try {
             $res = Http::timeout(10)->acceptJson()->get($url);
