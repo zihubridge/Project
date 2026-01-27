@@ -69,7 +69,7 @@ class ScanDepositJob implements ShouldQueue
 
             $deposit->swap->update(['swap_state_id' => 2]);
 
-            // ExecuteSwapJob::dispatch($deposit->swap_id);
+            ExecuteSwapJob::dispatch($deposit->swap_id);
             return; // Job finished successfully
         }
 
