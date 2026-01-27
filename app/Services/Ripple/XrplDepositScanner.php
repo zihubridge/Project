@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Xrpl;
+namespace App\Services\Ripple;
 
 use App\Models\SwapDeposit;
 use Illuminate\Support\Facades\Http;
