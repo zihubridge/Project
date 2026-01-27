@@ -74,7 +74,7 @@ class StellarSwapService
         return (string) $res->getHash();
     }
 
-    public function tokenToXlm(
+    public function xlmTokenToXlm(
         string $tokenCode,
         string $issuer,
         string $amountIn,
