@@ -27,6 +27,7 @@ class ChangeNowService
         string $fromCurrency,
         string $toCurrency,
         string $destinationAddress,
+        string $extraId,
         string $fromNetwork,
         string $toNetwork,
         string $fromAmount,
@@ -41,7 +42,7 @@ class ChangeNowService
             'fromAmount'   => (string) $fromAmount,
             'toAmount'     => "", // Empty for direct flow
             'address'      => $destinationAddress,
-            'extraId'      => "",
+            'extraId'      => $extraId,
             'refundAddress' => "",
             'refundExtraId' => "",
             'userId'       => "",
