@@ -37,13 +37,13 @@ class ScanDepositJob implements ShouldQueue
         }
 
         // Expired → mark failed
-        if (now()->greaterThan($deposit->expires_at)) {
+        if (now()->greaterThan($deposit->expires_at) && $deposit->swap->swap_state_id == 2) {
             $deposit->update([
                 'deposit_state_id' => 4, // expired
             ]);
 
             $deposit->swap->update([
-                'swap_state_id' => 5, // expired
+                'swap_state_id' => 10, // expired
             ]);
 
             return;
