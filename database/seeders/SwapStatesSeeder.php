@@ -68,6 +68,12 @@ class SwapStatesSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                // Expired
+                'name' => 'expired',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
                 // Any failure caught in any job
                 'name' => 'failed',
                 'created_at' => now(),
