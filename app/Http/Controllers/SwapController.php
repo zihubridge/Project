@@ -107,7 +107,7 @@ class SwapController extends Controller
                 'routing_type' => 'memo_id',
                 'routing_value' => $memo,
                 'destination_address' => $destination_address,
-                'swap_state_id' => 1, // pending
+                'swap_state_id' => 2, // 'waiting_for_deposit' based on your new seeder
                 'expires_at' => now()->addMinutes(15),
             ]);
 
