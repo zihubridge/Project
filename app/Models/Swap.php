@@ -18,6 +18,16 @@ class Swap extends Model
         return $this->belongsTo(Blockchain::class, 'to_blockchain_id');
     }
 
+    public function fromToken()
+    {
+        return $this->belongsTo(Token::class, 'from_token_id');
+    }
+
+    public function toToken()
+    {
+        return $this->belongsTo(Token::class, 'to_token_id');
+    }
+
     public function deposit()
     {
         return $this->hasOne(SwapDeposit::class);
