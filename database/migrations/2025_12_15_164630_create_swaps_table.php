@@ -27,6 +27,9 @@ return new class extends Migration
             $table->decimal('to_amount_estimated', 36, 18)->nullable();
             $table->decimal('to_amount_final', 36, 18)->nullable();
 
+            $table->decimal('expected_xrp_amount', 36, 18)->nullable();
+            $table->decimal('expected_xlm_amount', 36, 18)->nullable();
+
             // deposit routing (memo / tag)
             $table->string('routing_type', 16);
             $table->string('routing_value', 64)->unique();
