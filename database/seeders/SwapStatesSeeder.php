@@ -56,6 +56,12 @@ class SwapStatesSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
+                // Swap to the desired coin
+                'name' => 'swapping_to_coin',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
                 // Sending the final token to the user's destination wallet
                 'name' => 'sending_to_user',
                 'created_at' => now(),

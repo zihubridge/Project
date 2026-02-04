@@ -43,7 +43,7 @@ class ScanDepositJob implements ShouldQueue
             ]);
 
             $deposit->swap->update([
-                'swap_state_id' => 10, // expired
+                'swap_state_id' => 11, // expired
             ]);
 
             return;
