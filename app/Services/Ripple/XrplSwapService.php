@@ -1,0 +1,363 @@
+<?php
+
+namespace App\Services\Ripple;
+
+use Hardcastle\XRPL_PHP\Client\JsonRpcClient;
+use Hardcastle\XRPL_PHP\Models\Transaction\SubmitRequest;
+use Hardcastle\XRPL_PHP\Wallet\Wallet;
+use Hardcastle\XRPL_PHP\Models\Transaction\TransactionTypes\Payment;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use RuntimeException;
+
+class XrplSwapService
+{
+    protected JsonRpcClient $client;
+    protected string $hotWallet;
+    protected string $hotWalletSeed;
+    protected string $rpcUrl;
+
+    public function __construct()
+    {
+        $this->rpcUrl = config('services.xrpl.rpc');
+        $rpc = config('services.xrpl.rpc');
+        $this->hotWallet = config('services.xrpl.wallet');
+        $this->hotWalletSeed = config('services.xrpl.seed');
+
+        if (!$rpc || !$this->hotWallet || !$this->hotWalletSeed) {
+            throw new RuntimeException('XRPL configuration missing');
+        }
+
+        // Initialize the library client here
+        $this->client = new JsonRpcClient($rpc);
+    }
+
+    /* -------------------------------------------------
+     |  Low-level helpers
+     |--------------------------------------------------*/
+
+    protected function xrplPost(array $payload): array
+    {
+        $res = Http::timeout(20)
+            ->withHeaders(['Content-Type' => 'application/json'])
+            ->post($this->rpcUrl, $payload);
+
+        return $res->json() ?? [];
+    }
+
+    protected function pathFind(
+        string $source,
+        string $destination,
+        array|string $destinationAmount,
+        array|string|null $sendMax = null
+    ): array {
+        $params = [
+            'source_account' => $source,
+            'destination_account' => $destination,
+            'destination_amount' => $destinationAmount,
+        ];
+
+        if ($sendMax !== null) {
+            $params['send_max'] = $sendMax;
+        }
+
+        return $this->xrplPost([
+            'method' => 'ripple_path_find',
+            'params' => [$params],
+        ]);
+    }
+
+    /* -------------------------------------------------
+     |  Swap: XRP → XRPL Token
+     |--------------------------------------------------*/
+
+    public function xrpToToken(
+        string $xrpAmount,
+        string $tokenCurrency,
+        string $tokenIssuer,
+        string $minTokenOut
+    ): array {
+        $cur = $this->xrplCurrency($tokenCurrency);
+        $sendMaxDrops = bcmul($xrpAmount, '1000000', 0);
+
+        $paths = $this->pathFind(
+            source: $this->hotWallet,
+            destination: $this->hotWallet,
+            destinationAmount: [
+                'currency' => $cur,
+                'issuer' => $tokenIssuer,
+                'value' => $minTokenOut,
+            ],
+            sendMax: $sendMaxDrops
+        );
+
+        $alts = data_get($paths, 'result.alternatives', []);
+        if (!$alts) {
+            throw new RuntimeException('XRPL path not found (XRP → Token)');
+        }
+
+        $best = $alts[0];
+
+        $tx = [
+            'TransactionType' => 'Payment',
+            'Account' => $this->hotWallet,
+            'Destination' => $this->hotWallet,
+            'Amount' => $best['destination_amount'],
+            'SendMax' => $sendMaxDrops,
+            'DeliverMin' => [
+                'currency' => $cur,
+                'issuer' => $tokenIssuer,
+                'value' => $minTokenOut,
+            ],
+            'Paths' => $best['paths_computed'] ?? [],
+            'Flags' => 0x00020000, // tfPartialPayment
+        ];
+
+        return $this->signAndSubmit($tx);
+    }
+
+
+    /* -------------------------------------------------
+     |  Signing & Submit (stub)
+     |--------------------------------------------------*/
+
+    private function signAndSubmit(array $tx): array
+    {
+        try {
+            $wallet = Wallet::fromSeed($this->hotWalletSeed);
+            $preparedTx = $this->client->autofill($tx);
+            $signedTx = $wallet->sign($preparedTx);
+            $response = $this->client->submitAndWait($signedTx);
+            $result = $response->getResult();
+
+            $engineResult = $result['engine_result'] ?? '';
+
+            if ($engineResult === 'tesSUCCESS') {
+                return [
+                    'ok' => true,
+                    'tx_hash' => $result['tx_json']['hash'] ?? null,
+                    'amount_out' => $result['tx_json']['Amount']['value'] ?? $result['tx_json']['Amount'],
+                    'engine_result' => $engineResult
+                ];
+            }
+
+            Log::error("XRPL Error: " . $engineResult, ['result' => $result]);
+            return [
+                'ok' => false,
+                'reason' => $engineResult,
+                'message' => $result['engine_result_message'] ?? 'Unknown error'
+            ];
+        } catch (\Throwable $e) {
+            Log::error("XRPL Critical Failure: " . $e->getMessage());
+            return ['ok' => false, 'reason' => 'exception', 'message' => $e->getMessage()];
+        }
+    }
+
+    private function xrplCurrency(string $currency): string
+    {
+        $c = strtoupper($currency);
+        if (strlen($c) === 3) return $c;
+        if (preg_match('/^[A-F0-9]{40}$/', $c)) return $c;
+        throw new \InvalidArgumentException("Invalid XRPL currency: {$currency}");
+    }
+
+    /* -------------------------------------------------
+     |  Swap: XRPL Token → XRP
+     |--------------------------------------------------*/
+
+    public function xrpTokenToXrp(
+        string $tokenAmount,
+        string $tokenCurrency,
+        string $tokenIssuer,
+        string $minXrpOut
+    ): array {
+        $cur = $this->xrplCurrency($tokenCurrency);
+        $deliverMinDrops = bcmul($minXrpOut, '1000000', 0);
+
+        // 1. Path Finding (Your existing logic)
+        $paths = $this->pathFind(
+            source: $this->hotWallet,
+            destination: $this->hotWallet,
+            destinationAmount: $deliverMinDrops,
+            sendMax: [
+                'currency' => $cur,
+                'issuer' => $tokenIssuer,
+                'value' => $tokenAmount,
+            ]
+        );
+
+        $alts = data_get($paths, 'result.alternatives', []);
+        if (!$alts) {
+            throw new RuntimeException('XRPL path not found (Token → XRP)');
+        }
+
+        $best = $alts[0];
+
+        // 2. Prepare the Transaction Data
+        $tx = [
+            'TransactionType' => 'Payment',
+            'Account' => $this->hotWallet,
+            'Destination' => $this->hotWallet,
+            'Amount' => $best['destination_amount'],
+            'SendMax' => [
+                'currency' => $cur,
+                'issuer' => $tokenIssuer,
+                'value' => $tokenAmount,
+            ],
+            'DeliverMin' => $deliverMinDrops,
+            'Paths' => $best['paths_computed'] ?? [],
+            'Flags' => 0x00020000, // tfPartialPayment
+        ];
+
+        return $this->signAndSubmit($tx);
+    }
+
+
+    //check if xrp has been received in official ripple wallet from change now or not
+    public function checkXrpReceipt(string $destinationTag, float $expectedXrpAmount): array
+    {
+        // Fetch config values
+        $rpcUrl = config('services.xrpl.rpc');
+        $platformAddress = config('services.xrpl.wallet');
+
+        try {
+            // Query the XRPL for the last 10 transactions
+            $response = Http::post($rpcUrl, [
+                'method' => 'account_tx',
+                'params' => [[
+                    'account' => $platformAddress,
+                    'ledger_index_min' => -1,
+                    'forward' => false,
+                    'limit' => 10,
+                ]]
+            ]);
+
+            if ($response->failed()) {
+                throw new \RuntimeException("XRPL RPC Error: " . $response->body());
+            }
+
+            $result = $response->json()['result'];
+            $transactions = $result['transactions'] ?? [];
+
+            foreach ($transactions as $txData) {
+                $tx = $txData['tx'];
+
+                // Check if it's a Payment and matches our Destination Tag
+                if (($tx['TransactionType'] ?? '') === 'Payment' &&
+                    (isset($tx['DestinationTag']) && (string)$tx['DestinationTag'] === (string)$destinationTag)
+                ) {
+
+                    // Convert expected XRP to drops (XRP Ledger uses integers for XRP)
+                    $expectedDrops = bcmul($expectedXrpAmount, '1000000', 0);
+
+                    // IMPORTANT: Use delivered_amount from metadata to prevent "Partial Payment" exploits
+                    $deliveredDrops = $txData['meta']['delivered_amount'] ?? $tx['Amount'];
+
+                    if ($deliveredDrops === $expectedDrops) {
+                        return [
+                            'status' => 'success',
+                            'tx_hash' => $tx['hash'],
+                            'amount_received' => $expectedXrpAmount,
+                            'ledger_index' => $tx['ledger_index']
+                        ];
+                    }
+                }
+            }
+
+            return ['status' => 'pending', 'message' => 'Payment not found in recent transactions.'];
+        } catch (\Exception $e) {
+            return ['status' => 'error', 'message' => $e->getMessage()];
+        }
+    }
+
+    public function sendXrpTokenToDestination(
+        string $tokenAmount,
+        string $tokenCurrency,
+        string $tokenIssuer,
+        string $destination
+    ): array {
+        $cur = $this->xrplCurrency($tokenCurrency);
+
+        // For tokens, Amount is an array: ['currency', 'issuer', 'value']
+        $tx = [
+            'TransactionType' => 'Payment',
+            'Account' => $this->hotWallet,
+            'Destination' => $destination,
+            'Amount' => [
+                'currency' => $cur,
+                'issuer' => $tokenIssuer,
+                'value' => $tokenAmount,
+            ],
+        ];
+
+        // We reuse your clean signAndSubmit method
+        return $this->signAndSubmit($tx);
+    }
+
+    // public function xrpToXrpToken(
+    //     string $xrpAmountIn,
+    //     string $tokenCurrency,
+    //     string $tokenIssuer,
+    //     string $minTokenOut
+    // ): array {
+    //     $seed = env('XRPL_MAIN_WALLET_SEED');
+    //     $hot = env('XRPL_MAIN_WALLET');
+
+    //     $cur = $this->xrplCurrency($tokenCurrency);
+
+    //     $sendMaxDrops = (string) bcmul($xrpAmountIn, '1000000', 0);
+
+    //     // Ask XRPL for route/paths
+    //     $pathRes = $this->xrplPathFind(
+    //         source: $hot,
+    //         destination: $hot,
+    //         destinationAmount: ['currency' => $cur, 'issuer' => $tokenIssuer, 'value' => $minTokenOut],
+    //         sendMax: $sendMaxDrops
+    //     );
+
+    //     $alts = data_get($pathRes, 'result.alternatives', []);
+    //     if (!$alts) {
+    //         return ['ok' => false, 'reason' => 'no_path'];
+    //     }
+
+    //     $best = $alts[0];
+    //     $paths = $best['paths_computed'] ?? [];
+
+    //     $tx = [
+    //         'TransactionType' => 'Payment',
+    //         'Account' => $hot,
+    //         'Destination' => $hot,
+    //         'Amount' => ['currency' => $cur, 'issuer' => $tokenIssuer, 'value' => $best['destination_amount']['value'] ?? $minTokenOut],
+    //         'SendMax' => $sendMaxDrops,
+    //         'DeliverMin' => ['currency' => $cur, 'issuer' => $tokenIssuer, 'value' => $minTokenOut],
+    //         'Paths' => $paths,
+    //         'Flags' => 0x00020000,
+    //     ];
+
+
+    //     return [
+    //         'ok' => true,
+    //         'tx_hash' => $submit['hash'] ?? null,
+    //         'engine_result' => $submit['engine_result'] ?? null,
+    //     ];
+    // }
+
+    // private function xrplPathFind(
+    //     string $source,
+    //     string $destination,
+    //     array $destinationAmount,
+    //     array|string|null $sendMax = null
+    // ): array {
+    //     $params = [
+    //         'source_account' => $source,
+    //         'destination_account' => $destination,
+    //         'destination_amount' => $destinationAmount,
+    //     ];
+    //     if ($sendMax !== null) $params['send_max'] = $sendMax;
+
+    //     return $this->xrplPost([
+    //         'method' => 'ripple_path_find',
+    //         'params' => [$params],
+    //     ]);
+    // }
+}
