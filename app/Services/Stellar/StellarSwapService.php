@@ -2,14 +2,17 @@
 
 namespace App\Services\Stellar;
 
+use Illuminate\Support\Facades\Log;
 use Soneso\StellarSDK\Asset;
 use Soneso\StellarSDK\AssetTypeNative;
 use Soneso\StellarSDK\AssetTypeCreditAlphanum4;
 use Soneso\StellarSDK\AssetTypeCreditAlphanum12;
 use Soneso\StellarSDK\Crypto\KeyPair;
+use Soneso\StellarSDK\Memo;
 use Soneso\StellarSDK\Network;
 use Soneso\StellarSDK\TransactionBuilder;
 use Soneso\StellarSDK\PathPaymentStrictSendOperation;
+use Soneso\StellarSDK\PaymentOperationBuilder;
 use Soneso\StellarSDK\StellarSDK;
 
 class StellarSwapService
@@ -46,9 +49,128 @@ class StellarSwapService
         throw new \InvalidArgumentException("Invalid Stellar asset code");
     }
 
-    private function submitTx(array $operations, ?string $memo = null): string
+    public function xlmTokenToXlm(
+        string $tokenCode,
+        string $issuer,
+        string $amountIn,
+        string $minXlmOut,
+        ?string $memo = null,
+        $swapId
+    ): array {
+        $seed = config('services.stellar.seed');
+        $kp = KeyPair::fromSeed($seed);
+        $sourceAccountId = $kp->getAccountId();
+        $destination = config('services.stellar.wallet');
+
+        try {
+            $server = $this->sdk;
+            $sourceAccount = $server->requestAccount($sourceAccountId);
+
+            //Initialize the Builder with the loaded account
+            $builder = new TransactionBuilder($sourceAccount);
+
+            // Add the Operation
+            $op = new PathPaymentStrictSendOperation(
+                $this->asset($tokenCode, $issuer), // Send Asset
+                $amountIn,                        // Send Amount
+                $destination,                     // Destination Address
+                new AssetTypeNative(),            // Receive Asset (XLM)
+                $minXlmOut,                       // Min Receive Amount
+                []                                // Path (empty if direct)
+            );
+            $builder->addOperation($op);
+
+            // 5. Build, Sign, and Submit
+            $tx = $builder->build();
+            $tx->sign($kp, $this->network);
+            $response = $server->submitTransaction($tx);
+
+            if ($response->isSuccessful()) {
+                return [
+                    'tx_hash' => $response->getHash(),
+                    'min_out' => $minXlmOut,
+                ];
+            }
+
+            // Handle Failure
+            $extras = $response->getExtras();
+            Log::error('Stellar Path Payment Failed', [
+                'codes' => $extras ? $extras->getResultCodes() : 'unknown',
+                'swap_id' => $memo
+            ]);
+
+            return [
+                'status' => 'error',
+                'message' => 'Transaction failed on-chain.',
+                'error_codes' => $extras ? $extras->getResultCodes() : null
+            ];
+        } catch (\Throwable $e) {
+            Log::error('Stellar Service Error: ' . $e->getMessage());
+            return [
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
+    public function xlmToToken(
+        string $tokenCode,
+        string $issuer,
+        string $amountIn,
+        string $minTokenOut,
+        ?string $memo = null
+    ): array {
+        $destination = config('services.stellar.wallet');
+
+        $op = new PathPaymentStrictSendOperation(
+            new AssetTypeNative(),
+            $amountIn,
+            $destination,
+            $this->asset($tokenCode, $issuer),
+            $minTokenOut,
+            []
+        );
+
+        $hash = $this->submitTx([$op], $memo);
+
+        return [
+            'tx_hash' => $hash,
+            'min_out' => $minTokenOut,
+        ];
+    }
+
+    public function sendXlmToExchange(string $toAddress, string $amount, string $memoId): string
     {
-        $kp = env('STELLAR_SECRET_KEY');
+        $seed = config('services.stellar.seed');
+        $kp = KeyPair::fromSeed($seed);
+        $sourceAccount = $this->sdk->requestAccount($kp->getAccountId());
+
+        // Build the transaction
+        $builder = new TransactionBuilder($sourceAccount);
+
+        // Add the Payment Operation
+        $payment = (new PaymentOperationBuilder($toAddress, Asset::native(), $amount))->build();
+        $builder->addOperation($payment);
+
+        // Add the Memo
+        // ChangeNOW uses MEMO_ID (numeric) for Stellar swaps
+        $builder->addMemo(new Memo(Memo::MEMO_TYPE_ID, $memoId));
+
+        $tx = $builder->build();
+        $tx->sign($kp, $this->network);
+
+        $response = $this->sdk->submitTransaction($tx);
+
+        if (!$response->isSuccessful()) {
+            throw new \RuntimeException("Failed to send XLM to ChangeNOW: " . json_encode($response->getExtras()->getResultCodes()));
+        }
+
+        return $response->getHash();
+    }
+
+    public function sendXlmTokenToDestination(array $operations, ?string $memo = null): string
+    {
+        $kp = config('services.stellar.seed');
         $accountId = $kp->getAccountId();
 
         $server = $this->sdk->getServer();
@@ -74,57 +196,6 @@ class StellarSwapService
         return (string) $res->getHash();
     }
 
-    public function xlmTokenToXlm(
-        string $tokenCode,
-        string $issuer,
-        string $amountIn,
-        string $minXlmOut,
-        ?string $memo = null
-    ): array {
-        $kp = KeyPair::fromSeed(config('services.stellar.seed'));
-        $hot = $kp->getAccountId();
-
-        $op = new PathPaymentStrictSendOperation(
-            $this->asset($tokenCode, $issuer),
-            $amountIn,
-            $hot,
-            new AssetTypeNative(),
-            $minXlmOut,
-            []
-        );
-
-        $hash = $this->submitTx([$op], $memo);
-
-        return [
-            'tx_hash' => $hash,
-            'min_out' => $minXlmOut,
-        ];
-    }
-
-    public function xlmToToken(
-        string $tokenCode,
-        string $issuer,
-        string $amountIn,
-        string $minTokenOut,
-        ?string $memo = null
-    ): array {
-        $kp = KeyPair::fromSeed(config('services.stellar.seed'));
-        $hot = $kp->getAccountId();
-
-        $op = new PathPaymentStrictSendOperation(
-            new AssetTypeNative(),
-            $amountIn,
-            $hot,
-            $this->asset($tokenCode, $issuer),
-            $minTokenOut,
-            []
-        );
-
-        $hash = $this->submitTx([$op], $memo);
-
-        return [
-            'tx_hash' => $hash,
-            'min_out' => $minTokenOut,
-        ];
-    }
+    //check if xlm has been received in official stellar wallet from change now or not
+    public function checkXlmReceipt(string $destinationTag, float $expectedXrpAmount): array {}
 }
