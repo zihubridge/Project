@@ -45,6 +45,12 @@ return new class extends Migration
 
             $table->unsignedSmallInteger('swap_state_id')->default(1);
 
+            // The hash of the transaction WE sent to ChangeNOW
+            $table->string('external_tx_id')->nullable();
+    
+            // The hash of the transaction ChangeNOW sends to US
+            $table->string('incoming_tx_id')->nullable();
+
             $table->string('failure_reason', 255)->nullable();
             $table->timestamp('expires_at')->nullable();
 

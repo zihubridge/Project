@@ -44,7 +44,10 @@ class VerifyXrpAndCompleteSwap implements ShouldQueue
         }
 
         // FUNDS RECEIVED! Update state to 'changenow_received' (ID 6)
-        $swap->update(['swap_state_id' => 6]);
+         $swap->update([
+            'swap_state_id' => 6,
+            'incoming_tx_id' => $receipt['tx_hash']
+        ]);
         Log::info("[JOB] XRP received from ChangeNOW for Swap #{$this->swapId}.");
 
         try {
