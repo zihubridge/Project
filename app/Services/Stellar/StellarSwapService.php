@@ -118,7 +118,6 @@ class StellarSwapService
         string $issuer,
         string $amountIn,
         string $minTokenOut,
-        ?string $memo = null
     ): array {
         $destination = config('services.stellar.wallet');
 
@@ -131,7 +130,7 @@ class StellarSwapService
             []
         );
 
-        $hash = $this->submitTx([$op], $memo);
+        $hash = $this->submitTx([$op]);
 
         return [
             'tx_hash' => $hash,
@@ -196,6 +195,50 @@ class StellarSwapService
         return (string) $res->getHash();
     }
 
-    //check if xlm has been received in official stellar wallet from change now or not
-    public function checkXlmReceipt(string $destinationTag, float $expectedXrpAmount): array {}
+    /**
+     * Polling function to check if ChangeNOW has sent XLM to our wallet.
+     */
+    public function checkXlmReceipt(string $memoId, string $expectedXlmAmount): array
+    {
+        try {
+            // 1. Get the most recent payments for your platform wallet
+            // We limit to 10-20 to keep the check fast
+            $payments = $this->sdk->payments()
+                ->forAccount(config('services.stellar.wallet'))
+                ->order('desc')
+                ->limit(20)
+                ->execute();
+
+            foreach ($payments->getRecords() as $payment) {
+                // Only look for "payment" types and native XLM (type 'native')
+                if ($payment->getType() !== 'payment' || $payment->getAssetType() !== 'native') {
+                    continue;
+                }
+
+                // 2. To check the Memo, we must fetch the full Transaction for this payment
+                // Payments in Stellar don't show Memos in the list; only Transactions do.
+                $txHash = $payment->getTransactionHash();
+                $transaction = $this->sdk->requestTransaction($txHash);
+
+                // 3. Compare Memo and Amount
+                // ChangeNOW uses MEMO_ID (numeric)
+                $memoMatches = ((string)$transaction->getMemoValue() === (string)$memoId);
+
+                // Stellar amounts are strings, but we use bccomp for precision safety
+                $amountMatches = (bccomp($payment->getAmount(), $expectedXlmAmount, 7) === 0);
+
+                if ($memoMatches && $amountMatches) {
+                    return [
+                        'received' => true,
+                        'tx_hash'  => $txHash,
+                        'amount'   => $payment->getAmount()
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::error("[STELLAR CHECK] Error polling for receipt: " . $e->getMessage());
+        }
+
+        return ['received' => false];
+    }
 }

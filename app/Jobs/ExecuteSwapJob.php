@@ -130,6 +130,72 @@ class ExecuteSwapJob implements ShouldQueue
 
             // Ripple Token -> XRP -> XLM -> XLM Token
             else if ($fromBlockchainId === 2) {
+                Log::info('[SWAP] Ripple token → XRP');
+
+                $rippleResult = $xrpl->xrpTokenToXrp(
+                    tokenAmount: $deposit->received_amount,
+                    tokenCurrency: $swap->fromToken->asset_code,
+                    tokenIssuer: $swap->fromToken->issuer_address,
+                    minXrpOut: '0.0000001'
+                );
+
+                $xrpAmount = $rippleResult['min_out'];
+
+                // ------------------------------------------------------------------
+                // STEP 2: Initiate ChangeNOW Exchange
+                // ------------------------------------------------------------------
+                Log::info('[SWAP] XLM → XRP via ChangeNOW');
+                $destinationTag = rand(100000, 999999);
+
+                $exchange = $changeNow->createExchange(
+                    fromCurrency: 'xrp',
+                    toCurrency: 'xlm',
+                    destinationAddress: config('services.stellar.wallet'),
+                    extraId: (string)$destinationTag,
+                    fromNetwork: 'xrp',
+                    toNetwork: 'xlm',
+                    fromAmount: (string)$xrpAmount
+                );
+
+                if (empty($exchange['payinAddress'])) {
+                    throw new \RuntimeException('ChangeNOW did not return payinAddress');
+                }
+
+                // Save the ChangeNOW data for the next job to find
+                $swap->update([
+                    'expected_xlm_amount' => (string) $exchange['toAmount'],
+                    'destination_tag'     => (string) $destinationTag,
+                    'swap_state_id'       => 4, // 'sent_to_changenow'
+                ]);
+
+                $depositAddress = $exchange['payinAddress'];
+                $depositMemo    = $exchange['payinExtraId'] ?? null;
+
+                // ------------------------------------------------------------------
+                // STEP 3: Send funds to ChangeNOW
+                // ------------------------------------------------------------------
+                try {
+                    // Send the XRP to ChangeNOW
+                    $txHash = $xrpl->sendXrpToExchange($depositAddress, (string)$xrpAmount, $depositMemo);
+
+                    // On success, update the swap state to 'waiting_changenow' (ID 5)
+                    $swap->update([
+                        'swap_state_id' => 5,
+                        'external_tx_id' => $txHash
+                    ]);
+
+                    Log::info("[SWAP] XRP sent to ChangeNOW. Hash: $txHash. Moving to State 5.");
+
+                    // Dispatch the Verifier to watch if XLM has been receveid from changenow in wallet 
+                    VerifyXlmAndCompleteSwap::dispatch($swap->id);
+                } catch (Throwable $e) {
+                    Log::error('[SWAP ERROR] ' . $e->getMessage());
+                    $swap->update([
+                        'swap_state_id' => 12, // 'failed'
+                        'failure_reason' => 'Ripple to ChangeNOW transfer failed: ' . $e->getMessage()
+                    ]);
+                    throw $e;
+                }
             } else {
                 throw new \RuntimeException('Unsupported from blockchain');
             }

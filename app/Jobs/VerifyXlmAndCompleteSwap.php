@@ -36,7 +36,7 @@ class VerifyXlmAndCompleteSwap implements ShouldQueue
         }
 
         // Check if XLM arrived in our platform wallet
-        $receipt = $xlm->checkXlmReceipt($swap->destination_tag, $swap->expected_xrp_amount);
+        $receipt = $xlm->checkXlmReceipt($swap->destination_tag, $swap->expected_xlm_amount);
 
         if (!$receipt['received']) {
             // We release it back to the queue to try again in 60 seconds.
@@ -45,7 +45,10 @@ class VerifyXlmAndCompleteSwap implements ShouldQueue
         }
 
         // FUNDS RECEIVED! Update state to 'changenow_received' (ID 6)
-        $swap->update(['swap_state_id' => 6]);
+        $swap->update([
+            'swap_state_id' => 6,
+            'incoming_tx_id' => $receipt['tx_hash']
+        ]);
         Log::info("[JOB] XRP received from ChangeNOW for Swap #{$this->swapId}.");
 
         try {
@@ -53,9 +56,10 @@ class VerifyXlmAndCompleteSwap implements ShouldQueue
             $swap->update(['swap_state_id' => 7]);
 
             $xrplResult = $xlm->xlmToToken(
-                xlmAmount: $swap->expected_xrp_amount,
-                tokenCurrency: $swap->toToken->asset_code,
-                tokenIssuer: $swap->toToken->issuer_address,
+                tokenCode: $swap->toToken->asset_code,
+                issuer: $swap->toToken->issuer_address,
+                amountIn: $swap->expected_xrp_amount,
+                minTokenOut: $swap->expected_xrp_amount,
             );
 
             // Update state to 'sending_to_user' (ID 9)

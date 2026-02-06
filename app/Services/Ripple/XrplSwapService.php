@@ -3,9 +3,7 @@
 namespace App\Services\Ripple;
 
 use Hardcastle\XRPL_PHP\Client\JsonRpcClient;
-use Hardcastle\XRPL_PHP\Models\Transaction\SubmitRequest;
 use Hardcastle\XRPL_PHP\Wallet\Wallet;
-use Hardcastle\XRPL_PHP\Models\Transaction\TransactionTypes\Payment;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -294,70 +292,42 @@ class XrplSwapService
         return $this->signAndSubmit($tx);
     }
 
-    // public function xrpToXrpToken(
-    //     string $xrpAmountIn,
-    //     string $tokenCurrency,
-    //     string $tokenIssuer,
-    //     string $minTokenOut
-    // ): array {
-    //     $seed = env('XRPL_MAIN_WALLET_SEED');
-    //     $hot = env('XRPL_MAIN_WALLET');
+    /**
+     * Sends native XRP to a specific address (ChangeNOW)
+     * * @param string $toAddress The ChangeNOW payinAddress
+     * @param string $amount XRP amount (e.g., "10.5")
+     * @param string|null $destinationTag The ChangeNOW payinExtraId
+     * @return string The transaction hash
+     */
+    public function sendXrpToExchange(string $toAddress, string $amount, ?string $destinationTag = null): string
+    {
+        // Convert XRP to Drops (e.g., "1" XRP becomes "1000000" Drops)
+        $amountInDrops = bcmul($amount, '1000000', 0);
 
-    //     $cur = $this->xrplCurrency($tokenCurrency);
+        // Build the transaction array
+        $tx = [
+            'TransactionType' => 'Payment',
+            'Account' => $this->hotWallet,
+            'Destination' => $toAddress,
+            'Amount' => $amountInDrops, // For native XRP, this is a string of drops
+        ];
 
-    //     $sendMaxDrops = (string) bcmul($xrpAmountIn, '1000000', 0);
+        // Add Destination Tag if provided by ChangeNOW
+        if (!empty($destinationTag)) {
+            $tx['DestinationTag'] = (int) $destinationTag;
+        }
 
-    //     // Ask XRPL for route/paths
-    //     $pathRes = $this->xrplPathFind(
-    //         source: $hot,
-    //         destination: $hot,
-    //         destinationAmount: ['currency' => $cur, 'issuer' => $tokenIssuer, 'value' => $minTokenOut],
-    //         sendMax: $sendMaxDrops
-    //     );
+        // Sign and Submit using your established helper
+        $result = $this->signAndSubmit($tx);
 
-    //     $alts = data_get($pathRes, 'result.alternatives', []);
-    //     if (!$alts) {
-    //         return ['ok' => false, 'reason' => 'no_path'];
-    //     }
+        // Check for success
+        if (($result['engine_result'] ?? '') !== 'tesSUCCESS') {
+            throw new \RuntimeException(
+                "Failed to send XRP to ChangeNOW: " . ($result['engine_result_message'] ?? 'Unknown Error')
+            );
+        }
 
-    //     $best = $alts[0];
-    //     $paths = $best['paths_computed'] ?? [];
-
-    //     $tx = [
-    //         'TransactionType' => 'Payment',
-    //         'Account' => $hot,
-    //         'Destination' => $hot,
-    //         'Amount' => ['currency' => $cur, 'issuer' => $tokenIssuer, 'value' => $best['destination_amount']['value'] ?? $minTokenOut],
-    //         'SendMax' => $sendMaxDrops,
-    //         'DeliverMin' => ['currency' => $cur, 'issuer' => $tokenIssuer, 'value' => $minTokenOut],
-    //         'Paths' => $paths,
-    //         'Flags' => 0x00020000,
-    //     ];
-
-
-    //     return [
-    //         'ok' => true,
-    //         'tx_hash' => $submit['hash'] ?? null,
-    //         'engine_result' => $submit['engine_result'] ?? null,
-    //     ];
-    // }
-
-    // private function xrplPathFind(
-    //     string $source,
-    //     string $destination,
-    //     array $destinationAmount,
-    //     array|string|null $sendMax = null
-    // ): array {
-    //     $params = [
-    //         'source_account' => $source,
-    //         'destination_account' => $destination,
-    //         'destination_amount' => $destinationAmount,
-    //     ];
-    //     if ($sendMax !== null) $params['send_max'] = $sendMax;
-
-    //     return $this->xrplPost([
-    //         'method' => 'ripple_path_find',
-    //         'params' => [$params],
-    //     ]);
-    // }
+        // Return the hash so we can save it to 'external_tx_id'
+        return $result['tx_json']['hash'];
+    }
 }
