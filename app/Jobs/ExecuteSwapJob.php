@@ -87,6 +87,15 @@ class ExecuteSwapJob implements ShouldQueue
                     fromAmount: (string)$xlmAmount
                 );
 
+                Log::info('[ChangeNOW] createExchange response', [
+                    'swap_id'        => $swap->id,
+                    'from_currency'  => 'xlm',
+                    'to_currency'    => 'xrp',
+                    'from_amount'    => (string) $xlmAmount,
+                    'destination'    => config('services.xrpl.wallet'),
+                    'exchange_data'  => $exchange,
+                ]);
+
                 if (empty($exchange['payinAddress'])) {
                     throw new \RuntimeException('ChangeNOW did not return payinAddress');
                 }
@@ -98,15 +107,15 @@ class ExecuteSwapJob implements ShouldQueue
                     'swap_state_id'       => 4, // 'sent_to_changenow'
                 ]);
 
-                $depositAddress = $exchange['payinAddress'];
-                $depositMemo    = $exchange['payinExtraId'] ?? null;
+                $changeNowDepositAddress = $exchange['payinAddress'];
+                $changeNowDepositMemo    = $exchange['payinExtraId'] ?? null;
 
                 // ------------------------------------------------------------------
                 // STEP 3: Send funds to ChangeNOW
                 // ------------------------------------------------------------------
                 try {
                     // Send the XLM to ChangeNOW
-                    $txHash = $stellar->sendXlmToExchange($depositAddress, (string)$xlmAmount, $depositMemo);
+                    $txHash = $stellar->sendXlmToExchange($changeNowDepositAddress, (string)$xlmAmount, $changeNowDepositMemo);
 
                     // On success, update the swap state to 'waiting_changenow' (ID 5)
                     $swap->update([
