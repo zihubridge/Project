@@ -16,43 +16,73 @@ class VerifyXrpAndCompleteSwap implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $swapId;
-    public $tries = 60; // Retry for 60 minutes before failing
+
+    public int $tries = 60; // Retry for 60 minutes before failing
 
     public function __construct(int $swapId)
     {
         $this->swapId = $swapId;
     }
 
-    public function handle(XrplSwapService $xrpl)
+    /**
+     * Retry delay strategy (seconds)
+     */
+    public function backoff(): array
     {
-        // Reload the swap to get the latest data from the DB
-        $swap = Swap::with(['toToken'])->findOrFail($this->swapId);
+        return [60, 60, 60, 120, 300];
+    }
 
-        // Safety Check: If already completed or failed, stop.
-        if (in_array($swap->swap_state_id, [9, 12])) {
+    public function handle(XrplSwapService $xrpl): void
+    {
+        $swap = Swap::with('toToken')->findOrFail($this->swapId);
+
+        // Hard stop if already completed or failed
+        if (in_array($swap->swap_state_id, [10, 12], true)) {
+            Log::info('[VerifyXrp] Swap already finalized', [
+                'swap_id' => $this->swapId,
+                'state'   => $swap->swap_state_id,
+            ]);
             return;
         }
 
-        // Check if XRP arrived in our platform wallet
-        // We use the destination_tag and expected_amount saved in the previous job
-        $receipt = $xrpl->checkXrpReceipt($swap->destination_tag, $swap->expected_xrp_amount);
+        // ------------------------------------------------------------------
+        // STEP 1: Check XRP receipt from ChangeNOW
+        // ------------------------------------------------------------------
+        $receipt = $xrpl->checkXrpReceipt(
+            $swap->destination_tag,
+            $swap->expected_xrp_amount
+        );
 
-        if (!$receipt['received']) {
-            // We release it back to the queue to try again in 60 seconds.
-            Log::info("[POLLING] XRP for Swap #{$this->swapId} not found yet. Retrying in 60s...");
-            return $this->release(60);
+        if (($receipt['status'] ?? null) !== 'success') {
+            Log::info('[VerifyXrp] XRP not received yet', [
+                'swap_id' => $this->swapId,
+                'destination_tag' => $swap->destination_tag,
+                'expected_xrp' => $swap->expected_xrp_amount,
+            ]);
+
+            // IMPORTANT:
+            // Throwing forces Laravel to retry using backoff()
+            throw new \RuntimeException('XRP not received yet');
         }
 
-        // FUNDS RECEIVED! Update state to 'changenow_received' (ID 6)
-         $swap->update([
-            'swap_state_id' => 6,
-            'incoming_tx_id' => $receipt['tx_hash']
+        // ------------------------------------------------------------------
+        // STEP 2: Mark ChangeNOW → XRP received
+        // ------------------------------------------------------------------
+        $swap->update([
+            'swap_state_id'  => 6, // changenow_received
+            'incoming_tx_id' => $receipt['tx_hash'],
         ]);
-        Log::info("[JOB] XRP received from ChangeNOW for Swap #{$this->swapId}.");
+
+        Log::info('[VerifyXrp] XRP received from ChangeNOW', [
+            'swap_id' => $this->swapId,
+            'tx_hash' => $receipt['tx_hash'],
+        ]);
 
         try {
-            // Update state to 'swapping_to_token' (ID 7)
-            $swap->update(['swap_state_id' => 7]);
+            // ------------------------------------------------------------------
+            // STEP 3: Swap XRP → destination token
+            // ------------------------------------------------------------------
+            $swap->update(['swap_state_id' => 7]); // swapping_to_token
 
             $xrplResult = $xrpl->xrpToToken(
                 xrpAmount: $swap->expected_xrp_amount,
@@ -61,8 +91,10 @@ class VerifyXrpAndCompleteSwap implements ShouldQueue
                 minTokenOut: '0.0000001'
             );
 
-            // Update state to 'sending_to_user' (ID 9)
-            $swap->update(['swap_state_id' => 9]);
+            // ------------------------------------------------------------------
+            // STEP 4: Send token to user
+            // ------------------------------------------------------------------
+            $swap->update(['swap_state_id' => 9]); // sending_to_user
 
             $xrpl->sendXrpTokenToDestination(
                 tokenAmount: $xrplResult['amount_out'],
@@ -71,19 +103,28 @@ class VerifyXrpAndCompleteSwap implements ShouldQueue
                 destination: $swap->destination_address
             );
 
-            // Finalize: 'completed' (ID 10)
+            // ------------------------------------------------------------------
+            // STEP 5: Finalize swap
+            // ------------------------------------------------------------------
             $swap->update([
-                'swap_state_id' => 10,
-                'completed_at' => now()
+                'swap_state_id' => 10, // completed
+                'completed_at' => now(),
             ]);
 
-            Log::info("[JOB] Swap #{$this->swapId} successfully completed.");
-        } catch (\Throwable $e) {
-            Log::error("[JOB ERROR] Swap #{$this->swapId} failed during final steps: " . $e->getMessage());
-            $swap->update([
-                'swap_state_id' => 12, // failed
-                'failure_reason' => $e->getMessage()
+            Log::info('[VerifyXrp] Swap completed successfully', [
+                'swap_id' => $this->swapId,
             ]);
+        } catch (\Throwable $e) {
+            Log::error('[VerifyXrp] Finalization failed', [
+                'swap_id' => $this->swapId,
+                'error'   => $e->getMessage(),
+            ]);
+
+            // $swap->update([
+            //     'swap_state_id' => 12, // failed
+            //     'failure_reason' => $e->getMessage(),
+            // ]);
+
             throw $e;
         }
     }
