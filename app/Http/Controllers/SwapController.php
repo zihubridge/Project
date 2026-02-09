@@ -14,12 +14,16 @@ use Illuminate\Support\Str;
 
 class SwapController extends Controller
 {
-    private $stellarWallet, $rippleWallet;
+    private $stellarWallet, $rippleWallet, $isPublic;
+    protected string $rpcUrl, $stellarUrl;
 
     public function __construct()
     {
+        $this->isPublic = env('ENVIRONMENT') === 'public';
         $this->stellarWallet = config('services.stellar.wallet');
         $this->rippleWallet  = config('services.xrpl.wallet');
+        $this->stellarUrl = config('services.stellar.horizon_url');
+        $this->rpcUrl          = config('services.xrpl.rpc');
     }
 
     public function start(Request $request)
@@ -62,10 +66,21 @@ class SwapController extends Controller
             }
 
             $deposit_address = null;
+            $url = null;
             if ($data['from_blockchain'] == 1) {
                 $deposit_address = $this->stellarWallet;
+                $baseUrl = $this->isPublic
+                    ? config('services.explorers.stellar.mainnet')
+                    : config('services.explorers.stellar.testnet');
+
+                $url = $baseUrl . $deposit_address;
             } else {
                 $deposit_address = $this->rippleWallet;
+                $baseUrl = $this->isPublic
+                    ? config('services.explorers.xrpl.mainnet')
+                    : config('services.explorers.xrpl.testnet');
+
+                $url = $baseUrl . $deposit_address;
             }
 
             $memo = (string) random_int(100000000, 999999999);
@@ -83,6 +98,7 @@ class SwapController extends Controller
                 'from_blockchain_name' => $from_blockchain->name,
                 'from_blockchain_asset_code' => strtoupper($from_blockchain->asset_code),
                 'from_token' => $from_token->asset_code,
+                'url' => $url,
             ]);
         } catch (ValidationException $e) {
             return redirect()->back()

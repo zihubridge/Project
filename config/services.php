@@ -68,4 +68,15 @@ return [
         'api_key'  => env('CHANGENOW_API_KEY'),
     ],
 
+    'explorers' => [
+    'stellar' => [
+        'mainnet' => 'https://stellar.expert/explorer/public/account/',
+        'testnet' => 'https://stellar.expert/explorer/testnet/account/',
+    ],
+    'xrpl' => [
+        'mainnet' => 'https://xrpscan.com/account/',
+        'testnet' => 'https://testnet.xrpl.org/accounts/',
+    ],
+],
+
 ];

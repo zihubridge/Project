@@ -79,7 +79,8 @@
 
                                     <div class="flex gap-2">
                                         <ion-icon name="open-outline"
-                                            class="cursor-pointer text-xl bg-[#E1E8F3] text-[#859AB5] p-2 rounded-md">
+                                            class="cursor-pointer text-xl bg-[#E1E8F3] text-[#859AB5] p-2 rounded-md open-explorer"
+                                            data-url="{{ $url }}">
                                         </ion-icon>
 
                                         <ion-icon name="copy-outline"
@@ -252,6 +253,16 @@
             if (!address) return;
 
             copyToClipboard(address).then(showToast);
+        });
+
+        document.addEventListener('click', function(e) {
+            const target = e.target.closest('.open-explorer');
+            if (!target) return;
+
+            const url = target.dataset.url;
+            if (!url) return;
+
+            window.open(url, '_blank', 'noopener,noreferrer');
         });
     </script>
 @endpush
