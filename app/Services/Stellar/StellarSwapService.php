@@ -218,8 +218,7 @@ class StellarSwapService
         $builder->addOperation($payment);
 
         // Add the Memo
-        // ChangeNOW uses MEMO_ID (numeric) for Stellar swaps
-        $builder->addMemo(new Memo(Memo::MEMO_TYPE_ID, $memoId));
+        $builder->addMemo(new Memo(Memo::MEMO_TYPE_TEXT, $memoId));
 
         $tx = $builder->build();
         $tx->sign($kp, $this->network);
