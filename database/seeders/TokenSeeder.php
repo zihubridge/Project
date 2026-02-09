@@ -25,6 +25,14 @@ class TokenSeeder extends Seeder
                 'status' => 1,
             ],
             [
+                'name' => 'AQUA',
+                'asset_code' => 'AQUA',
+                'blockchain_id' => 1,
+                'issuer_address' => 'GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA',
+                'pool_id' => '59fa1dc57433dcfbd2db7319d26cb3da1f28f2d8095a3ec36ad4ef9cadb0013e',
+                'status' => 1,
+            ],
+            [
                 'name' => 'Xyield',
                 'asset_code' => 'XYIELD',
                 'blockchain_id' => 2,
