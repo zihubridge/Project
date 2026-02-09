@@ -83,8 +83,8 @@
                                         </ion-icon>
 
                                         <ion-icon name="copy-outline"
-                                            onclick="navigator.clipboard.writeText('{{ $deposit_address }}')"
-                                            class="cursor-pointer text-xl bg-[#E1E8F3] text-[#859AB5] p-2 rounded-md">
+                                            class="cursor-pointer text-xl bg-[#E1E8F3] text-[#859AB5] p-2 rounded-md copy-address"
+                                            data-address="{{ $deposit_address }}">
                                         </ion-icon>
                                     </div>
 
@@ -111,9 +111,8 @@
                                     <span class="font-mono text-sm font-semibold text-gray-900 select-all">
                                         {{ $memo }}
                                     </span>
-                                    <ion-icon name="copy-outline"
-                                        onclick="navigator.clipboard.writeText('{{ $memo }}')"
-                                        class="cursor-pointer text-lg text-red-500">
+                                    <ion-icon name="copy-outline" class="cursor-pointer text-lg text-red-500 copy-memo"
+                                        data-memo="{{ $memo }}">
                                     </ion-icon>
                                 </div>
 
@@ -192,21 +191,67 @@
     </section>
 @endsection
 
-<script>
-    function copyText() {
-        const text = document.getElementById("exchangeId").textContent;
-        navigator.clipboard.writeText(text);
+@push('scripts')
+    <script>
+        function copyToClipboard(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                return navigator.clipboard.writeText(text);
+            }
 
-        const toast = document.getElementById("copyToast");
-        toast.classList.remove("hidden");
+            // Fallback (HTTP, older browsers)
+            const textarea = document.createElement("textarea");
+            textarea.value = text;
+            textarea.style.position = "fixed";
+            textarea.style.left = "-9999px";
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
 
-        setTimeout(() => {
-            toast.classList.add("hidden");
-        }, 1500);
-    }
+            try {
+                document.execCommand("copy");
+                return Promise.resolve();
+            } catch (err) {
+                return Promise.reject(err);
+            } finally {
+                document.body.removeChild(textarea);
+            }
+        }
 
-    window.addEventListener('load', () => {
-        const toast = document.getElementById('customToast');
-        toast.classList.remove('hidden');
-    });
-</script>
+        function showToast() {
+            const toast = document.getElementById("copyToast");
+            if (!toast) return;
+
+            toast.classList.remove("hidden");
+            setTimeout(() => {
+                toast.classList.add("hidden");
+            }, 1500);
+        }
+
+        function copyText() {
+            const text = document.getElementById("exchangeId")?.textContent;
+            if (!text) return;
+
+            copyToClipboard(text).then(showToast);
+        }
+
+        document.addEventListener('click', function(e) {
+            const target = e.target.closest('.copy-memo');
+            if (!target) return;
+
+            const memo = target.dataset.memo;
+            if (!memo) return;
+
+            copyToClipboard(memo).then(showToast);
+        });
+
+        document.addEventListener('click', function(e) {
+            const target = e.target.closest('.copy-address');
+            if (!target) return;
+
+            const address = target.dataset.address;
+            if (!address) return;
+
+            copyToClipboard(address).then(showToast);
+        });
+    </script>
+@endpush
