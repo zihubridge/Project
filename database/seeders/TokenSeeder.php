@@ -14,6 +14,7 @@ class TokenSeeder extends Seeder
     public function run(): void
     {
         Token::truncate();
+        // pool id is converted to is the base32 StrKey form of the pool ID ex-encoded pool ID (what Horizon wants) for that pool is:
 
         $tokens = [
             [
