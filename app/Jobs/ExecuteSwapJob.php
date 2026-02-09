@@ -69,7 +69,7 @@ class ExecuteSwapJob implements ShouldQueue
                     swapId: $swap->id
                 );
 
-                $xlmAmount = $stellarResult['min_out'];
+                $xlmAmount = $stellarResult['xlm_amount'];
 
                 // ------------------------------------------------------------------
                 // STEP 2: Initiate ChangeNOW Exchange
@@ -204,13 +204,6 @@ class ExecuteSwapJob implements ShouldQueue
                 'swap_id' => $swap->id,
                 'error' => $e->getMessage(),
             ]);
-
-            DB::transaction(function () use ($swap, $e) {
-                $swap->update([
-                    'swap_state_id' => 6,
-                    'failure_reason' => $e->getMessage(),
-                ]);
-            });
 
             throw $e;
         }

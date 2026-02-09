@@ -2,6 +2,7 @@
 
 namespace App\Services\Stellar;
 
+use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Log;
 use Soneso\StellarSDK\Asset;
 use Soneso\StellarSDK\AssetTypeNative;
@@ -9,6 +10,7 @@ use Soneso\StellarSDK\AssetTypeCreditAlphanum4;
 use Soneso\StellarSDK\AssetTypeCreditAlphanum12;
 use Soneso\StellarSDK\Crypto\KeyPair;
 use Soneso\StellarSDK\Memo;
+use Soneso\StellarSDK\MuxedAccount;
 use Soneso\StellarSDK\Network;
 use Soneso\StellarSDK\TransactionBuilder;
 use Soneso\StellarSDK\PathPaymentStrictSendOperation;
@@ -59,37 +61,68 @@ class StellarSwapService
         $swapId
     ): array {
         $seed = config('services.stellar.seed');
-        $kp = KeyPair::fromSeed($seed);
-        $sourceAccountId = $kp->getAccountId();
-        $destination = config('services.stellar.wallet');
+        $platform_stellar_Wallet = config('services.stellar.wallet');
 
         try {
+            $kp = KeyPair::fromSeed($seed);
             $server = $this->sdk;
-            $sourceAccount = $server->requestAccount($sourceAccountId);
+            $sourceAccount = $this->sdk->requestAccount($kp->getAccountId());
 
-            //Initialize the Builder with the loaded account
-            $builder = new TransactionBuilder($sourceAccount);
+            Log::info('[Stellar Swap] Preparing path payment', [
+                'swap_id' => $swapId,
+                'send_asset' => $tokenCode . ':' . $issuer,
+                'amount_in' => $amountIn,
+                'min_xlm_out' => $minXlmOut,
+                'platform_stellar_Wallet' => $platform_stellar_Wallet,
+            ]);
 
-            // Add the Operation
-            $op = new PathPaymentStrictSendOperation(
+            $builder = (new TransactionBuilder($sourceAccount, $this->network));
+
+            // Swapping token to xlm within same wallet (platform_stellar_Wallet)
+            $op = (new PathPaymentStrictSendOperation(
                 $this->asset($tokenCode, $issuer), // Send Asset
                 $amountIn,                        // Send Amount
-                $destination,                     // Destination Address
+                MuxedAccount::fromAccountId($platform_stellar_Wallet),        // Destination Address
                 new AssetTypeNative(),            // Receive Asset (XLM)
                 $minXlmOut,                       // Min Receive Amount
-                []                                // Path (empty if direct)
+            )
             );
             $builder->addOperation($op);
 
-            // 5. Build, Sign, and Submit
+            // Build, Sign, and Submit
             $tx = $builder->build();
             $tx->sign($kp, $this->network);
             $response = $server->submitTransaction($tx);
 
+            Log::info('[Stellar Swap] Successful', [
+                'tx_hash' => $response->getHash(),
+                'xlm_amount' => $minXlmOut,
+            ]);
+
             if ($response->isSuccessful()) {
+
+                $txHash = $response->getHash();
+
+                $client = $this->horizonClient();
+                $horizonResponse = $client->get("transactions/{$txHash}/operations");
+
+                $data = json_decode($horizonResponse->getBody()->getContents(), true);
+
+                $receivedXlm = null;
+
+                foreach ($data['_embedded']['records'] as $record) {
+                    if (
+                        $record['type'] === 'path_payment_strict_send' &&
+                        $record['asset_type'] === 'native'
+                    ) {
+                        $receivedXlm = $record['amount'];
+                        break;
+                    }
+                }
+
                 return [
                     'tx_hash' => $response->getHash(),
-                    'min_out' => $minXlmOut,
+                    'xlm_amount' => $receivedXlm,
                 ];
             }
 
@@ -289,5 +322,13 @@ class StellarSwapService
         }
 
         return ['received' => false];
+    }
+
+    private function horizonClient(): Client
+    {
+        return new Client([
+            'base_uri' => rtrim(config('services.stellar.horizon_url'), '/') . '/',
+            'timeout'  => 10,
+        ]);
     }
 }
