@@ -130,22 +130,17 @@ class XrplSwapService
             $submitJson   = $submitRes->json();
             Log::info('submitJson', $submitJson);
 
-            $delivered = data_get($submitJson, 'result.meta.delivered_amount');
-
-            if (!is_array($delivered) || empty($delivered['value'])) {
-                throw new RuntimeException('XRPL swap succeeded but delivered_amount missing');
-            }
-
             $txHash = data_get($submitJson, 'result.tx_json.hash');
+            $amountOut = data_get($submitJson, 'result.tx_json.Amount.value');
 
-            if (!$txHash) {
-                throw new RuntimeException('XRPL submission succeeded but tx hash missing');
+            if (!$txHash || !$amountOut) {
+                throw new RuntimeException('XRPL submission succeeded but output amount missing');
             }
 
             return [
                 'ok'         => true,
                 'tx_hash'    => $txHash,
-                'amount_out' => (string) $delivered['value'],
+                'amount_out' => (string) $amountOut,
             ];
         } catch (\Throwable $e) {
             Log::error('[XRPL XRP→TOKEN FAILED]', ['error' => $e->getMessage()]);
@@ -162,16 +157,58 @@ class XrplSwapService
 
     private function signAndSubmit(array $tx): array
     {
+        Log::info('[XRPL] signAndSubmit started', [
+            'tx' => $tx,
+        ]);
+
         try {
             $wallet = WalletWallet::fromSeed($this->hotWalletSeed);
+
+            Log::info('[XRPL] Wallet loaded', [
+                'address' => method_exists($wallet, 'getAddress') ? $wallet->getAddress() : null,
+            ]);
+
             $preparedTx = $this->client->autofill($tx);
+
+            Log::info('[XRPL] Transaction autofilled', [
+                'prepared_tx' => $preparedTx,
+            ]);
+
             $signedTx = $wallet->sign($preparedTx);
+
+            Log::info('[XRPL] Transaction signed', [
+                'has_tx_blob' => isset($signedTx['tx_blob']),
+                'tx_blob_length' => isset($signedTx['tx_blob']) ? strlen($signedTx['tx_blob']) : 0,
+            ]);
+
+            if (empty($signedTx['tx_blob'])) {
+                Log::error('[XRPL] Signing failed: tx_blob missing', [
+                    'signed_tx' => $signedTx,
+                ]);
+
+                return [
+                    'ok' => false,
+                    'reason' => 'signing_failed',
+                    'message' => 'tx_blob missing after signing',
+                ];
+            }
+
+            Log::info('[XRPL] Submitting transaction');
+
             $response = $this->client->submitAndWait($signedTx);
             $result = $response->getResult();
 
-            $engineResult = $result['engine_result'] ?? '';
+            Log::info('[XRPL] Submit response received', [
+                'result' => $result,
+            ]);
+
+            $engineResult = $result['engine_result'] ?? null;
 
             if ($engineResult === 'tesSUCCESS') {
+                Log::info('[XRPL] Transaction successful', [
+                    'tx_hash' => data_get($result, 'tx_json.hash'),
+                ]);
+
                 return [
                     'ok' => true,
                     'tx_hash' => $result['tx_json']['hash'] ?? null,
@@ -180,7 +217,12 @@ class XrplSwapService
                 ];
             }
 
-            Log::error("XRPL Error: " . $engineResult, ['result' => $result]);
+            Log::error('[XRPL] Transaction rejected by network', [
+                'engine_result' => $engineResult,
+                'engine_message' => $result['engine_result_message'] ?? null,
+                'full_result' => $result,
+            ]);
+
             return [
                 'ok' => false,
                 'reason' => $engineResult,
