@@ -108,6 +108,21 @@ class VerifyXrpAndCompleteSwap implements ShouldQueue
                 destination: $swap->destination_address
             );
 
+            if (!($sendResult['ok'] ?? false)) {
+                Log::error('[SWAP] Token send to user failed', [
+                    'swap_id' => $swap->id,
+                    'error'   => $sendResult['message'] ?? 'unknown error',
+                ]);
+
+                $swap->update([
+                    'swap_state_id'   => 12, // failed
+                    'failure_reason' => 'Failed to send token to destination: ' .
+                        ($sendResult['message'] ?? 'unknown'),
+                ]);
+
+                throw new RuntimeException('Final token transfer failed');
+            }
+
             // ------------------------------------------------------------------
             // STEP 5: Finalize swap
             // ------------------------------------------------------------------
