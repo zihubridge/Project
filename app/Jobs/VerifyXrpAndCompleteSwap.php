@@ -112,8 +112,7 @@ class VerifyXrpAndCompleteSwap implements ShouldQueue
             // STEP 5: Finalize swap
             // ------------------------------------------------------------------
             $swap->update([
-                'swap_state_id' => 10, // completed
-                'completed_at' => now(),
+                'swap_state_id' => 10, // complete
             ]);
 
             Log::info('[VerifyXrp] Swap completed successfully', [
