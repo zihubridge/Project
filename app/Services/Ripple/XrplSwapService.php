@@ -3,9 +3,11 @@
 namespace App\Services\Ripple;
 
 use Hardcastle\XRPL_PHP\Client\JsonRpcClient;
-use Hardcastle\XRPL_PHP\Wallet\Wallet;
+use Hardcastle\XRPL_PHP\Models\Transaction\TransactionTypes\Payment;
+use Hardcastle\XRPL_PHP\Wallet\Wallet as WalletWallet;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 use RuntimeException;
 
 class XrplSwapService
@@ -68,52 +70,91 @@ class XrplSwapService
     /* -------------------------------------------------
      |  Swap: XRP → XRPL Token
      |--------------------------------------------------*/
-
     public function xrpToToken(
         string $xrpAmount,
         string $tokenCurrency,
         string $tokenIssuer,
         string $minTokenOut
     ): array {
-        $cur = $this->xrplCurrency($tokenCurrency);
-        $sendMaxDrops = bcmul($xrpAmount, '1000000', 0);
+        try {
+            $cur = $this->xrplCurrency($tokenCurrency);
+            $sendMaxDrops = bcmul($xrpAmount, '1000000', 0);
 
-        $paths = $this->pathFind(
-            source: $this->hotWallet,
-            destination: $this->hotWallet,
-            destinationAmount: [
-                'currency' => $cur,
-                'issuer' => $tokenIssuer,
-                'value' => $minTokenOut,
-            ],
-            sendMax: $sendMaxDrops
-        );
+            $tx = [
+                'TransactionType' => 'Payment',
+                'Account'         => $this->hotWallet,
+                'Destination'     => $this->hotWallet,
 
-        $alts = data_get($paths, 'result.alternatives', []);
-        if (!$alts) {
-            throw new RuntimeException('XRPL path not found (XRP → Token)');
+                'Amount' => [
+                    'currency' => $cur,
+                    'issuer'   => $tokenIssuer,
+                    'value'    => '999999999',
+                ],
+
+                'DeliverMin' => [
+                    'currency' => $cur,
+                    'issuer'   => $tokenIssuer,
+                    'value'    => $minTokenOut,
+                ],
+
+                'SendMax' => $sendMaxDrops,
+                'Flags'   => 0x00020000, // tfPartialPayment
+            ];
+
+            Log::info('[XRPL XRP→TOKEN TX BUILT]', $tx);
+
+            $wallet = WalletWallet::fromSeed($this->hotWalletSeed);
+
+            $autofilled = $this->client->autofill($tx);
+
+            $paymentTx = new Payment($autofilled);
+            $signed    = $wallet->sign($paymentTx);
+
+            $txBlob = $signed['tx_blob'] ?? null;
+            if (empty($txBlob)) {
+                Log::error('Local XRPL signing error: no tx_blob returned', ['signed' => $signed]);
+                return ['ok' => false, 'error' => 'Signing failed', 'status' => 500, 'context' => $signed];
+            }
+
+            // Submit
+            $submitRes = Http::post($this->rpcUrl, [
+                'method' => 'submit',
+                'params' => [['tx_blob' => $txBlob]],
+            ]);
+
+            if (! $submitRes->ok()) {
+                Log::error('XRPL submit HTTP failed', ['body' => $submitRes->body()]);
+                return ['ok' => false, 'error' => 'Transaction submit HTTP failed', 'status' => $submitRes->status()];
+            }
+
+            $submitJson   = $submitRes->json();
+            Log::info('submitJson', $submitJson);
+
+            $delivered = data_get($submitJson, 'result.meta.delivered_amount');
+
+            if (!is_array($delivered) || empty($delivered['value'])) {
+                throw new RuntimeException('XRPL swap succeeded but delivered_amount missing');
+            }
+
+            $txHash = data_get($submitJson, 'result.tx_json.hash');
+
+            if (!$txHash) {
+                throw new RuntimeException('XRPL submission succeeded but tx hash missing');
+            }
+
+            return [
+                'ok'         => true,
+                'tx_hash'    => $txHash,
+                'amount_out' => (string) $delivered['value'],
+            ];
+        } catch (\Throwable $e) {
+            Log::error('[XRPL XRP→TOKEN FAILED]', ['error' => $e->getMessage()]);
+            return [
+                'ok'      => false,
+                'message' => $e->getMessage(),
+            ];
         }
-
-        $best = $alts[0];
-
-        $tx = [
-            'TransactionType' => 'Payment',
-            'Account' => $this->hotWallet,
-            'Destination' => $this->hotWallet,
-            'Amount' => $best['destination_amount'],
-            'SendMax' => $sendMaxDrops,
-            'DeliverMin' => [
-                'currency' => $cur,
-                'issuer' => $tokenIssuer,
-                'value' => $minTokenOut,
-            ],
-            'Paths' => $best['paths_computed'] ?? [],
-            'Flags' => 0x00020000, // tfPartialPayment
-        ];
-
-        return $this->signAndSubmit($tx);
     }
-
 
     /* -------------------------------------------------
      |  Signing & Submit (stub)
@@ -122,7 +163,7 @@ class XrplSwapService
     private function signAndSubmit(array $tx): array
     {
         try {
-            $wallet = Wallet::fromSeed($this->hotWalletSeed);
+            $wallet = WalletWallet::fromSeed($this->hotWalletSeed);
             $preparedTx = $this->client->autofill($tx);
             $signedTx = $wallet->sign($preparedTx);
             $response = $this->client->submitAndWait($signedTx);
@@ -153,10 +194,24 @@ class XrplSwapService
 
     private function xrplCurrency(string $currency): string
     {
-        $c = strtoupper($currency);
-        if (strlen($c) === 3) return $c;
-        if (preg_match('/^[A-F0-9]{40}$/', $c)) return $c;
-        throw new \InvalidArgumentException("Invalid XRPL currency: {$currency}");
+        $currency = strtoupper(trim($currency));
+
+        // 3-letter codes
+        if (strlen($currency) === 3) {
+            return $currency;
+        }
+
+        // Already hex (force uppercase)
+        if (preg_match('/^[A-F0-9]{40}$/i', $currency)) {
+            return strtoupper($currency);
+        }
+
+        // Encode ASCII → XRPL hex (UPPERCASE!)
+        if (strlen($currency) > 3 && strlen($currency) <= 20) {
+            return strtoupper(str_pad(bin2hex($currency), 40, '0'));
+        }
+
+        throw new InvalidArgumentException("Invalid XRPL currency: {$currency}");
     }
 
     /* -------------------------------------------------
@@ -226,7 +281,7 @@ class XrplSwapService
                     'account' => $platformAddress,
                     'ledger_index_min' => -1,
                     'forward' => false,
-                    'limit' => 10,
+                    'limit' => 100,
                 ]]
             ]);
 
@@ -251,7 +306,7 @@ class XrplSwapService
                     // IMPORTANT: Use delivered_amount from metadata to prevent "Partial Payment" exploits
                     $deliveredDrops = $txData['meta']['delivered_amount'] ?? $tx['Amount'];
 
-                    if ($deliveredDrops === $expectedDrops) {
+                    if (bccomp($deliveredDrops, $expectedDrops, 0) >= 0) {
                         return [
                             'status' => 'success',
                             'tx_hash' => $tx['hash'],
