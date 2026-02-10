@@ -387,22 +387,54 @@ class XrplSwapService
         string $tokenIssuer,
         string $destination
     ): array {
-        $cur = $this->xrplCurrency($tokenCurrency);
+        try {
+            $cur = $this->xrplCurrency($tokenCurrency);
 
-        // For tokens, Amount is an array: ['currency', 'issuer', 'value']
-        $tx = [
-            'TransactionType' => 'Payment',
-            'Account' => $this->hotWallet,
-            'Destination' => $destination,
-            'Amount' => [
-                'currency' => $cur,
-                'issuer' => $tokenIssuer,
-                'value' => $tokenAmount,
-            ],
-        ];
+            $tx = [
+                'TransactionType' => 'Payment',
+                'Account'         => $this->hotWallet,
+                'Destination'     => $destination,
+                'Amount'          => [
+                    'currency' => $cur,
+                    'issuer'   => $tokenIssuer,
+                    'value'    => $tokenAmount,
+                ],
+            ];
 
-        // We reuse your clean signAndSubmit method
-        return $this->signAndSubmit($tx);
+            Log::info('[XRPL SEND TOKEN TX BUILT]', $tx);
+
+            $wallet = WalletWallet::fromSeed($this->hotWalletSeed);
+
+            $autofilled = $this->client->autofill($tx);
+            $paymentTx = new Payment($autofilled);
+            $signed    = $wallet->sign($paymentTx);
+
+            $txBlob = $signed['tx_blob'] ?? null;
+            if (!$txBlob) {
+                throw new RuntimeException('Signing failed');
+            }
+
+            $submitRes = Http::post($this->rpcUrl, [
+                'method' => 'submit',
+                'params' => [['tx_blob' => $txBlob]],
+            ]);
+
+            $json = $submitRes->json();
+            $engine = data_get($json, 'result.engine_result');
+            $hash   = data_get($json, 'result.tx_json.hash');
+
+            if ($engine !== 'tesSUCCESS') {
+                throw new RuntimeException("XRPL send failed: {$engine}");
+            }
+
+            return [
+                'ok'      => true,
+                'tx_hash' => $hash,
+            ];
+        } catch (\Throwable $e) {
+            Log::error('[XRPL SEND TOKEN FAILED]', ['error' => $e->getMessage()]);
+            return ['ok' => false, 'message' => $e->getMessage()];
+        }
     }
 
     /**
