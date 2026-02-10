@@ -20,11 +20,6 @@ class SwapEventTypeSeeder extends Seeder
             ['name' => 'Deposit Failed', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Deposit Expired', 'created_at' => now(), 'updated_at' => now()],
 
-            // Swap legs
-            ['name' => 'Leg Started', 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Leg Completed', 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Leg Failed', 'created_at' => now(), 'updated_at' => now()],
-
             // Provider / bridge
             ['name' => 'Provider Order Created', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Provider Order Completed', 'created_at' => now(), 'updated_at' => now()],
