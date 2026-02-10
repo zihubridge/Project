@@ -10,6 +10,7 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 class VerifyXrpAndCompleteSwap implements ShouldQueue
 {
@@ -90,6 +91,10 @@ class VerifyXrpAndCompleteSwap implements ShouldQueue
                 tokenIssuer: $swap->toToken->issuer_address,
                 minTokenOut: '0.0000001'
             );
+
+            if (!$xrplResult['ok']) {
+                throw new RuntimeException('XRP to token swap failed');
+            }
 
             // ------------------------------------------------------------------
             // STEP 4: Send token to user
