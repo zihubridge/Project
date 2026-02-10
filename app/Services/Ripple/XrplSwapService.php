@@ -339,21 +339,37 @@ class XrplSwapService
 
                 // Check if it's a Payment and matches our Destination Tag
                 if (($tx['TransactionType'] ?? '') === 'Payment' &&
-                    (isset($tx['DestinationTag']) && (string)$tx['DestinationTag'] === (string)$destinationTag)
+                    isset($tx['DestinationTag']) && (string) $tx['DestinationTag'] === (string) $destinationTag
                 ) {
 
                     // Convert expected XRP to drops (XRP Ledger uses integers for XRP)
                     $expectedDrops = bcmul($expectedXrpAmount, '1000000', 0);
 
-                    // IMPORTANT: Use delivered_amount from metadata to prevent "Partial Payment" exploits
-                    $deliveredDrops = $txData['meta']['delivered_amount'] ?? $tx['Amount'];
+                    // 0.5% tolerance
+                    $toleranceDrops = bcdiv(
+                        bcmul($expectedDrops, '5', 0),
+                        '1000',
+                        0
+                    );
 
-                    if (bccomp($deliveredDrops, $expectedDrops, 0) >= 0) {
+                    $minAcceptable = bcsub($expectedDrops, $toleranceDrops, 0);
+
+                    // Use meta.delivered_amount ONLY
+                    $delivered = $txData['meta']['delivered_amount'] ?? null;
+
+                    // Must be XRP (drops string)
+                    if (!is_string($delivered)) {
+                        continue;
+                    }
+
+                    $deliveredDrops = $delivered;
+
+                    if (bccomp($deliveredDrops, $minAcceptable, 0) >= 0) {
                         return [
-                            'status' => 'success',
-                            'tx_hash' => $tx['hash'],
-                            'amount_received' => $expectedXrpAmount,
-                            'ledger_index' => $tx['ledger_index']
+                            'status'          => 'success',
+                            'tx_hash'         => $tx['hash'],
+                            'amount_received' => bcdiv($deliveredDrops, '1000000', 6),
+                            'ledger_index'    => $tx['ledger_index'],
                         ];
                     }
                 }
