@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
 
             $table->uuid('swap_uuid')->unique();
-            $table->unsignedBigInteger('user_id')->nullable()->index();
 
             $table->unsignedBigInteger('from_blockchain_id')->index();
             $table->unsignedBigInteger('to_blockchain_id')->index();
@@ -27,13 +26,6 @@ return new class extends Migration
             $table->decimal('to_amount_estimated', 36, 18)->nullable();
             $table->decimal('to_amount_final', 36, 18)->nullable();
 
-            $table->decimal('expected_xrp_amount', 36, 18)->nullable();
-            $table->decimal('expected_xlm_amount', 36, 18)->nullable();
-
-            // deposit routing (memo / tag)
-            $table->string('routing_type', 16);
-            $table->string('routing_value', 64)->unique();
-
             // destination
             $table->string('destination_address', 128);
             $table->string('destination_tag', 64)->nullable();
@@ -44,13 +36,6 @@ return new class extends Migration
             $table->unsignedBigInteger('fee_token_id')->nullable();
 
             $table->unsignedSmallInteger('swap_state_id')->default(1);
-
-            // The hash of the transaction WE sent to ChangeNOW
-            $table->string('external_tx_id')->nullable();
-    
-            // The hash of the transaction ChangeNOW sends to US
-            $table->string('incoming_tx_id')->nullable();
-
             $table->string('failure_reason', 255)->nullable();
             $table->timestamp('expires_at')->nullable();
 

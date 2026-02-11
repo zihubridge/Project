@@ -21,8 +21,8 @@ return new class extends Migration
             $table->string('deposit_address', 128);
 
             // routing identity (memo / tag / muxed)
-            $table->string('routing_type', 16);   // memo_id | destination_tag
-            $table->string('routing_value', 64)->unique();
+            $table->string('deposit_routing_type', 16);
+            $table->string('deposit_routing_value', 64)->unique();
 
             $table->unsignedBigInteger('expected_token_id')->index();
             $table->decimal('expected_amount', 36, 18);
