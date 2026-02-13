@@ -15,7 +15,6 @@ class InternalSwapStateSeeder extends Seeder
     {
         $states = [
             'creating',
-            'broadcasted',
             'confirmed',
             'failed',
         ];
