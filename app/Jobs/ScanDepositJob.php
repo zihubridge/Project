@@ -2,8 +2,10 @@
 
 namespace App\Jobs;
 
+use App\Models\InternalSwap;
 use App\Models\SwapDeposit;
 use App\Models\SwapEvent;
+use App\Jobs\ExecuteSwapJob;
 use App\Services\Stellar\StellarDepositScanner;
 use App\Services\Ripple\XrplDepositScanner;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -12,6 +14,7 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class ScanDepositJob implements ShouldQueue
 {
@@ -36,6 +39,8 @@ class ScanDepositJob implements ShouldQueue
         ]);
 
         $SwapDeposit = SwapDeposit::with(['swap.fromBlockchain', 'expectedToken'])->find($this->depositId);
+
+        $swap = $SwapDeposit->swap;
 
         if (!$SwapDeposit) {
             Log::warning('[ScanDepositJob] Deposit not found', [
@@ -96,43 +101,52 @@ class ScanDepositJob implements ShouldQueue
             default   => false,
         };
 
-        // Handle Results
-        if ($found) {
+        if (!$found) {
+            $this->release(20);
+            return;
+        }
 
-            Log::info('[ScanDepositJob] Deposit found', [
-                'deposit_id' => $SwapDeposit->id,
-                'tx_hash' => $found['tx_hash'] ?? null,
-            ]);
+        DB::transaction(function () use ($SwapDeposit, $swap, $found) {
 
+            // 1. Update deposit first
             $SwapDeposit->update([
                 'deposit_state_id' => 3, // confirmed
                 'tx_hash' => $found['tx_hash'],
                 'sender_address' => $found['sender'],
-                'received_amount' => $found['amount'],
+                'received_token_amount' => $found['amount'],
                 'received_at' => now(),
             ]);
 
-            $SwapDeposit->swap->update(['swap_state_id' => 3]); //deposit received
+            // 2. Update swap state
+            $swap->update([
+                'swap_state_id' => 3,
+            ]);
 
+            // 3. Create internal swap row safely (idempotent)
+            InternalSwap::firstOrCreate(
+                [
+                    'swap_id' => $swap->id,
+                    'leg'     => 'source',
+                ],
+                [
+                    'blockchain_id'          => $swap->from_blockchain_id,
+                    'from_token_id'          => $swap->from_token_id,
+                    'to_token_id'            => $swap->to_token_id,
+                    'amount_in'              => $SwapDeposit->received_token_amount,
+                    'internal_swap_state_id' => 1, // creating
+                ]
+            );
+
+            // 4. Log event
             SwapEvent::create([
-                'swap_id' => $SwapDeposit->swap_id,
-                'swap_event_type_id' => 2, //Deposit Confirmed
+                'swap_id' => $swap->id,
+                'swap_event_type_id' => 2,
                 'message' => 'Deposit confirmed on chain',
                 'meta' => json_encode($found),
             ]);
+        });
 
-            ExecuteSwapJob::dispatch($SwapDeposit->swap_id);
-
-            Log::info('[ScanDepositJob] Swap job dispatched', [
-                'swap_id' => $SwapDeposit->swap_id,
-            ]);
-            return; // Job finished successfully
-        }
-
-        Log::info('[ScanDepositJob] Deposit not foundss, retrying', [
-            'deposit_id' => $SwapDeposit->id,
-        ]);
-
-        $this->release(20);
+        // Dispatch outside transaction
+        ExecuteSwapJob::dispatch($swap->id);
     }
 }
