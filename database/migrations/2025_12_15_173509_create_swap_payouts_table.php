@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('to_address', 128);
 
             $table->string('tx_hash', 128)->nullable()->unique();
-            $table->unsignedSmallInteger('state_id')->default(0);
+            $table->unsignedSmallInteger('swap_payout_state_id')->default(1);
 
             $table->json('meta')->nullable();
             $table->timestamps();

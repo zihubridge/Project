@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\SwapDeposit;
+use App\Models\SwapEvent;
 use App\Services\Stellar\StellarDepositScanner;
 use App\Services\Ripple\XrplDepositScanner;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -10,7 +11,6 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class ScanDepositJob implements ShouldQueue
@@ -35,43 +35,64 @@ class ScanDepositJob implements ShouldQueue
             'deposit_id' => $this->depositId,
         ]);
 
-        $deposit = SwapDeposit::with(['swap.fromBlockchain', 'expectedToken'])->find($this->depositId);
+        $SwapDeposit = SwapDeposit::with(['swap.fromBlockchain', 'expectedToken'])->find($this->depositId);
 
-        // Deposit removed or already processed
-        if (!$deposit || $deposit->deposit_state_id !== 1) {
+        if (!$SwapDeposit) {
+            Log::warning('[ScanDepositJob] Deposit not found', [
+                'deposit_id' => $this->depositId,
+            ]);
+            return;
+        }
+
+        // Only process if still waiting
+        if ($SwapDeposit->deposit_state_id !== 1) {
             Log::info('[ScanDepositJob] Deposit already processed', [
-                'deposit_id' => $deposit->id,
-                'state' => $deposit->deposit_state_id,
+                'deposit_id' => $SwapDeposit->id,
+                'state' => $SwapDeposit->deposit_state_id,
+            ]);
+            return;
+        }
+
+        // If swap already failed or expired, stop
+        if (in_array($SwapDeposit->swap->swap_state_id, [10, 11, 12])) {
+            Log::info('[ScanDepositJob] Swap already closed', [
+                'swap_id' => $SwapDeposit->swap_id,
             ]);
             return;
         }
 
         // Expired → mark failed
-        if (now()->greaterThan($deposit->expires_at) && $deposit->swap->swap_state_id == 2) {
+        if (now()->greaterThan($SwapDeposit->expires_at) && $SwapDeposit->swap->swap_state_id == 2) {
             Log::info('[ScanDepositJob] Deposit expired', [
-                'deposit_id' => $deposit->id,
+                'deposit_id' => $SwapDeposit->id,
             ]);
-            $deposit->update([
+            $SwapDeposit->update([
                 'deposit_state_id' => 4, // expired
             ]);
 
-            $deposit->swap->update([
-                'swap_state_id' => 11, // expired
+            $SwapDeposit->swap->update([
+                'swap_state_id' => 10, // expired
+            ]);
+
+            SwapEvent::create([
+                'swap_id' => $SwapDeposit->swap_id,
+                'swap_event_type_id' => 3, // Deposit Expired
+                'message' => 'User did not deposit before expiry',
             ]);
 
             return;
         }
 
-        $blockchainId = $deposit->swap->fromBlockchain->id;
+        $blockchainId = $SwapDeposit->swap->fromBlockchain->id;
 
         Log::info('[ScanDepositJob] Scanning blockchain', [
-            'deposit_id' => $deposit->id,
+            'deposit_id' => $SwapDeposit->id,
             'blockchain_id' => $blockchainId,
         ]);
 
         $found = match ($blockchainId) {
-            1 => $stellarScanner->scan($deposit),
-            2 => $xrplScanner->scan($deposit),
+            1 => $stellarScanner->scan($SwapDeposit),
+            2 => $xrplScanner->scan($SwapDeposit),
             default   => false,
         };
 
@@ -79,11 +100,11 @@ class ScanDepositJob implements ShouldQueue
         if ($found) {
 
             Log::info('[ScanDepositJob] Deposit found', [
-                'deposit_id' => $deposit->id,
+                'deposit_id' => $SwapDeposit->id,
                 'tx_hash' => $found['tx_hash'] ?? null,
             ]);
 
-            $deposit->update([
+            $SwapDeposit->update([
                 'deposit_state_id' => 3, // confirmed
                 'tx_hash' => $found['tx_hash'],
                 'sender_address' => $found['sender'],
@@ -91,21 +112,27 @@ class ScanDepositJob implements ShouldQueue
                 'received_at' => now(),
             ]);
 
-            $deposit->swap->update(['swap_state_id' => 3]); //deposit received
+            $SwapDeposit->swap->update(['swap_state_id' => 3]); //deposit received
 
-            ExecuteSwapJob::dispatch($deposit->swap_id);
+            SwapEvent::create([
+                'swap_id' => $SwapDeposit->swap_id,
+                'swap_event_type_id' => 2, //Deposit Confirmed
+                'message' => 'Deposit confirmed on chain',
+                'meta' => json_encode($found),
+            ]);
+
+            ExecuteSwapJob::dispatch($SwapDeposit->swap_id);
 
             Log::info('[ScanDepositJob] Swap job dispatched', [
-                'swap_id' => $deposit->swap_id,
+                'swap_id' => $SwapDeposit->swap_id,
             ]);
             return; // Job finished successfully
         }
 
-        Log::info('[ScanDepositJob] Deposit not found, retrying', [
-            'deposit_id' => $deposit->id,
+        Log::info('[ScanDepositJob] Deposit not foundss, retrying', [
+            'deposit_id' => $SwapDeposit->id,
         ]);
 
-        // If not found, release back to queue for retry
-        $this->release(now()->addSeconds(20));
+        $this->release(20);
     }
 }

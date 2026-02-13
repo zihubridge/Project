@@ -4,65 +4,118 @@ namespace App\Services\Stellar;
 
 use App\Models\SwapDeposit;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class StellarDepositScanner
 {
-    public function scan(SwapDeposit $deposit): ?array
+    public function scan(SwapDeposit $deposit): array
     {
         $address = $deposit->deposit_address;
-
         $baseUrl = config('services.stellar.horizon_url');
 
-        // Fetch recent payments for this account
         $url = rtrim($baseUrl, '/') . "/accounts/{$address}/payments?order=desc&limit=100";
 
-        $res = Http::timeout(15)->get($url);
-        if ($res->failed()) {
-            return null;
-        }
+        Log::info('[StellarScanner] Scanning account', [
+            'deposit_id' => $deposit->id,
+            'address' => $address,
+            'url' => $url,
+        ]);
 
-        $payments = data_get($res->json(), '_embedded.records', []);
+        try {
+            $res = Http::timeout(15)->get($url);
 
-        foreach ($payments as $p) {
-            // Verify Destination Address
-            if (($p['to'] ?? null) !== $address) continue;
+            if ($res->failed()) {
+                Log::error('[StellarScanner] Horizon payments failed', [
+                    'status' => $res->status(),
+                    'body' => $res->body(),
+                ]);
 
-            // Verify Asset (Code and Issuer)
-            if (($p['asset_code'] ?? null) !== $deposit->expectedToken->asset_code) continue;
-            if (($p['asset_issuer'] ?? null) !== $deposit->expectedToken->issuer_address) continue;
-
-            // Verify Amount (Matches exactly or more)
-            if (bccomp((string)$p['amount'], (string)$deposit->expected_amount, 7) < 0) continue;
-
-            // Fetch Transaction Details to check the Memo
-            $txHash = $p['transaction_hash'];
-
-            // We call the transaction endpoint because the payments endpoint 
-            // does not always include the memo in the basic record
-            $tx = Http::timeout(15)->get(rtrim($baseUrl, '/') . "/transactions/{$txHash}")->json();
-
-            // Verify Memo Logic
-            $validMemoTypes = ['id', 'text'];
-            $memoType = $tx['memo_type'] ?? null;
-            $memoValue = (string)($tx['memo'] ?? '');
-            $expectedMemo = (string)$deposit->routing_value;
-
-            if (!in_array($memoType, $validMemoTypes)) {
-                continue;
+                return [
+                    'status' => 'error',
+                    'reason' => 'horizon_payments_failed',
+                ];
             }
 
-            if ($memoValue !== $expectedMemo) {
-                continue;
+            $payments = data_get($res->json(), '_embedded.records', []);
+
+            foreach ($payments as $p) {
+
+                if (($p['to'] ?? null) !== $address) {
+                    continue;
+                }
+
+                if (($p['asset_code'] ?? null) !== $deposit->expectedToken->asset_code) {
+                    continue;
+                }
+
+                if (($p['asset_issuer'] ?? null) !== $deposit->expectedToken->issuer_address) {
+                    continue;
+                }
+
+                if (bccomp((string)$p['amount'], (string)$deposit->expected_amount, 7) < 0) {
+                    continue;
+                }
+
+                $txHash = $p['transaction_hash'] ?? null;
+                if (!$txHash) {
+                    continue;
+                }
+
+                $txUrl = rtrim($baseUrl, '/') . "/transactions/{$txHash}";
+                $txRes = Http::timeout(15)->get($txUrl);
+
+                if ($txRes->failed()) {
+                    Log::error('[StellarScanner] Horizon transaction fetch failed', [
+                        'tx_hash' => $txHash,
+                        'status' => $txRes->status(),
+                    ]);
+                    continue;
+                }
+
+                $tx = $txRes->json();
+
+                $memoType = $tx['memo_type'] ?? null;
+                $memoValue = (string)($tx['memo'] ?? '');
+                $expectedMemo = (string)$deposit->deposit_routing_value;
+
+                if (!in_array($memoType, ['id', 'text'], true)) {
+                    continue;
+                }
+
+                if ($memoValue !== $expectedMemo) {
+                    continue;
+                }
+
+                Log::info('[StellarScanner] Valid deposit found', [
+                    'deposit_id' => $deposit->id,
+                    'tx_hash' => $txHash,
+                    'amount' => $p['amount'],
+                ]);
+
+                return [
+                    'status' => 'success',
+                    'tx_hash' => $txHash,
+                    'sender' => $p['from'] ?? null,
+                    'amount' => $p['amount'],
+                    'ledger' => $p['ledger'] ?? null,
+                ];
             }
 
-            // Success: Return payment details for the Job to process
             return [
-                'tx_hash' => $txHash,
-                'sender' => $p['from'] ?? null,
-                'amount' => $p['amount'],
+                'status' => 'not_found',
+            ];
+        } catch (\Throwable $e) {
+
+            Log::error('[StellarScanner] Unexpected exception', [
+                'deposit_id' => $deposit->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'status' => 'error',
+                'reason' => 'exception',
+                'message' => $e->getMessage(),
             ];
         }
-
-        return null;
     }
 }

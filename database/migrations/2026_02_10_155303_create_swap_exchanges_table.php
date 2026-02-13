@@ -35,7 +35,7 @@ return new class extends Migration
             $table->string('exchange_tx_id', 64)->index();
 
             // Status tracking
-            $table->unsignedSmallInteger('state')->default(1);
+            $table->unsignedSmallInteger('swap_exchange_state_id')->default(1);
 
             $table->timestamps();
         });

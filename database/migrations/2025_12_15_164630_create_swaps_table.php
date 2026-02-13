@@ -22,9 +22,9 @@ return new class extends Migration
             $table->unsignedBigInteger('from_token_id')->index();
             $table->unsignedBigInteger('to_token_id')->index();
 
-            $table->decimal('from_amount', 36, 18);
-            $table->decimal('to_amount_estimated', 36, 18)->nullable();
-            $table->decimal('to_amount_final', 36, 18)->nullable();
+            $table->decimal('from_token_amount', 36, 18);
+            $table->decimal('to_estimated_token_amount', 36, 18)->nullable();
+            $table->decimal('to_final_token_amount', 36, 18)->nullable();
 
             // destination
             $table->string('destination_address', 128);

@@ -58,90 +58,97 @@ class StellarSwapService
         string $amountIn,
         string $minXlmOut,
         ?string $memo = null,
-        $swapId
+        int $swapId
     ): array {
+
         $seed = config('services.stellar.seed');
-        $platform_stellar_Wallet = config('services.stellar.wallet');
+        $platformWallet = config('services.stellar.wallet');
 
         try {
             $kp = KeyPair::fromSeed($seed);
             $server = $this->sdk;
-            $sourceAccount = $this->sdk->requestAccount($kp->getAccountId());
+            $sourceAccount = $server->requestAccount($kp->getAccountId());
 
             Log::info('[Stellar Swap] Preparing path payment', [
                 'swap_id' => $swapId,
-                'send_asset' => $tokenCode . ':' . $issuer,
+                'asset' => $tokenCode . ':' . $issuer,
                 'amount_in' => $amountIn,
-                'min_xlm_out' => $minXlmOut,
-                'platform_stellar_Wallet' => $platform_stellar_Wallet,
             ]);
 
-            $builder = (new TransactionBuilder($sourceAccount, $this->network));
+            $builder = new TransactionBuilder($sourceAccount, $this->network);
 
-            // Swapping token to xlm within same wallet (platform_stellar_Wallet)
-            $op = (new PathPaymentStrictSendOperation(
-                $this->asset($tokenCode, $issuer), // Send Asset
-                $amountIn,                        // Send Amount
-                MuxedAccount::fromAccountId($platform_stellar_Wallet),        // Destination Address
-                new AssetTypeNative(),            // Receive Asset (XLM)
-                $minXlmOut,                       // Min Receive Amount
-            )
+            $op = new PathPaymentStrictSendOperation(
+                $this->asset($tokenCode, $issuer),
+                $amountIn,
+                MuxedAccount::fromAccountId($platformWallet),
+                new AssetTypeNative(),
+                $minXlmOut
             );
+
             $builder->addOperation($op);
 
-            // Build, Sign, and Submit
             $tx = $builder->build();
             $tx->sign($kp, $this->network);
+
             $response = $server->submitTransaction($tx);
 
-            Log::info('[Stellar Swap] Successful', [
-                'tx_hash' => $response->getHash(),
-                'xlm_amount' => $minXlmOut,
-            ]);
+            if (!$response->isSuccessful()) {
 
-            if ($response->isSuccessful()) {
+                $extras = $response->getExtras();
 
-                $txHash = $response->getHash();
-
-                $client = $this->horizonClient();
-                $horizonResponse = $client->get("transactions/{$txHash}/operations");
-
-                $data = json_decode($horizonResponse->getBody()->getContents(), true);
-
-                $receivedXlm = null;
-
-                foreach ($data['_embedded']['records'] as $record) {
-                    if (
-                        $record['type'] === 'path_payment_strict_send' &&
-                        $record['asset_type'] === 'native'
-                    ) {
-                        $receivedXlm = $record['amount'];
-                        break;
-                    }
-                }
+                Log::error('[Stellar Swap] On-chain failure', [
+                    'swap_id' => $swapId,
+                    'codes' => $extras?->getResultCodes()
+                ]);
 
                 return [
-                    'tx_hash' => $response->getHash(),
-                    'xlm_amount' => $receivedXlm,
+                    'ok' => false,
+                    'error' => 'onchain_failed',
+                    'details' => $extras?->getResultCodes()
                 ];
             }
 
-            // Handle Failure
-            $extras = $response->getExtras();
-            Log::error('Stellar Path Payment Failed', [
-                'codes' => $extras ? $extras->getResultCodes() : 'unknown',
-                'swap_id' => $memo
+            $txHash = $response->getHash();
+
+            // Fetch real received amount
+            $horizon = $this->horizonClient();
+            $ops = $horizon->get("transactions/{$txHash}/operations");
+            $data = json_decode($ops->getBody()->getContents(), true);
+
+            $receivedXlm = null;
+
+            foreach ($data['_embedded']['records'] ?? [] as $record) {
+                if (
+                    $record['type'] === 'path_payment_strict_send' &&
+                    $record['asset_type'] === 'native'
+                ) {
+                    $receivedXlm = $record['amount'];
+                    break;
+                }
+            }
+
+            if (!$receivedXlm) {
+                return [
+                    'ok' => false,
+                    'error' => 'no_native_received'
+                ];
+            }
+
+            return [
+                'ok' => true,
+                'tx_hash' => $txHash,
+                'amount_out' => $receivedXlm,
+            ];
+        } catch (\Throwable $e) {
+
+            Log::error('[Stellar Swap] Exception', [
+                'swap_id' => $swapId,
+                'error' => $e->getMessage()
             ]);
 
             return [
-                'status' => 'error',
-                'message' => 'Transaction failed on-chain.',
-                'error_codes' => $extras ? $extras->getResultCodes() : null
-            ];
-        } catch (\Throwable $e) {
-            Log::error('Stellar Service Error: ' . $e->getMessage());
-            return [
-                'status' => 'error',
+                'ok' => false,
+                'error' => 'exception',
                 'message' => $e->getMessage()
             ];
         }

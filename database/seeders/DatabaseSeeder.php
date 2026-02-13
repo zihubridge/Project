@@ -19,5 +19,8 @@ class DatabaseSeeder extends Seeder
         $this->call(SwapStatesSeeder::class);
         $this->call(SwapEventTypeSeeder::class);
         $this->call(DepositStateSeeder::class);
+        $this->call(SwapExchangeStateSeeder::class);
+        $this->call(SwapPayoutStateSeeder::class);
+        $this->call(InternalSwapStateSeeder::class);
     }
 }

@@ -32,4 +32,24 @@ class Swap extends Model
     {
         return $this->hasOne(SwapDeposit::class);
     }
+
+    public function exchange()
+    {
+        return $this->hasOne(SwapExchange::class);
+    }
+
+    public function payout()
+    {
+        return $this->hasOne(SwapPayout::class);
+    }
+
+    public function events()
+    {
+        return $this->hasMany(SwapEvent::class);
+    }
+
+    public function state()
+    {
+        return $this->belongsTo(SwapState::class, 'swap_state_id');
+    }
 }
