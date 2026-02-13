@@ -556,7 +556,7 @@ class GlobalController extends Controller
         $tokenOut = bcdiv($numerator, $denominator, $scale);
 
         return [
-            'token_out_estimated' => bcadd($tokenOut, '0', 8), // display precision
+            'token_out_estimated' => bcadd($tokenOut, '0', 3), // display precision
         ];
     }
 
@@ -850,8 +850,8 @@ class GlobalController extends Controller
 
             $tokenOut = bcdiv($numerator, $denominator, $scale);
 
-            // Stellar assets usually use 7 decimals; display to 7
-            $tokenOut7 = bcadd($tokenOut, '0', 7);
+            // Stellar assets usually use 3 decimals; display to 3
+            $tokenOut7 = bcadd($tokenOut, '0', 3);
 
             return [
                 'estimated_token' => $tokenOut7,
