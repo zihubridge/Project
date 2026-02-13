@@ -15,21 +15,19 @@ use Illuminate\Support\Str;
 class SwapController extends Controller
 {
     private $stellarWallet, $rippleWallet, $isPublic;
-    protected string $rpcUrl, $stellarUrl;
 
     public function __construct()
     {
         $this->isPublic = env('ENVIRONMENT') === 'public';
         $this->stellarWallet = config('services.stellar.wallet');
         $this->rippleWallet  = config('services.xrpl.wallet');
-        $this->stellarUrl = config('services.stellar.horizon_url');
-        $this->rpcUrl          = config('services.xrpl.rpc');
     }
 
     public function start(Request $request)
     {
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'gt:0'],
+            'estimated_token_amount' => ['required', 'numeric', 'gt:0'],
 
             'from_blockchain' => ['required', 'exists:blockchains,id'],
             'to_blockchain'   => ['required', 'exists:blockchains,id'],
@@ -76,7 +74,8 @@ class SwapController extends Controller
             toBlockchainId: $data['to_blockchain'],
             fromTokenId: $fromToken->id,
             toTokenId: $toToken->id,
-            fromAmount: $data['amount'],
+            fromTokenAmount: $data['amount'],
+            estimatedTokenAmount: $data['estimated_token_amount'],
             destinationAddress: $data['destination_address'],
             destinationTag: $data['destination_tag'] ?? null,
             depositAddress: $depositAddress,
@@ -86,17 +85,7 @@ class SwapController extends Controller
 
         ScanDepositJob::dispatch($swap->id);
 
-        return view('pages.deposit', [
-            'uuid'            => $swap->swap_uuid,
-            'deposit_address' => $depositAddress,
-            'memo'   => $routingValue,
-            'amount'          => $swap->from_amount,
-            'expires_at'      => $swap->expires_at,
-            'from_blockchain_name' => $fromBlockchain->name,
-            'from_blockchain_asset_code' => strtoupper($fromBlockchain->asset_code),
-            'from_token'      => $fromToken->asset_code,
-            'url' => $url,
-        ]);
+        return view('pages.deposit', compact('swap', 'depositAddress', 'routingValue', 'url'));
     }
 
 
@@ -105,7 +94,8 @@ class SwapController extends Controller
         int $toBlockchainId,
         int $fromTokenId,
         int $toTokenId,
-        string $fromAmount,
+        string $fromTokenAmount,
+        string $estimatedTokenAmount,
         string $destinationAddress,
         ?string $destinationTag,
         string $depositAddress,
@@ -117,7 +107,8 @@ class SwapController extends Controller
             $toBlockchainId,
             $fromTokenId,
             $toTokenId,
-            $fromAmount,
+            $fromTokenAmount,
+            $estimatedTokenAmount,
             $destinationAddress,
             $destinationTag,
             $depositAddress,
@@ -131,7 +122,8 @@ class SwapController extends Controller
                 'to_blockchain_id'  => $toBlockchainId,
                 'from_token_id'     => $fromTokenId,
                 'to_token_id'       => $toTokenId,
-                'from_amount'       => $fromAmount,
+                'from_token_amount'       => $fromTokenAmount,
+                'to_estimated_token_amount'       => $estimatedTokenAmount,
                 'destination_address' => $destinationAddress,
                 'destination_tag'   => $destinationTag,
                 'swap_state_id'     => 2, //WAITING_FOR_DEPOSIT,
@@ -144,7 +136,7 @@ class SwapController extends Controller
                 'deposit_routing_type' => $depositRoutingType,
                 'deposit_routing_value' => $depositRoutingValue,
                 'expected_token_id'    => $fromTokenId,
-                'expected_amount'      => $fromAmount,
+                'expected_token_amount' => $fromTokenAmount,
                 'deposit_state_id'     => 1, //WAITING,
                 'expires_at'           => $swap->expires_at,
             ]);

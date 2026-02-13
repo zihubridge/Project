@@ -25,9 +25,9 @@ return new class extends Migration
             $table->string('deposit_routing_value', 64)->unique();
 
             $table->unsignedBigInteger('expected_token_id')->index();
-            $table->decimal('expected_amount', 36, 18);
+            $table->decimal('expected_token_amount', 36, 18);
 
-            $table->decimal('received_amount', 36, 18)->nullable();
+            $table->decimal('received_token_amount', 36, 18)->nullable();
             $table->string('tx_hash', 128)->nullable()->unique();
             $table->string('sender_address', 128)->nullable();
 

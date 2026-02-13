@@ -135,6 +135,8 @@
         <form id="realSwapForm" action="{{ route('swap.start') }}" method="POST" style="display: none;">
             @csrf
             <input type="hidden" name="amount" id="post_amount">
+            <input type="hidden" name="estimated_token_amount" id="post_estimated_token_amount">
+            
             <input type="hidden" name="from_blockchain" id="post_from_blockchain">
             <input type="hidden" name="to_blockchain" id="post_to_blockchain">
 
@@ -231,6 +233,7 @@
 
                 // Get the values safely
                 document.getElementById('post_amount').value = sendInput.value;
+                document.getElementById('post_estimated_token_amount').value = receiveInput.value;
 
                 // Ensure these match the setAttribute names in loadTokens
                 document.getElementById('post_from_blockchain').value = fromOption.getAttribute(

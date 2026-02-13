@@ -11,7 +11,7 @@
             <div class="bg-white rounded-2xl p-5 flex flex-col md:flex-row md:justify-between gap-4 md:gap-0">
                 <div class="flex flex-wrap justify-center md:justify-start gap-3 items-center">
                     <h2 class="text-lg font-bold text-black">Exchange ID:</h2>
-                    <p id="exchangeId" class="text-[#2B2B2B] break-all">{{ $uuid }}</p>
+                    <p id="exchangeId" class="text-[#2B2B2B] break-all">{{ $swap->swap_uuid }}</p>
                     <ion-icon name="copy-outline" class="cursor-pointer text-xl" onclick="copyText()"></ion-icon>
                 </div>
                 <div
@@ -38,12 +38,34 @@
                     <!-- Content: 7/12 -->
                     <div class="flex flex-wrap items-center gap-3 w-full md:w-8/12 px-8">
                         {{-- <img src="{{ asset('assets/new assets/eth.png') }}" alt="eth"> --}}
-                        <p class="text-black font-semibold text-xl">{{ $amount }} {{ $from_token }}
+                        <p class="text-black font-semibold text-xl">{{ $swap->from_token_amount }}
+                            {{ $swap->fromToken->asset_code }}
                         </p>
 
                         <div class="flex items-center gap-3">
                             <span>Networking:</span>
-                            <p class="bg-[#0066FF] rounded-md text-white px-2">{{ $from_blockchain_asset_code }}</p>
+                            <p class="bg-[#0066FF] rounded-md text-white px-2">
+                                {{ strtoupper($swap->fromBlockchain->asset_code) }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row gap-5 mb-10">
+                    <h2 class="text-lg font-bold text-black w-full md:w-4/12">
+                        You Will Receive:
+                    </h2>
+
+                    <div class="flex flex-wrap items-center gap-3 w-full md:w-8/12 px-8">
+                        <p class="text-green-600 font-semibold text-xl">
+                            {{ number_format($swap->to_estimated_token_amount, 6) }}
+                            {{ $swap->toToken->asset_code }}
+                        </p>
+
+                        <div class="flex items-center gap-3">
+                            <span>Network:</span>
+                            <p class="bg-green-600 rounded-md text-white px-2">
+                                {{ strtoupper($swap->toBlockchain->asset_code ?? '') }}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -73,7 +95,7 @@
                                             Deposit Address
                                         </p>
                                         <p class="text-sm sm:text-base break-all tracking-wider text-gray-900 font-medium">
-                                            {{ $deposit_address }}
+                                            {{ $depositAddress }}
                                         </p>
                                     </div>
 
@@ -85,7 +107,7 @@
 
                                         <ion-icon name="copy-outline"
                                             class="cursor-pointer text-xl bg-[#E1E8F3] text-[#859AB5] p-2 rounded-md copy-address"
-                                            data-address="{{ $deposit_address }}">
+                                            data-address="{{ $depositAddress }}">
                                         </ion-icon>
                                     </div>
 
@@ -100,7 +122,7 @@
 
                                 <div>
                                     <p class="text-sm font-bold text-red-600">
-                                        {{ $from_blockchain_asset_code === 'XRP' ? 'Destination Tag (REQUIRED)' : 'Memo ID (REQUIRED)' }}
+                                        {{ $swap->fromBlockchain->asset_code === 'XRP' ? 'Destination Tag (REQUIRED)' : 'Memo ID (REQUIRED)' }}
                                     </p>
                                     <p class="text-xs text-gray-500">
                                         Funds sent without this will NOT be credited.
@@ -110,10 +132,10 @@
                                 <div
                                     class="flex items-center gap-3 bg-[#F9FAFB] border border-red-300 rounded-lg px-4 py-2">
                                     <span class="font-mono text-sm font-semibold text-gray-900 select-all">
-                                        {{ $memo }}
+                                        {{ $routingValue }}
                                     </span>
                                     <ion-icon name="copy-outline" class="cursor-pointer text-lg text-red-500 copy-memo"
-                                        data-memo="{{ $memo }}">
+                                        data-memo="{{ $routingValue }}">
                                     </ion-icon>
                                 </div>
 
@@ -122,7 +144,7 @@
                             <!-- Network Warning -->
                             <div class="bg-[#FEF7EA] text-[#F7931A] border-t border-[#F7931A] p-4 text-sm">
                                 Please deposit using the
-                                <strong>Main {{ $from_blockchain_name }} ({{ $from_blockchain_asset_code }})
+                                <strong>Main {{ $swap->fromBlockchain->name }} ({{ $swap->fromBlockchain->asset_code }})
                                     network</strong>.
                             </div>
 
