@@ -57,7 +57,7 @@
 
                     <div class="flex flex-wrap items-center gap-3 w-full md:w-8/12 px-8">
                         <p class="text-green-600 font-semibold text-xl">
-                            {{ number_format($swap->to_estimated_token_amount, 6) }}
+                            {{ number_format($swap->to_estimated_token_amount, 3) }}
                             {{ $swap->toToken->asset_code }}
                         </p>
 
