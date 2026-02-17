@@ -40,7 +40,6 @@ class ScanDepositJob implements ShouldQueue
 
         $SwapDeposit = SwapDeposit::with(['swap.fromBlockchain', 'expectedToken'])->find($this->depositId);
 
-        $swap = $SwapDeposit->swap;
 
         if (!$SwapDeposit) {
             Log::warning('[ScanDepositJob] Deposit not found', [
@@ -48,6 +47,8 @@ class ScanDepositJob implements ShouldQueue
             ]);
             return;
         }
+        
+        $swap = $SwapDeposit->swap;
 
         // Only process if still waiting
         if ($SwapDeposit->deposit_state_id !== 1) {
