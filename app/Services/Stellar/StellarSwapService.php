@@ -213,6 +213,8 @@ class StellarSwapService
 
     public function sendXlmToExchange(string $toAddress, string $amount, string $memoId): string
     {
+        //7 decimal places
+        $amount = number_format((float) $amount, 7, '.', '');
         $seed = config('services.stellar.seed');
         $kp = KeyPair::fromSeed($seed);
         $sourceAccount = $this->sdk->requestAccount($kp->getAccountId());
