@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\InternalSwap;
 use App\Models\Swap;
 use App\Models\SwapEvent;
 use App\Models\SwapExchange;
@@ -70,6 +71,13 @@ class ExecuteSwapJob implements ShouldQueue
         XrplSwapService $xrpl
     ): void {
 
+        $internalSwap = InternalSwap::where('swap_id', $swap->id)
+        ->where('leg', 'source')
+        ->first();
+
+        if (!$internalSwap) return;
+        if ($internalSwap->tx_hash) return;
+
         $swap->update(['swap_state_id' => 4]); // internal_swap_started
 
         SwapEvent::create([
@@ -86,7 +94,7 @@ class ExecuteSwapJob implements ShouldQueue
             $result = $stellar->xlmTokenToXlm(
                 $swap->fromToken->asset_code,
                 $swap->fromToken->issuer_address,
-                $deposit->received_amount,
+                $deposit->received_token_amount,
                 '0.0000001',
                 null,
                 $swap->id
@@ -94,7 +102,7 @@ class ExecuteSwapJob implements ShouldQueue
         } else {
 
             $result = $xrpl->xrpTokenToXrp(
-                tokenAmount: $deposit->received_amount,
+                tokenAmount: $deposit->received_token_amount,
                 tokenCurrency: $swap->fromToken->asset_code,
                 tokenIssuer: $swap->fromToken->issuer_address,
                 minXrpOut: '0.0000001'
@@ -118,11 +126,15 @@ class ExecuteSwapJob implements ShouldQueue
             return;
         }
 
-        Log::info('result', $result);
-        Log::info('amount_out', $result['amount_out']);
         $swap->update([
-            'swap_state_id' => 5,
-            'to_amount_estimated' => $result['amount_out']
+            'swap_state_id' => 5
+        ]);
+
+        $internalSwap->update([
+            'amount_out' => $result['amount_out'],
+            'tx_hash' => $result['tx_hash'],
+            'internal_swap_state_id' => 2,
+            'meta' => json_encode($result)
         ]);
 
         SwapEvent::create([
@@ -148,6 +160,14 @@ class ExecuteSwapJob implements ShouldQueue
             return;
         }
 
+        $sourceInternalSwap = $swap->sourceInternalSwap;
+
+        if (!$sourceInternalSwap || !$sourceInternalSwap->amount_out) {
+            return;
+        }
+
+        $coinAmount = $sourceInternalSwap->amount_out;
+
         $swap->update(['swap_state_id' => 6]); // provider_processing
 
         try {
@@ -158,7 +178,7 @@ class ExecuteSwapJob implements ShouldQueue
                 extraId: random_int(100000, 999999),
                 fromNetwork: $swap->fromBlockchain->asset_code,
                 toNetwork: $swap->toBlockchain->asset_code,
-                fromAmount: (string) $swap->to_amount_estimated
+                fromAmount: (string) $coinAmount
             );
         } catch (Throwable $e) {
 
@@ -178,6 +198,7 @@ class ExecuteSwapJob implements ShouldQueue
             'exchange_order_id' => $exchange['id'] ?? null,
             'payin_address' => $exchange['payinAddress'],
             'payin_memo' => $exchange['payinExtraId'] ?? null,
+            'from_amount' => $coinAmount,
             'expected_amount' => $exchange['toAmount'] ?? null,
             'swap_exchange_state_id' => 2
         ]);
@@ -203,20 +224,18 @@ class ExecuteSwapJob implements ShouldQueue
             return; // already sent
         }
 
-        $amount = $swap->to_amount_estimated;
-
         if ($swap->fromBlockchain->id === 1) {
 
             $tx = $stellar->sendXlmToExchange(
                 $exchange->payin_address,
-                $amount,
+                $exchange->from_amount,
                 $exchange->payin_memo
             );
         } else {
 
             $tx = $xrpl->sendXrpToExchange(
                 $exchange->payin_address,
-                $amount,
+                $exchange->from_amount,
                 $exchange->payin_memo
             );
         }

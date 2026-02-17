@@ -52,4 +52,21 @@ class Swap extends Model
     {
         return $this->belongsTo(SwapState::class, 'swap_state_id');
     }
+
+    public function internalSwaps()
+    {
+        return $this->hasMany(InternalSwap::class);
+    }
+
+    public function sourceInternalSwap()
+    {
+        return $this->hasOne(InternalSwap::class)
+            ->where('leg', 'source');
+    }
+
+    public function destinationInternalSwap()
+    {
+        return $this->hasOne(InternalSwap::class)
+            ->where('leg', 'destination');
+    }
 }

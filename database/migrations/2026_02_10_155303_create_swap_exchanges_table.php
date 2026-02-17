@@ -29,10 +29,11 @@ return new class extends Migration
             $table->string('payin_memo', 64)->nullable();
 
             // Coin Amount
+            $table->decimal('from_amount', 36, 18)->nullable();
             $table->decimal('expected_amount', 36, 18)->nullable();
             $table->decimal('received_amount', 36, 18)->nullable();
 
-            $table->string('exchange_tx_id', 64)->index();
+            $table->string('exchange_tx_id', 64)->nullable();
 
             // Status tracking
             $table->unsignedSmallInteger('swap_exchange_state_id')->default(1);
