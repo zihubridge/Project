@@ -131,10 +131,51 @@ class XrplSwapService
             Log::info('submitJson', $submitJson);
 
             $txHash = data_get($submitJson, 'result.tx_json.hash');
-            $amountOut = data_get($submitJson, 'result.tx_json.Amount.value');
+            if (!$txHash) {
+                throw new RuntimeException('XRPL submission succeeded but hash missing');
+            }
 
-            if (!$txHash || !$amountOut) {
-                throw new RuntimeException('XRPL submission succeeded but output amount missing');
+            // Poll for validation (up to 10 seconds)
+            $maxAttempts = 20;
+            $attempt = 0;
+            $validated = false;
+            $txDetails = null;
+
+            while ($attempt < $maxAttempts && !$validated) {
+                usleep(500000); // 0.5 seconds between attempts
+
+                $txDetailsRes = Http::post($this->rpcUrl, [
+                    'method' => 'tx',
+                    'params' => [[
+                        'transaction' => $txHash,
+                        'binary' => false,
+                    ]]
+                ]);
+
+                $txDetails = $txDetailsRes->json();
+                $validated = data_get($txDetails, 'result.validated', false);
+
+                $attempt++;
+            }
+
+            if (!$validated) {
+                Log::error('Transaction not validated in time', ['hash' => $txHash]);
+                throw new RuntimeException('Transaction submitted but not validated within timeout');
+            }
+
+            Log::info('txDetails', $txDetails);
+
+            // Now safely extract delivered_amount
+            $delivered = data_get($txDetails, 'result.meta.delivered_amount');
+
+            if (!$delivered) {
+                throw new RuntimeException('Delivered amount not found in validated transaction');
+            }
+
+            if (is_array($delivered)) {
+                $amountOut = $delivered['value'];
+            } else {
+                $amountOut = bcdiv($delivered, '1000000', 18);
             }
 
             return [
