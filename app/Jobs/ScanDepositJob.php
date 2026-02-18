@@ -60,15 +60,15 @@ class ScanDepositJob implements ShouldQueue
         }
 
         // If swap already failed or expired, stop
-        if (in_array($SwapDeposit->swap->swap_state_id, [10, 11, 12])) {
+        if (in_array($swap->swap_state_id, [10, 11, 12])) {
             Log::info('[ScanDepositJob] Swap already closed', [
-                'swap_id' => $SwapDeposit->swap_id,
+                'swap_id' => $swap->id,
             ]);
             return;
         }
 
         // Expired → mark failed
-        if (now()->greaterThan($SwapDeposit->expires_at) && $SwapDeposit->swap->swap_state_id == 2) {
+        if (now()->greaterThan($SwapDeposit->expires_at) && $swap->swap_state_id == 2) {
             Log::info('[ScanDepositJob] Deposit expired', [
                 'deposit_id' => $SwapDeposit->id,
             ]);
@@ -76,12 +76,12 @@ class ScanDepositJob implements ShouldQueue
                 'deposit_state_id' => 4, // expired
             ]);
 
-            $SwapDeposit->swap->update([
+            $swap->update([
                 'swap_state_id' => 10, // expired
             ]);
 
             SwapEvent::create([
-                'swap_id' => $SwapDeposit->swap_id,
+                'swap_id' => $swap->id,
                 'swap_event_type_id' => 3, // Deposit Expired
                 'message' => 'User did not deposit before expiry',
             ]);
@@ -89,7 +89,7 @@ class ScanDepositJob implements ShouldQueue
             return;
         }
 
-        $blockchainId = $SwapDeposit->swap->fromBlockchain->id;
+        $blockchainId = $swap->fromBlockchain->id;
 
         Log::info('[ScanDepositJob] Scanning blockchain', [
             'deposit_id' => $SwapDeposit->id,
@@ -99,10 +99,10 @@ class ScanDepositJob implements ShouldQueue
         $found = match ($blockchainId) {
             1 => $stellarScanner->scan($SwapDeposit),
             2 => $xrplScanner->scan($SwapDeposit),
-            default   => false,
+            default => false,
         };
 
-        if (!$found) {
+        if (!$found || !is_array($found) || !isset($found['tx_hash'], $found['sender'], $found['amount'])) {
             $this->release(20);
             return;
         }
