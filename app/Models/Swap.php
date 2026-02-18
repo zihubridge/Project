@@ -48,7 +48,7 @@ class Swap extends Model
         return $this->hasMany(SwapEvent::class);
     }
 
-    public function state()
+    public function swapState()
     {
         return $this->belongsTo(SwapState::class, 'swap_state_id');
     }
@@ -68,5 +68,38 @@ class Swap extends Model
     {
         return $this->hasOne(InternalSwap::class)
             ->where('leg', 'destination');
+    }
+
+    public function getFrontendStep(): int
+    {
+        return match($this->swapState->name ?? '') {
+            'created', 'waiting_deposit' => 1,
+            'deposit_confirmed' => 2,
+            'internal_swap_started', 'internal_swap_completed' => 3,
+            'provider_processing' => 4,
+            'provider_completed' => 5,
+            'payout_processing' => 6,
+            'completed' => 7,
+            'expired', 'failed', 'refunded' => 0,
+            default => 1,
+        };
+    }
+
+    /**
+     * Get human-readable step name for frontend display
+     */
+    public function getFrontendStepName(): string
+    {
+        return match($this->getFrontendStep()) {
+            1 => 'Awaiting Deposit',
+            2 => 'Deposit Confirmed',
+            3 => 'Swapping to Coin',
+            4 => 'Exchanging Coins',
+            5 => 'Swapping to Token',
+            6 => 'Sending Tokens',
+            7 => 'Completed',
+            0 => 'Failed',
+            default => 'Processing',
+        };
     }
 }

@@ -85,7 +85,17 @@ class SwapController extends Controller
 
         ScanDepositJob::dispatch($swap->id);
 
-        return view('pages.deposit', compact('swap', 'depositAddress', 'routingValue', 'url'));
+        $currentStep = $swap->getFrontendStep();
+        $stepName = $swap->getFrontendStepName();
+
+        return view('pages.deposit', compact(
+            'swap',
+            'depositAddress',
+            'routingValue',
+            'url',
+            'currentStep',
+            'stepName'
+        ));
     }
 
 
@@ -149,5 +159,23 @@ class SwapController extends Controller
 
             return $swap;
         });
+    }
+
+    public function getStatus($uuid)
+    {
+        $swap = Swap::where('swap_uuid', $uuid)
+            ->with(['fromToken', 'toToken', 'fromBlockchain', 'toBlockchain', 'swapState'])
+            ->firstOrFail();
+
+        return response()->json([
+            'swap_state_id' => $swap->swap_state_id,
+            'swap_state_name' => $swap->swapState->name,
+            'current_step' => $swap->getFrontendStep(),
+            'step_name' => $swap->getFrontendStepName(),
+            'is_completed' => $swap->swapState->name === 'completed',
+            'is_failed' => in_array($swap->swapState->name, ['expired', 'failed', 'refunded']),
+            'failure_reason' => $swap->failure_reason,
+            'to_final_token_amount' => $swap->to_final_token_amount,
+        ]);
     }
 }

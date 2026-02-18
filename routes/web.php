@@ -31,4 +31,5 @@ Route::prefix('global')->group(function () {
 
 Route::prefix('swap')->group(function () {
     Route::post('start', [SwapController::class, 'start'])->name('swap.start');
+    Route::get('{uuid}/status', [SwapController::class, 'getStatus'])->name('swap.status');
 });

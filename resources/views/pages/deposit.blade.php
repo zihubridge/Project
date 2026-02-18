@@ -27,17 +27,14 @@
 
                 <!-- Heading -->
                 <div class="w-full text-center py-5">
-                    <h2 class="text-xl font-bold text-black">Awaiting Your Deposit</h2>
+                    <h2 id="statusHeading" class="text-xl font-bold text-black">{{ $stepName }}</h2>
                 </div>
 
                 <!-- Send Deposit -->
                 <div class="flex flex-col md:flex-row gap-5 mb-10">
-                    <!-- Label: 5/12 -->
                     <h2 class="text-lg font-bold text-black w-full md:w-4/12">Send Deposit:</h2>
 
-                    <!-- Content: 7/12 -->
                     <div class="flex flex-wrap items-center gap-3 w-full md:w-8/12 px-8">
-                        {{-- <img src="{{ asset('assets/new assets/eth.png') }}" alt="eth"> --}}
                         <p class="text-black font-semibold text-xl">{{ $swap->from_token_amount }}
                             {{ $swap->fromToken->asset_code }}
                         </p>
@@ -156,39 +153,33 @@
             </div>
         </div>
 
-        <div class="max-w-2xl mx-auto mt-10 px-4">
-            <div class="flex flex-wrap justify-between gap-4">
-                <!-- Step 1 -->
-                <div class="flex flex-col items-center flex-1 min-w-[100px] sm:min-w-[120px]">
-                    <div class="bg-[#203052] p-3 rounded-full flex justify-center items-center">
-                        <img src="{{ asset('assets/new assets/icon4.png') }}" class="w-6 sm:w-7" alt="">
-                    </div>
-                    <span class="text-black font-medium text-center text-sm sm:text-base mt-1">Pending Deposit</span>
-                </div>
+        <!-- Progress Steps -->
+        <div class="max-w-5xl mx-auto mt-10 px-4">
+            <div class="flex justify-center items-start gap-4 sm:gap-6 md:gap-8">
+                @php
+                    $steps = [
+                        ['name' => 'Awaiting Deposit', 'icon' => 'icon4.png'],
+                        ['name' => 'Deposit Confirmed', 'icon' => 'icon3.png'],
+                        ['name' => 'Swapping to Coin', 'icon' => 'icon3.png'],
+                        ['name' => 'Exchanging Coins', 'icon' => 'icon2.png'],
+                        ['name' => 'Swapping to Token', 'icon' => 'icon3.png'],
+                        ['name' => 'Sending Tokens', 'icon' => 'icon1.png'],
+                        ['name' => 'Completed', 'icon' => 'icon3.png'],
+                    ];
+                @endphp
 
-                <!-- Step 2 -->
-                <div class="flex flex-col items-center flex-1 min-w-[100px] sm:min-w-[120px]">
-                    <div class="bg-[#D7E2F0] p-3 rounded-full flex justify-center items-center">
-                        <img src="{{ asset('assets/new assets/icon3.png') }}" class="w-6 sm:w-7" alt="">
+                @foreach ($steps as $index => $step)
+                    <div class="flex flex-col items-center w-16 sm:w-20" data-step="{{ $index + 1 }}">
+                        <div
+                            class="step-circle p-2.5 sm:p-3 rounded-full transition-colors duration-300
+                            {{ $index + 1 <= $currentStep ? 'bg-[#203052]' : 'bg-[#D7E2F0]' }}">
+                            <img src="{{ asset('assets/new assets/' . $step['icon']) }}" class="w-5 sm:w-6" alt="">
+                        </div>
+                        <span class="text-black font-medium text-center text-xs mt-2 leading-tight">
+                            {{ $step['name'] }}
+                        </span>
                     </div>
-                    <span class="text-black font-medium text-center text-sm sm:text-base mt-1">Confirming</span>
-                </div>
-
-                <!-- Step 3 -->
-                <div class="flex flex-col items-center flex-1 min-w-[100px] sm:min-w-[120px]">
-                    <div class="bg-[#D7E2F0] p-3 rounded-full flex justify-center items-center">
-                        <img src="{{ asset('assets/new assets/icon2.png') }}" class="w-6 sm:w-7" alt="">
-                    </div>
-                    <span class="text-black font-medium text-center text-sm sm:text-base mt-1">Exchanging</span>
-                </div>
-
-                <!-- Step 4 -->
-                <div class="flex flex-col items-center flex-1 min-w-[100px] sm:min-w-[120px]">
-                    <div class="bg-[#D7E2F0] p-3 rounded-full flex justify-center items-center">
-                        <img src="{{ asset('assets/new assets/icon1.png') }}" class="w-6 sm:w-7" alt="">
-                    </div>
-                    <span class="text-black font-medium text-center text-sm sm:text-base mt-1">Sending</span>
-                </div>
+                @endforeach
             </div>
         </div>
 
@@ -215,6 +206,7 @@
 @endsection
 
 @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
         function copyToClipboard(text) {
             if (navigator.clipboard && window.isSecureContext) {
@@ -285,6 +277,81 @@
             if (!url) return;
 
             window.open(url, '_blank', 'noopener,noreferrer');
+        });
+
+        // ============================================
+        // SWAP STATUS POLLING
+        // ============================================
+        const swapUuid = "{{ $swap->swap_uuid }}";
+        let pollInterval;
+        let previousStep = {{ $currentStep }};
+
+        function updateSwapStatus() {
+            axios.get(`/swap/${swapUuid}/status`)
+                .then(response => {
+                    const data = response.data;
+
+                    console.log('Status update:', data);
+
+                    // Only update UI if step changed
+                    if (data.current_step !== previousStep) {
+                        previousStep = data.current_step;
+
+                        // Update heading
+                        const heading = document.getElementById('statusHeading');
+                        if (heading) {
+                            heading.textContent = data.step_name;
+                        }
+
+                        // Update step circles
+                        document.querySelectorAll('[data-step]').forEach(stepEl => {
+                            const stepNum = parseInt(stepEl.dataset.step);
+                            const circle = stepEl.querySelector('.step-circle');
+
+                            if (stepNum <= data.current_step) {
+                                circle.classList.remove('bg-[#D7E2F0]');
+                                circle.classList.add('bg-[#203052]');
+                            } else {
+                                circle.classList.remove('bg-[#203052]');
+                                circle.classList.add('bg-[#D7E2F0]');
+                            }
+                        });
+                    }
+
+                    // Handle completion (swap_state_id === 9)
+                    if (data.is_completed) {
+                        clearInterval(pollInterval);
+                        console.log('Swap completed!');
+
+                        // Optional: Redirect after 2 seconds
+                        // setTimeout(() => {
+                        //     window.location.href = '/swap/success';
+                        // }, 2000);
+                    }
+
+                    // Handle failure
+                    if (data.is_failed) {
+                        clearInterval(pollInterval);
+                        console.error('Swap failed:', data.failure_reason);
+
+                        // Show error
+                        alert('Swap failed: ' + (data.failure_reason || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching swap status:', error);
+                });
+        }
+
+        // Start polling every 10 seconds
+        pollInterval = setInterval(updateSwapStatus, 10000);
+
+        // Initial call after 5 seconds
+        setTimeout(updateSwapStatus, 5000);
+
+        // Clear interval when page unloads
+        window.addEventListener('beforeunload', () => {
+            clearInterval(pollInterval);
         });
     </script>
 @endpush
