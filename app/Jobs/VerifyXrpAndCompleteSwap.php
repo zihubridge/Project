@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\InternalSwap;
 use App\Models\Swap;
 use App\Models\SwapEvent;
 use App\Models\SwapPayout;
@@ -54,19 +55,11 @@ class VerifyXrpAndCompleteSwap implements ShouldQueue
         // STEP 1: Check XRP receipt from ChangeNOW
         // ------------------------------------------------------------------
         $receipt = $xrpl->checkXrpReceipt(
-            $swap->destination_tag,
-            $swap->expected_xrp_amount
+            $exchange->payout_memo,
+            $exchange->expected_amount
         );
 
         if (($receipt['status'] ?? null) !== 'success') {
-            Log::info('[VerifyXrp] XRP not received yet', [
-                'swap_id' => $this->swapId,
-                'destination_tag' => $swap->destination_tag,
-                'expected_xrp' => $swap->expected_xrp_amount,
-            ]);
-
-            // IMPORTANT:
-            // Throwing forces Laravel to retry using backoff()
             throw new \RuntimeException('XRP not received yet');
         }
 
@@ -75,7 +68,7 @@ class VerifyXrpAndCompleteSwap implements ShouldQueue
         // ------------------------------------------------------------------
         $exchange->update([
             'received_amount' => $receipt['amount_received'],
-            'exchange_tx_id'  => $receipt['tx_hash'],
+            'payout_tx_id'  => $receipt['tx_hash'],
             'swap_exchange_state_id' => 7 //PROVIDER_COMPLETED,
         ]);
 
@@ -89,6 +82,16 @@ class VerifyXrpAndCompleteSwap implements ShouldQueue
             'meta' => json_encode($receipt),
         ]);
 
+        $internalSwap = InternalSwap::create([
+            'swap_id' => $swap->id,
+            'blockchain_id' => $swap->to_blockchain_id,
+            'from_token_id' => $swap->from_token_id,
+            'to_token_id' => $swap->to_token_id,
+            'leg' => 'destination',
+            'amount_in' => $exchange->received_amount,
+            'internal_swap_state_id' => 1, //creating
+        ]);
+
         try {
             // ------------------------------------------------------------------
             // STEP 3: Internal XRP → Token swap
@@ -96,7 +99,7 @@ class VerifyXrpAndCompleteSwap implements ShouldQueue
             $swap->update(['swap_state_id' => 7]); // swapping_to_token
 
             $xrplResult = $xrpl->xrpToToken(
-                xrpAmount: $swap->expected_xrp_amount,
+                xrpAmount: $exchange->expected_amount,
                 tokenCurrency: $swap->toToken->asset_code,
                 tokenIssuer: $swap->toToken->issuer_address,
                 minTokenOut: '0.0000001'
@@ -110,6 +113,8 @@ class VerifyXrpAndCompleteSwap implements ShouldQueue
                 throw new RuntimeException('XRP to token swap failed');
             }
 
+            $internalSwap->update(['amount_out' => $xrplResult['amount_out'], 'internal_swap_state_id' => 2 ]);
+
             // ------------------------------------------------------------------
             // STEP 4: Send token to user
             // ------------------------------------------------------------------
@@ -119,13 +124,13 @@ class VerifyXrpAndCompleteSwap implements ShouldQueue
                 'swap_id'       => $swap->id,
                 'blockchain_id' => $swap->to_blockchain_id,
                 'token_id'      => $swap->to_token_id,
-                'amount'        => $xrplResult['amount_out'],
+                'amount'        => $internalSwap->amount_out,
                 'to_address'    => $swap->destination_address,
                 'swap_payout_state_id'      => 1 //CREATING,
             ]);
 
             $sendResult = $xrpl->sendXrpTokenToDestination(
-                tokenAmount: $xrplResult['amount_out'],
+                tokenAmount: $internalSwap->amount_out,
                 tokenCurrency: $swap->toToken->asset_code,
                 tokenIssuer: $swap->toToken->issuer_address,
                 destination: $swap->destination_address
@@ -164,11 +169,7 @@ class VerifyXrpAndCompleteSwap implements ShouldQueue
 
             SwapEvent::create([
                 'swap_id' => $swap->id,
-                'swap_event_type_id' => SwapEventType::SWAP_COMPLETED,
-            ]);
-
-            Log::info('[VerifyXrp] Swap completed successfully', [
-                'swap_id' => $this->swapId,
+                'swap_event_type_id' => 17 //SWAP_COMPLETED,
             ]);
         } catch (\Throwable $e) {
             Log::error('[VerifyXrp] Finalization failed', [

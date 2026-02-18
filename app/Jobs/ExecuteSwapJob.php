@@ -171,11 +171,12 @@ class ExecuteSwapJob implements ShouldQueue
         $swap->update(['swap_state_id' => 6]); // provider_processing
 
         try {
+            $payoutTag = random_int(100000, 999999);
             $exchange = $changeNow->createExchange(
                 fromCurrency: $swap->fromBlockchain->asset_code,
                 toCurrency: $swap->toBlockchain->asset_code,
                 destinationAddress: config('services.xrpl.wallet'),
-                extraId: random_int(100000, 999999),
+                extraId: $payoutTag,
                 fromNetwork: $swap->fromBlockchain->asset_code,
                 toNetwork: $swap->toBlockchain->asset_code,
                 fromAmount: (string) $coinAmount
@@ -198,6 +199,8 @@ class ExecuteSwapJob implements ShouldQueue
             'exchange_order_id' => $exchange['id'] ?? null,
             'payin_address' => $exchange['payinAddress'],
             'payin_memo' => $exchange['payinExtraId'] ?? null,
+            'payout_address' => config('services.xrpl.wallet'),
+            'payout_memo'    => $payoutTag,
             'from_amount' => $coinAmount,
             'expected_amount' => $exchange['toAmount'] ?? null,
             'swap_exchange_state_id' => 2
@@ -241,7 +244,7 @@ class ExecuteSwapJob implements ShouldQueue
         }
 
         $exchange->update([
-            'exchange_tx_id' => $tx,
+            'payin_tx_id' => $tx,
             'swap_exchange_state_id' => 3
         ]);
 
