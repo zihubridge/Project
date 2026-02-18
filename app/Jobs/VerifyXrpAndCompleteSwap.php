@@ -96,7 +96,7 @@ class VerifyXrpAndCompleteSwap implements ShouldQueue
             // ------------------------------------------------------------------
             // STEP 3: Internal XRP → Token swap
             // ------------------------------------------------------------------
-            $swap->update(['swap_state_id' => 7]); // swapping_to_token
+            $swap->update(['swap_state_id' => 4]); // swapping_to_token
 
             $xrplResult = $xrpl->xrpToToken(
                 xrpAmount: $exchange->expected_amount,
@@ -113,12 +113,12 @@ class VerifyXrpAndCompleteSwap implements ShouldQueue
                 throw new RuntimeException('XRP to token swap failed');
             }
 
-            $internalSwap->update(['amount_out' => $xrplResult['amount_out'], 'internal_swap_state_id' => 2 ]);
+            $internalSwap->update(['amount_out' => $xrplResult['amount_out'], 'tx_hash' => $xrplResult['tx_hash'], 'internal_swap_state_id' => 2 ]);
 
             // ------------------------------------------------------------------
             // STEP 4: Send token to user
             // ------------------------------------------------------------------
-            $swap->update(['swap_state_id' => 9]); // sending_to_user
+            $swap->update(['swap_state_id' => 8]); // payout processing
 
             $payout = SwapPayout::create([
                 'swap_id'       => $swap->id,
@@ -147,7 +147,7 @@ class VerifyXrpAndCompleteSwap implements ShouldQueue
                 ]);
 
                 $swap->update([
-                    'swap_state_id'   => 12, // failed
+                    'swap_state_id'   => 11, // failed
                     'failure_reason' => 'Failed to send token to destination: ' .
                         ($sendResult['message'] ?? 'unknown'),
                 ]);
@@ -159,7 +159,7 @@ class VerifyXrpAndCompleteSwap implements ShouldQueue
             // STEP 5: Finalize swap
             // ------------------------------------------------------------------
             $swap->update([
-                'swap_state_id' => 10, // complete
+                'swap_state_id' => 9, // complete
             ]);
 
             $payout->update([
@@ -177,10 +177,10 @@ class VerifyXrpAndCompleteSwap implements ShouldQueue
                 'error'   => $e->getMessage(),
             ]);
 
-            // $swap->update([
-            //     'swap_state_id' => 12, // failed
-            //     'failure_reason' => $e->getMessage(),
-            // ]);
+            $swap->update([
+                'swap_state_id' => 11, // failed
+                'failure_reason' => $e->getMessage(),
+            ]);
 
             throw $e;
         }
