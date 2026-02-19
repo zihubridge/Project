@@ -175,7 +175,9 @@ class ExecuteSwapJob implements ShouldQueue
             $exchange = $changeNow->createExchange(
                 fromCurrency: $swap->fromBlockchain->asset_code,
                 toCurrency: $swap->toBlockchain->asset_code,
-                destinationAddress: config('services.xrpl.wallet'),
+                destinationAddress: $swap->toBlockchain->asset_code === 'xrp'
+                    ? config('services.xrpl.wallet')
+                    : config('services.stellar.wallet'),
                 extraId: $payoutTag,
                 fromNetwork: $swap->fromBlockchain->asset_code,
                 toNetwork: $swap->toBlockchain->asset_code,
