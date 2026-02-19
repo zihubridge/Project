@@ -307,45 +307,148 @@ class XrplSwapService
         string $tokenIssuer,
         string $minXrpOut
     ): array {
-        $cur = $this->xrplCurrency($tokenCurrency);
-        $deliverMinDrops = bcmul($minXrpOut, '1000000', 0);
+        try {
+            $cur = $this->xrplCurrency($tokenCurrency);
 
-        // 1. Path Finding (Your existing logic)
-        $paths = $this->pathFind(
-            source: $this->hotWallet,
-            destination: $this->hotWallet,
-            destinationAmount: $deliverMinDrops,
-            sendMax: [
-                'currency' => $cur,
-                'issuer' => $tokenIssuer,
-                'value' => $tokenAmount,
-            ]
-        );
+            Log::info('[XRPL Token→XRP] Starting swap', [
+                'token_amount' => $tokenAmount,
+                'token_currency' => $tokenCurrency,
+                'token_currency_encoded' => $cur,
+                'token_issuer' => $tokenIssuer,
+                'min_xrp_out' => $minXrpOut,
+            ]);
 
-        $alts = data_get($paths, 'result.alternatives', []);
-        if (!$alts) {
-            throw new RuntimeException('XRPL path not found (Token → XRP)');
+            // Calculate DeliverMin in drops (minimum XRP to receive)
+            $minXrpDrops = bcmul($minXrpOut, '1000000', 0);
+            if (bccomp($minXrpDrops, '100', 0) < 0) {
+                $minXrpDrops = '100';
+            }
+
+            $maxXrpDrops = bcmul($minXrpOut, '1200000', 0);
+
+            if (bccomp($maxXrpDrops, '100', 0) < 0) {
+                $maxXrpDrops = '100'; 
+            }
+
+            $tx = [
+                'TransactionType' => 'Payment',
+                'Account' => $this->hotWallet,
+                'Destination' => $this->hotWallet,
+                'Amount' => (string) $maxXrpDrops, // Ensure it's a string
+                'SendMax' => [
+                    'currency' => $cur,
+                    'issuer' => $tokenIssuer,
+                    'value' => $this->xrplNormalizeAmount($tokenAmount),
+                ],
+                'DeliverMin' => (string) $minXrpDrops, // Ensure it's a string
+                'Flags' => 131072, // tfPartialPayment (already correct)
+            ];
+
+            Log::info('[XRPL Token→XRP TX BUILT]', $tx);
+
+            $wallet = WalletWallet::fromSeed($this->hotWalletSeed);
+
+            $autofilled = $this->client->autofill($tx);
+
+            $paymentTx = new Payment($autofilled);
+            $signed = $wallet->sign($paymentTx);
+
+            $txBlob = $signed['tx_blob'] ?? null;
+            if (empty($txBlob)) {
+                Log::error('Local XRPL signing error: no tx_blob returned', ['signed' => $signed]);
+                return ['ok' => false, 'error' => 'Signing failed', 'status' => 500, 'context' => $signed];
+            }
+
+            // Submit
+            $submitRes = Http::post($this->rpcUrl, [
+                'method' => 'submit',
+                'params' => [['tx_blob' => $txBlob]],
+            ]);
+
+            if (!$submitRes->ok()) {
+                Log::error('XRPL submit HTTP failed', ['body' => $submitRes->body()]);
+                return ['ok' => false, 'error' => 'Transaction submit HTTP failed', 'status' => $submitRes->status()];
+            }
+
+            $submitJson = $submitRes->json();
+            Log::info('submitJson', $submitJson);
+
+            $txHash = data_get($submitJson, 'result.tx_json.hash');
+            if (!$txHash) {
+                throw new RuntimeException('XRPL submission succeeded but hash missing');
+            }
+
+            // Poll for validation (up to 10 seconds)
+            $maxAttempts = 20;
+            $attempt = 0;
+            $validated = false;
+            $txDetails = null;
+
+            while ($attempt < $maxAttempts && !$validated) {
+                usleep(500000); // 0.5 seconds
+
+                $txDetailsRes = Http::post($this->rpcUrl, [
+                    'method' => 'tx',
+                    'params' => [[
+                        'transaction' => $txHash,
+                        'binary' => false,
+                    ]]
+                ]);
+
+                $txDetails = $txDetailsRes->json();
+                $validated = data_get($txDetails, 'result.validated', false);
+
+                $attempt++;
+            }
+
+            if (!$validated) {
+                Log::error('Transaction not validated in time', ['hash' => $txHash]);
+                throw new RuntimeException('Transaction submitted but not validated within timeout');
+            }
+
+            Log::info('txDetails', $txDetails);
+
+            // Extract delivered_amount (XRP will be a string in drops)
+            $delivered = data_get($txDetails, 'result.meta.delivered_amount');
+
+            if (!$delivered) {
+                throw new RuntimeException('Delivered amount not found in validated transaction');
+            }
+
+            // For XRP, delivered_amount is a string of drops
+            if (is_string($delivered)) {
+                $amountOut = bcdiv($delivered, '1000000', 6); // Convert drops to XRP
+            } else {
+                // Shouldn't happen for XRP, but handle just in case
+                $amountOut = $delivered;
+            }
+
+            return [
+                'ok' => true,
+                'tx_hash' => $txHash,
+                'amount_out' => (string) $amountOut,
+            ];
+        } catch (\Throwable $e) {
+            Log::error('[XRPL Token→XRP FAILED]', ['error' => $e->getMessage()]);
+            return [
+                'ok' => false,
+                'message' => $e->getMessage(),
+            ];
+        }
+    }
+
+    private function xrplNormalizeAmount(string $amount): string
+    {
+        // remove trailing zeros
+        $amount = rtrim(rtrim($amount, '0'), '.');
+
+        // fallback
+        if ($amount === '') {
+            $amount = '0';
         }
 
-        $best = $alts[0];
-
-        // 2. Prepare the Transaction Data
-        $tx = [
-            'TransactionType' => 'Payment',
-            'Account' => $this->hotWallet,
-            'Destination' => $this->hotWallet,
-            'Amount' => $best['destination_amount'],
-            'SendMax' => [
-                'currency' => $cur,
-                'issuer' => $tokenIssuer,
-                'value' => $tokenAmount,
-            ],
-            'DeliverMin' => $deliverMinDrops,
-            'Paths' => $best['paths_computed'] ?? [],
-            'Flags' => 0x00020000, // tfPartialPayment
-        ];
-
-        return $this->signAndSubmit($tx);
+        // limit precision to 15 significant digits
+        return sprintf('%.15g', (float)$amount);
     }
 
 
