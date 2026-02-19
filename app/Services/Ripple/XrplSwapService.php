@@ -312,9 +312,8 @@ class XrplSwapService
 
             Log::info('[XRPL Token→XRP] Starting swap', [
                 'token_amount' => $tokenAmount,
-                'token_currency' => $tokenCurrency,
-                'token_currency_encoded' => $cur,
-                'token_issuer' => $tokenIssuer,
+                'currency' => $cur,
+                'issuer' => $tokenIssuer,
                 'min_xrp_out' => $minXrpOut,
             ]);
 
@@ -324,23 +323,20 @@ class XrplSwapService
                 $minXrpDrops = '100';
             }
 
-            $maxXrpDrops = bcmul($minXrpOut, '1200000', 0);
-
-            if (bccomp($maxXrpDrops, '100', 0) < 0) {
-                $maxXrpDrops = '100'; 
-            }
+            // Maximum XRP ceiling (10,000 XRP)
+            $maxXrpDrops = '10000000000';
 
             $tx = [
                 'TransactionType' => 'Payment',
                 'Account' => $this->hotWallet,
                 'Destination' => $this->hotWallet,
-                'Amount' => (string) $maxXrpDrops, // Ensure it's a string
+                'Amount' => $maxXrpDrops,
                 'SendMax' => [
                     'currency' => $cur,
                     'issuer' => $tokenIssuer,
                     'value' => $this->xrplNormalizeAmount($tokenAmount),
                 ],
-                'DeliverMin' => (string) $minXrpDrops, // Ensure it's a string
+                'DeliverMin' => $minXrpDrops,
                 'Flags' => 131072, // tfPartialPayment (already correct)
             ];
 
@@ -354,56 +350,50 @@ class XrplSwapService
             $signed = $wallet->sign($paymentTx);
 
             $txBlob = $signed['tx_blob'] ?? null;
-            if (empty($txBlob)) {
-                Log::error('Local XRPL signing error: no tx_blob returned', ['signed' => $signed]);
-                return ['ok' => false, 'error' => 'Signing failed', 'status' => 500, 'context' => $signed];
+            if (!$txBlob) {
+                throw new RuntimeException('Signing failed');
             }
 
-            // Submit
             $submitRes = Http::post($this->rpcUrl, [
                 'method' => 'submit',
-                'params' => [['tx_blob' => $txBlob]],
+                'params' => [[
+                    'tx_blob' => $txBlob
+                ]]
             ]);
 
-            if (!$submitRes->ok()) {
-                Log::error('XRPL submit HTTP failed', ['body' => $submitRes->body()]);
-                return ['ok' => false, 'error' => 'Transaction submit HTTP failed', 'status' => $submitRes->status()];
-            }
-
             $submitJson = $submitRes->json();
-            Log::info('submitJson', $submitJson);
+            Log::info('[XRPL SUBMIT]', $submitJson);
 
             $txHash = data_get($submitJson, 'result.tx_json.hash');
             if (!$txHash) {
-                throw new RuntimeException('XRPL submission succeeded but hash missing');
+                throw new RuntimeException('Missing tx hash');
             }
 
-            // Poll for validation (up to 10 seconds)
-            $maxAttempts = 20;
-            $attempt = 0;
+            // Poll for validation
             $validated = false;
             $txDetails = null;
 
-            while ($attempt < $maxAttempts && !$validated) {
+            for ($i = 0; $i < 20; $i++) {
                 usleep(500000); // 0.5 seconds
 
-                $txDetailsRes = Http::post($this->rpcUrl, [
+                $res = Http::post($this->rpcUrl, [
                     'method' => 'tx',
                     'params' => [[
                         'transaction' => $txHash,
-                        'binary' => false,
+                        'binary' => false
                     ]]
                 ]);
 
-                $txDetails = $txDetailsRes->json();
-                $validated = data_get($txDetails, 'result.validated', false);
+                $txDetails = $res->json();
 
-                $attempt++;
+                if (data_get($txDetails, 'result.validated')) {
+                    $validated = true;
+                    break;
+                }
             }
 
             if (!$validated) {
-                Log::error('Transaction not validated in time', ['hash' => $txHash]);
-                throw new RuntimeException('Transaction submitted but not validated within timeout');
+                throw new RuntimeException('Transaction not validated');
             }
 
             Log::info('txDetails', $txDetails);
@@ -411,22 +401,16 @@ class XrplSwapService
             // Extract delivered_amount (XRP will be a string in drops)
             $delivered = data_get($txDetails, 'result.meta.delivered_amount');
 
-            if (!$delivered) {
-                throw new RuntimeException('Delivered amount not found in validated transaction');
+            if (!is_string($delivered)) {
+                throw new RuntimeException('Unexpected delivered amount format');
             }
 
-            // For XRP, delivered_amount is a string of drops
-            if (is_string($delivered)) {
-                $amountOut = bcdiv($delivered, '1000000', 6); // Convert drops to XRP
-            } else {
-                // Shouldn't happen for XRP, but handle just in case
-                $amountOut = $delivered;
-            }
+            $amountOut = bcdiv($delivered, '1000000', 6);
 
             return [
                 'ok' => true,
                 'tx_hash' => $txHash,
-                'amount_out' => (string) $amountOut,
+                'amount_out' => $amountOut,
             ];
         } catch (\Throwable $e) {
             Log::error('[XRPL Token→XRP FAILED]', ['error' => $e->getMessage()]);
