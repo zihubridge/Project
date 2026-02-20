@@ -47,207 +47,248 @@ class GlobalController extends Controller
                 'to_asset_code' => ['required', 'string', 'max:64'],
                 'to_issuer_address' => ['required', 'string', 'max:128'],
             ]);
+
+            $amount = (string)$data['amount'];
+
+            if (!is_numeric($amount) || bccomp($amount, '0', 7) <= 0) {
+                return response()->json([
+                    'status' => 0,
+                    'message' => 'Invalid amount'
+                ], 422);
+            }
+
+            if ($data['from_blockchain'] === $data['to_blockchain']) {
+                return response()->json([
+                    'status' => 0,
+                    'message' => 'Same-chain swap is not allowed'
+                ], 422);
+            }
+
+            if ($data['from_blockchain'] === 'xlm' && $data['to_blockchain'] === 'xrp') {
+                return $this->estimateXlmToXrp($data, $amount);
+            }
+
+            if ($data['from_blockchain'] === 'xrp' && $data['to_blockchain'] === 'xlm') {
+                return $this->estimateXrpToXlm($data, $amount);
+            }
+
+            return response()->json([
+                'status' => 0,
+                'message' => 'Unsupported swap pair'
+            ], 422);
         } catch (ValidationException $e) {
+
             return response()->json([
                 'status'  => 0,
                 'message' => 'Validation error',
                 'errors'  => $e->errors(),
             ], 422);
-        }
-
-        try {
-            $amount = (string) ($data['amount'] ?? '0');
-
-            if (!is_numeric($amount) || bccomp($amount, '0', 7) <= 0) {
-                throw new \Exception("Invalid amount");
-            }
-
-            //Stellar to Ripple 
-            if ($data['from_blockchain'] == 'xlm' && $data['to_blockchain'] == 'xrp') {
-                try {
-
-                    $token = Token::where('issuer_address', $data['from_issuer_address'])->first();
-
-                    if (!$token) {
-                        throw new \Exception("Token not found for issuer address");
-                    }
-
-                    $poolId = $token->pool_id;
-
-                    if (!$token->pool_id) {
-                        throw new \Exception("Pool ID missing for token: {$token->asset_code}");
-                    }
-
-                    $assetCode = $token->asset_code;
-                    if (!$assetCode) {
-                        throw new \Exception("Asset Code not found");
-                    }
-                    $issuerAddress = $token->issuer_address;
-                    if (!$issuerAddress) {
-                        throw new \Exception("Issuer Address not found");
-                    }
-                    $xlmQuote = $this->estimateXlmOutFromPool($poolId, $assetCode, $issuerAddress, $amount);
-
-                    if (!$xlmQuote || empty($xlmQuote['estimated_xlm'])) {
-                        throw new \RuntimeException('Could not estimate XLM output from Stellar pool.');
-                    }
-
-                    $estimatedXlm = (string) $xlmQuote['estimated_xlm'];
-
-                    // Optional: ChangeNOW often expects a reasonable decimal format.
-                    // Keep 7 decimals (XLM standard) or trim trailing zeros if you want.
-                    $estimatedXlm = bcadd($estimatedXlm, '0', 7);
-
-                    $xrp = $this->getChangeNowEstimatedAmount(
-                        fromCurrency: 'xlm',
-                        toCurrency: 'xrp',
-                        fromNetwork: 'xlm',
-                        toNetwork: 'xrp',
-                        fromAmount: $estimatedXlm,
-                        flow: 'fixed-rate',
-                        type: 'direct',
-                        useRateId: true
-                    );
-
-                    // ChangeNOW usually returns estimatedAmount for "to"
-                    $estimatedXrp = (string)($xrp['toAmount'] ?? '0');
-
-                    if (!is_numeric($estimatedXrp) || bccomp($estimatedXrp, '0', 6) <= 0) {
-                        throw new \RuntimeException('Could not estimate XRP output from ChangeNOW.');
-                    }
-
-                    // Now quote XRP -> XRPL token
-                    $xrplTokenQuote = $this->xrpToXRPToken(
-                        xrpAmount: $estimatedXrp,
-                        currency: $data['to_asset_code'],          // for XRPL this must be currency or hex
-                        issuer: $data['to_issuer_address'],        // XRPL issuer address
-                        isTestnet: $this->isTestnet
-                    );
-
-                    if (!$xrplTokenQuote || empty($xrplTokenQuote['token_out_estimated'])) {
-                        return response()->json([
-                            'status' => 0,
-                            'message' => 'Could not estimate XRPL token output (AMM not found / no liquidity).'
-                        ], 422);
-                    }
-
-                    return response()->json([
-                        'status' => 1,
-                        'estimated_amount' => (string)$xrplTokenQuote['token_out_estimated'],
-                        'meta' => [
-                            'estimated_xlm' => $estimatedXlm,
-                            'estimated_xrp' => bcadd($estimatedXrp, '0', 6),
-                        ],
-                    ]);
-                } catch (HorizonRequestException $e) {
-                    if ($e->getStatusCode() === 404) {
-                        return response()->json([
-                            'status'      => 1,
-                            'balance' => 0.0,
-                        ]);
-                    }
-                    return response()->json([
-                        'status'  => 0,
-                        'message' => 'Horizon error',
-                        'code'    => $e->getStatusCode(),
-                    ], 502);
-                }
-            }
-            //Ripple to Stellar
-            else if ($data['from_blockchain'] == 'xrp' && $data['to_blockchain'] == 'xlm') {
-                try {
-                    $token = Token::where('issuer_address', $data['from_issuer_address'])->first();
-
-                    if (!$token) {
-                        throw new \Exception("Token not found for issuer address");
-                    }
-
-                    $assetCode = $token->asset_code;
-                    if (!$assetCode) {
-                        throw new \Exception("Asset Code not found");
-                    }
-
-                    $issuerAddress = $token->issuer_address;
-                    if (!$issuerAddress) {
-                        throw new \Exception("Issuer Address not found");
-                    }
-
-                    $quote = $this->xrpTokenToXrp(
-                        tokenAmount: $amount,
-                        currency: $assetCode,
-                        issuer: $issuerAddress,
-                        isTestnet: $this->isTestnet
-                    );
-
-                    $xrpOut = $quote['xrp_out_estimated'] ?? "0";
-
-                    $xlm = $this->getChangeNowEstimatedAmount(
-                        fromCurrency: 'xrp',
-                        toCurrency: 'xlm',
-                        fromNetwork: 'xrp',
-                        toNetwork: 'xlm',
-                        fromAmount: $xrpOut,
-                        flow: 'fixed-rate',
-                        type: 'direct',
-                        useRateId: true
-                    );
-
-                    // ChangeNOW usually returns estimatedAmount for "to"
-                    $estimatedXlm = (string)($xlm['toAmount'] ?? '0');
-
-                    if (!is_numeric($estimatedXlm) || bccomp($estimatedXlm, '0', 6) <= 0) {
-                        throw new \RuntimeException('Could not estimate XLM output from ChangeNOW.');
-                    }
-
-                    $xlmtoken = Token::where('issuer_address', $data['to_issuer_address'])->first();
-
-                    if (!$xlmtoken) {
-                        throw new \Exception("Token not found for issuer address");
-                    }
-
-                    $poolId = $xlmtoken->pool_id;
-
-                    if (!$xlmtoken->pool_id) {
-                        throw new \Exception("Pool ID missing for token: {$xlmtoken->asset_code}");
-                    }
-
-                    $quote = $this->xlmToXlmToken(
-                        poolId: $poolId,
-                        assetCode: $xlmtoken->asset_code,
-                        issuerAddress: $xlmtoken->issuer_address,
-                        xlmAmountIn: $estimatedXlm
-                    );
-
-                    $tokenOut = $quote['estimated_token'] ?? '0';
-
-                    if (!$tokenOut) {
-                        throw new \RuntimeException('Could not estimate XLM output from Stellar pool.');
-                    }
-
-                    return response()->json([
-                        'status' => 1,
-                        'estimated_amount' => $tokenOut,
-                    ]);
-                } catch (HorizonRequestException $e) {
-                    if ($e->getStatusCode() === 404) {
-                        return response()->json([
-                            'status'      => 1,
-                            'balance' => 0.0,
-                        ]);
-                    }
-                    return response()->json([
-                        'status'  => 0,
-                        'message' => 'Horizon error',
-                        'code'    => $e->getStatusCode(),
-                    ], 502);
-                }
-            }
         } catch (\Throwable $e) {
+
             return response()->json([
                 'status'  => 0,
-                'message' => 'Unexpected error',
+                'message' => $e->getMessage(),
             ], 500);
         }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | XLM → XRP
+    |--------------------------------------------------------------------------
+    */
+    private function estimateXlmToXrp(array $data, string $amount)
+    {
+        try {
+
+            $token = $this->getTokenOrFail($data['from_issuer_address']);
+
+            if (!$token->pool_id) {
+                throw new \Exception("Pool ID missing for token: {$token->asset_code}");
+            }
+
+            // Step 1: Token → XLM
+            $xlmQuote = $this->estimateXlmOutFromPool(
+                $token->pool_id,
+                $token->asset_code,
+                $token->issuer_address,
+                $amount
+            );
+
+            $estimatedXlm = (string)($xlmQuote['estimated_xlm'] ?? '0');
+
+            if (bccomp($estimatedXlm, '0', 7) <= 0) {
+                throw new \RuntimeException('Could not estimate XLM output from Stellar pool.');
+            }
+
+            $estimatedXlm = bcadd($estimatedXlm, '0', 7);
+
+            // Step 2: XLM → XRP (ChangeNOW)
+            $xrpQuote = $this->getChangeNowEstimatedAmount(
+                fromCurrency: 'xlm',
+                toCurrency: 'xrp',
+                fromNetwork: 'xlm',
+                toNetwork: 'xrp',
+                fromAmount: $estimatedXlm,
+                flow: 'fixed-rate',
+                type: 'direct',
+                useRateId: true
+            );
+
+            $estimatedXrp = (string)($xrpQuote['toAmount'] ?? '0');
+
+            if (bccomp($estimatedXrp, '0', 6) <= 0) {
+                throw new \RuntimeException('Could not estimate XRP output.');
+            }
+
+            // Now quote XRP -> XRPL toke
+            $xrplTokenQuote = $this->xrpToXRPToken(
+                xrpAmount: $estimatedXrp,
+                currency: $data['to_asset_code'],
+                issuer: $data['to_issuer_address'],
+                isTestnet: $this->isTestnet
+            );
+
+            $tokenOut = $xrplTokenQuote['token_out_estimated'] ?? null;
+
+            if (!$tokenOut) {
+                return response()->json([
+                    'status' => 0,
+                    'message' => 'Could not estimate XRPL token output (no liquidity).'
+                ], 422);
+            }
+
+            return response()->json([
+                'status' => 1,
+                'estimated_amount' => (string)$tokenOut,
+                'meta' => [
+                    'estimated_xlm' => $estimatedXlm,
+                    'estimated_xrp' => bcadd($estimatedXrp, '0', 6),
+                ],
+            ]);
+        } catch (HorizonRequestException $e) {
+
+            return response()->json([
+                'status'  => 0,
+                'message' => 'Horizon error',
+                'code'    => $e->getStatusCode(),
+            ], 502);
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | XRP → XLM
+    |--------------------------------------------------------------------------
+    */
+    private function estimateXrpToXlm(array $data, string $amount)
+    {
+        try {
+
+            $token = $this->getTokenOrFail($data['from_issuer_address']);
+
+            // Check ChangeNOW limits
+            $limits = $this->getChangeNowMinMaxAmount(
+                fromCurrency: 'xrp',
+                toCurrency: 'xlm',
+                fromNetwork: 'xrp',
+                toNetwork: 'xlm',
+                flow: 'standard'
+            );
+
+            $minXrpRequired = $limits['minAmount'];
+
+            // Minimum token needed
+            $minQuote = $this->getMinimumTokenForXrp(
+                tokenCurrency: $token->asset_code,
+                tokenIssuer: $token->issuer_address,
+                targetXrp: $minXrpRequired,
+                isTestnet: $this->isTestnet
+            );
+
+            $minTokenRequired = $minQuote['min_token_amount'] ?? '0';
+
+            if (bccomp($amount, $minTokenRequired, 6) < 0) {
+                return response()->json([
+                    'status' => 0,
+                    'message' => "Minimum amount required is {$minTokenRequired} {$token->asset_code}",
+                    'min_amount' => $minTokenRequired,
+                    'your_amount' => $amount,
+                ], 400);
+            }
+
+            // Token → XRP
+            $xrpQuote = $this->xrpTokenToXrp(
+                tokenAmount: $amount,
+                currency: $token->asset_code,
+                issuer: $token->issuer_address,
+                isTestnet: $this->isTestnet
+            );
+
+            $xrpOut = $xrpQuote['xrp_out_estimated'] ?? '0';
+
+            // XRP → XLM
+            $xlmQuote = $this->getChangeNowEstimatedAmount(
+                fromCurrency: 'xrp',
+                toCurrency: 'xlm',
+                fromNetwork: 'xrp',
+                toNetwork: 'xlm',
+                fromAmount: $xrpOut,
+                flow: 'fixed-rate',
+                type: 'direct',
+                useRateId: true
+            );
+
+            $estimatedXlm = (string)($xlmQuote['toAmount'] ?? '0');
+
+            if (bccomp($estimatedXlm, '0', 7) <= 0) {
+                throw new \RuntimeException('Could not estimate XLM output.');
+            }
+
+            // XLM → Stellar Token
+            $xlmToken = $this->getTokenOrFail($data['to_issuer_address']);
+
+            if (!$xlmToken->pool_id) {
+                throw new \Exception("Pool ID missing for token: {$xlmToken->asset_code}");
+            }
+
+            $tokenQuote = $this->xlmToXlmToken(
+                poolId: $xlmToken->pool_id,
+                assetCode: $xlmToken->asset_code,
+                issuerAddress: $xlmToken->issuer_address,
+                xlmAmountIn: $estimatedXlm
+            );
+
+            $tokenOut = $tokenQuote['estimated_token'] ?? '0';
+
+            if (bccomp($tokenOut, '0', 7) <= 0) {
+                throw new \RuntimeException('Could not estimate token output.');
+            }
+
+            return response()->json([
+                'status' => 1,
+                'estimated_amount' => $tokenOut,
+            ]);
+        } catch (HorizonRequestException $e) {
+            return response()->json([
+                'status'  => 0,
+                'message' => 'Horizon error',
+                'code'    => $e->getStatusCode(),
+            ], 502);
+        }
+    }
+
+    private function getTokenOrFail(string $issuerAddress): Token
+    {
+        $token = Token::where('issuer_address', $issuerAddress)->first();
+
+        if (!$token) {
+            throw new \Exception("Token not found for issuer address");
+        }
+
+        return $token;
     }
 
     public function blockchains()
@@ -649,10 +690,48 @@ class GlobalController extends Controller
         }
     }
 
+    private function getChangeNowMinMaxAmount(
+        string $fromCurrency,
+        string $toCurrency,
+        ?string $fromNetwork = null,
+        ?string $toNetwork = null,
+        string $flow = 'standard'
+    ): array {
+        $baseUrl = rtrim(config('services.changenow.base_url', 'https://api.changenow.io'), '/');
+        $apiKey = config('services.changenow.api_key');
+
+        if (!$apiKey) {
+            throw new \RuntimeException('CHANGENOW_API_KEY is missing.');
+        }
+
+        $params = [
+            'fromCurrency' => strtolower($fromCurrency),
+            'toCurrency' => strtolower($toCurrency),
+            'flow' => $flow,
+        ];
+
+        if ($fromNetwork) $params['fromNetwork'] = strtolower($fromNetwork);
+        if ($toNetwork) $params['toNetwork'] = strtolower($toNetwork);
+
+        try {
+            $res = Http::timeout(20)
+                ->acceptJson()
+                ->withHeaders(['x-changenow-api-key' => $apiKey])
+                ->get($baseUrl . '/v2/exchange/range', $params);
+
+            return $res->json();
+        } catch (\Exception $e) {
+            Log::error('ChangeNow min/max fetch failed', [
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
     private function xrpTokenToXrp(
-        string $tokenAmount,        // token amount as string, e.g. "150.25"
-        string $currency,           // token currency, e.g. "ARMY" (will be normalized to HEX if needed)
-        string $issuer,             // r.... issuer
+        string $tokenAmount,
+        string $currency,
+        string $issuer,
         bool $isTestnet = false
     ): ?array {
         if (!function_exists('bcadd')) {
@@ -696,20 +775,25 @@ class GlobalController extends Controller
             return null;
         }
 
-        // We requested asset=XRP, asset2=token
-        // amount  => XRP reserve in drops (string)
-        // amount2 => token reserve object with value
-        $xrpReserveDrops = is_string($amount) ? $amount : null;
-        $tokenReserve    = is_array($amount2) ? (string)($amount2['value'] ?? '0') : '0';
+        // CRITICAL FIX: Determine which is XRP and which is token
+        // XRP is always a string of drops, tokens are always objects with 'value'
+        $xrpReserveDrops = null;
+        $tokenReserve = null;
 
-        // Safety: some servers can swap output; handle it
-        if ($xrpReserveDrops === null || !ctype_digit($xrpReserveDrops)) {
-            if (is_string($amount2) && ctype_digit($amount2) && is_array($amount)) {
-                $xrpReserveDrops = $amount2;
-                $tokenReserve    = (string)($amount['value'] ?? '0');
-            } else {
-                return null;
-            }
+        if (is_string($amount) && ctype_digit($amount)) {
+            // amount is XRP (drops)
+            $xrpReserveDrops = $amount;
+            $tokenReserve = is_array($amount2) ? (string)($amount2['value'] ?? '0') : '0';
+        } elseif (is_string($amount2) && ctype_digit($amount2)) {
+            // amount2 is XRP (drops), amount is token
+            $xrpReserveDrops = $amount2;
+            $tokenReserve = is_array($amount) ? (string)($amount['value'] ?? '0') : '0';
+        } else {
+            Log::error('[xrpTokenToXrp] Could not determine reserve types', [
+                'amount' => $amount,
+                'amount2' => $amount2,
+            ]);
+            return null;
         }
 
         if (bccomp($tokenReserve, '0', 18) <= 0 || bccomp($xrpReserveDrops, '0', 0) <= 0) {
@@ -996,5 +1080,50 @@ class GlobalController extends Controller
         }
 
         return ['valid' => false, 'needs_trustline' => true, 'message' => "Destination wallet is missing trustline for {$currency}."];
+    }
+
+    private function getMinimumTokenForXrp(
+        string $tokenCurrency,
+        string $tokenIssuer,
+        string $targetXrp,
+        bool $isTestnet = false
+    ): array {
+
+        try {
+            // Try with 1 token to get the rate
+            $testQuote = $this->xrpTokenToXrp(
+                tokenAmount: '1',
+                currency: $tokenCurrency,
+                issuer: $tokenIssuer,
+                isTestnet: $isTestnet
+            );
+
+            $xrpPerToken = $testQuote['xrp_out_estimated'] ?? '0';
+
+            if (bccomp($xrpPerToken, '0', 18) <= 0) {
+                throw new \RuntimeException('Cannot determine token exchange rate');
+            }
+
+            // Calculate: minTokens = targetXrp / xrpPerToken
+            // Add 5% buffer for slippage
+            $minTokens = bcdiv($targetXrp, $xrpPerToken, 6);
+            $minTokensWithBuffer = bcmul($minTokens, '1.05', 6); // 5% buffer
+
+            return [
+                'min_token_amount' => $minTokensWithBuffer,
+                'rate' => $xrpPerToken,
+                'target_xrp' => $targetXrp,
+            ];
+        } catch (\Exception $e) {
+            Log::error('Min token calculation failed', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'min_token_amount' => '10',
+                'rate' => '0',
+                'error' => $e->getMessage(),
+            ];
+        }
     }
 }

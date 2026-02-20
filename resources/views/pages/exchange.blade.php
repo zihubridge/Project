@@ -81,6 +81,14 @@
                                     <span class="text-gray-500 text-xs font-bold uppercase tracking-wider">You Get</span>
                                     <input id="receiveAmount" type="text" placeholder="0.0" readonly
                                         class="bg-transparent text-black text-2xl font-bold focus:outline-none w-full cursor-default" />
+                                    <div id="swap-error-message"
+                                        class="hidden mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                        <div class="flex items-start gap-2">
+                                            <ion-icon name="alert-circle-outline"
+                                                class="text-red-600 text-xl flex-shrink-0 mt-0.5"></ion-icon>
+                                            <span id="swap-error-text" class="text-red-600 text-sm font-medium"></span>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="flex flex-col items-end gap-2 min-w-[140px]">
@@ -175,6 +183,7 @@
             let destOk = false;
             let estimating = false;
             let estimateReqId = 0;
+            let hasEstimateError = false;
 
             function setDestState(ok, message = "") {
                 destOk = ok;
@@ -185,7 +194,7 @@
                     destError.textContent = "";
                     destError.classList.add("hidden");
                 }
-                swapBtn.disabled = !(destOk && !estimating);
+                updateSwapButton();
             }
 
             function setEstimateLoading(on) { 
@@ -195,7 +204,7 @@
                     receiveInput.value = "Loading estimated amount...";
                 }
 
-                swapBtn.disabled = !(destOk && !estimating);
+                updateSwapButton();
             }
 
             setDestState(false, "");
@@ -261,9 +270,10 @@
                 const fromOpt = fromTokenSelect.options[fromTokenSelect.selectedIndex];
                 const toOpt = toTokenSelect.options[toTokenSelect.selectedIndex];
 
-                // If not ready, clear the output (don’t show loading forever)
+                // If not ready, clear the output
                 if (!amount || isNaN(Number(amount)) || Number(amount) <= 0 || !fromOpt || !toOpt) {
                     receiveInput.value = "";
+                    clearSwapError();
                     setEstimateLoading(false);
                     return;
                 }
@@ -285,9 +295,9 @@
                     return;
                 }
 
-                // NEW: show loading instantly
                 const myReqId = ++estimateReqId;
                 setEstimateLoading(true);
+                clearSwapError();
 
                 try {
                     const res = await fetch("/global/token_swapping_amount", {
@@ -306,6 +316,10 @@
 
                     if (json.status === 1 && json.estimated_amount !== undefined) {
                         receiveInput.value = json.estimated_amount;
+                        clearSwapError();
+                    } else if (json.status === 0) {
+                        receiveInput.value = "";
+                        showSwapError(json.message || "Estimation failed");
                     } else {
                         receiveInput.value = "";
                         console.log("Estimate response:", json);
@@ -314,9 +328,35 @@
                     if (myReqId !== estimateReqId) return;
                     console.error("Estimate failed:", e);
                     receiveInput.value = "";
+                    showSwapError("Network error. Please try again.");
                 } finally {
                     if (myReqId === estimateReqId) setEstimateLoading(false);
                 }
+            }
+
+            function showSwapError(message) {
+                const errorEl = document.getElementById('swap-error-message');
+                const errorText = document.getElementById('swap-error-text');
+                
+                if (errorEl && errorText) {
+                    errorText.textContent = message;
+                    errorEl.classList.remove('hidden');
+                    hasEstimateError = true; 
+                    updateSwapButton();
+                }
+            }
+
+            function clearSwapError() {
+                const errorEl = document.getElementById('swap-error-message');
+                if (errorEl) {
+                    errorEl.classList.add('hidden');
+                    hasEstimateError = false;
+                    updateSwapButton(); 
+                }
+            }
+
+            function updateSwapButton() {
+                swapBtn.disabled = !(destOk && !estimating && !hasEstimateError);
             }
 
             async function checkDestination() {
@@ -371,49 +411,51 @@
                 }
             }
 
-        // Load tokens into select and attach asset/issuer to options
-        function loadTokens(assetCode, selectId) {
+            // Load tokens into select and attach asset/issuer to options
+            function loadTokens(assetCode, selectId) {
 
-            return fetch("/global/tokens", {
-                    method: "POST",
-                    headers: {
-                        "Accept": "application/json",
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
-                    },
-                    body: JSON.stringify({ asset_code: assetCode }),
-                })
-                .then(res => res.json())
-                .then(json => {
-                    const select = document.getElementById(selectId);
-                    if (!select || json.status !== "success") return;
+                return fetch("/global/tokens", {
+                        method: "POST",
+                        headers: {
+                            "Accept": "application/json",
+                            "Content-Type": "application/json",
+                            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+                        },
+                        body: JSON.stringify({
+                            asset_code: assetCode
+                        }),
+                    })
+                    .then(res => res.json())
+                    .then(json => {
+                        const select = document.getElementById(selectId);
+                        if (!select || json.status !== "success") return;
 
-                    select.innerHTML = `<option value="" selected disabled>Choose token</option>`;
+                        select.innerHTML = `<option value="" selected disabled>Choose token</option>`;
 
-                    (json.tokens || []).forEach(token => {
-                        const opt = document.createElement("option");
-                        opt.value = token.id;
-                        opt.text = token.asset_code;
+                        (json.tokens || []).forEach(token => {
+                            const opt = document.createElement("option");
+                            opt.value = token.id;
+                            opt.text = token.asset_code;
 
-                        opt.dataset.asset = token.asset_code;
-                        opt.dataset.issuer = token.issuer_address;
+                            opt.dataset.asset = token.asset_code;
+                            opt.dataset.issuer = token.issuer_address;
 
-                        opt.setAttribute('data-blockchain-id', token.blockchain_id);
-                        opt.setAttribute('data-asset-code', token.asset_code);
-                        opt.setAttribute('data-issuer', token.issuer_address);
+                            opt.setAttribute('data-blockchain-id', token.blockchain_id);
+                            opt.setAttribute('data-asset-code', token.asset_code);
+                            opt.setAttribute('data-issuer', token.issuer_address);
 
-                        select.appendChild(opt);
+                            select.appendChild(opt);
+                        });
                     });
-                });
-        }
+            }
 
-        function debounce(fn, delay = 400) {
-            let t;
-            return (...args) => {
-                clearTimeout(t);
-                t = setTimeout(() => fn(...args), delay);
-            };
-        }
-    });
+            function debounce(fn, delay = 400) {
+                let t;
+                return (...args) => {
+                    clearTimeout(t);
+                    t = setTimeout(() => fn(...args), delay);
+                };
+            }
+        });
     </script>
 @endpush
