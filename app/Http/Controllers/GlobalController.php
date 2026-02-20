@@ -13,6 +13,8 @@ use Soneso\StellarSDK\Network;
 use Soneso\StellarSDK\StellarSDK;
 use Illuminate\Http\Client\RequestException;
 
+use function Illuminate\Log\log;
+
 class GlobalController extends Controller
 {
     private bool $isTestnet;
@@ -198,24 +200,39 @@ class GlobalController extends Controller
                 flow: 'standard'
             );
 
+            log('limit', $limits);
+
             $minXrpRequired = $limits['minAmount'];
 
             // Minimum token needed
             $minQuote = $this->getMinimumTokenForXrp(
                 tokenCurrency: $token->asset_code,
                 tokenIssuer: $token->issuer_address,
+                tokenAmount: $amount,
                 targetXrp: $minXrpRequired,
                 isTestnet: $this->isTestnet
             );
 
-            $minTokenRequired = $minQuote['min_token_amount'] ?? '0';
+            log('minQuote', $minQuote);
 
-            if (bccomp($amount, $minTokenRequired, 6) < 0) {
+            if (!($minQuote['is_enough'] ?? false)) {
+
+                $minTokenRequired = $this->findMinimumTokenAmountForXrp(
+                    currency: $token->asset_code,
+                    issuer: $token->issuer_address,
+                    targetXrp: $minQuote['target_xrp'],
+                    currentAmount: $amount,
+                    currentXrpOut: $minQuote['xrp_out'],
+                    isTestnet: $this->isTestnet
+                );
+
                 return response()->json([
                     'status' => 0,
                     'message' => "Minimum amount required is {$minTokenRequired} {$token->asset_code}",
                     'min_amount' => $minTokenRequired,
                     'your_amount' => $amount,
+                    'estimated_xrp' => $minQuote['xrp_out'],
+                    'required_xrp' => $minQuote['target_xrp'],
                 ], 400);
             }
 
@@ -1085,45 +1102,97 @@ class GlobalController extends Controller
     private function getMinimumTokenForXrp(
         string $tokenCurrency,
         string $tokenIssuer,
+        string $tokenAmount,
         string $targetXrp,
         bool $isTestnet = false
     ): array {
 
         try {
-            // Try with 1 token to get the rate
-            $testQuote = $this->xrpTokenToXrp(
-                tokenAmount: '1',
+
+            // Get XRP output for the PROVIDED token amount
+            $quote = $this->xrpTokenToXrp(
+                tokenAmount: $tokenAmount,
                 currency: $tokenCurrency,
                 issuer: $tokenIssuer,
                 isTestnet: $isTestnet
             );
 
-            $xrpPerToken = $testQuote['xrp_out_estimated'] ?? '0';
+            Log::debug('xrpTokenToXrp', $quote);
 
-            if (bccomp($xrpPerToken, '0', 18) <= 0) {
-                throw new \RuntimeException('Cannot determine token exchange rate');
+            $xrpOut = $quote['xrp_out_estimated'] ?? '0';
+
+            if (!is_numeric($xrpOut) || bccomp($xrpOut, '0', 18) <= 0) {
+                throw new \RuntimeException('Cannot determine XRP output');
             }
 
-            // Calculate: minTokens = targetXrp / xrpPerToken
-            // Add 5% buffer for slippage
-            $minTokens = bcdiv($targetXrp, $xrpPerToken, 6);
-            $minTokensWithBuffer = bcmul($minTokens, '1.05', 6); // 5% buffer
+            // Check if provided amount satisfies minimum XRP requirement
+            $enough = bccomp($xrpOut, $targetXrp, 6) >= 0;
 
             return [
-                'min_token_amount' => $minTokensWithBuffer,
-                'rate' => $xrpPerToken,
-                'target_xrp' => $targetXrp,
+                'token_amount'   => $tokenAmount,
+                'xrp_out'        => $xrpOut,
+                'target_xrp'     => $targetXrp,
+                'is_enough'      => $enough,
+                'short_by'       => $enough
+                    ? '0'
+                    : bcsub($targetXrp, $xrpOut, 6),
             ];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+
             Log::error('Min token calculation failed', [
                 'error' => $e->getMessage(),
             ]);
 
             return [
-                'min_token_amount' => '10',
-                'rate' => '0',
-                'error' => $e->getMessage(),
+                'token_amount' => $tokenAmount,
+                'xrp_out'      => '0',
+                'target_xrp'   => $targetXrp,
+                'is_enough'    => false,
+                'short_by'     => $targetXrp,
+                'error'        => $e->getMessage(),
             ];
         }
+    }
+
+    private function findMinimumTokenAmountForXrp(
+        string $currency,
+        string $issuer,
+        string $targetXrp,
+        string $currentAmount,
+        string $currentXrpOut,
+        bool $isTestnet = false
+    ): string {
+
+        $ratio = bcdiv($targetXrp, $currentXrpOut, 18);
+        $estimated = bcmul($currentAmount, $ratio, 6);
+
+        $low  = bcmul($estimated, '0.8', 6);
+        $high = bcmul($estimated, '1.2', 6);
+
+        // 8–10 iterations needed now
+        for ($i = 0; $i < 5; $i++) {
+
+            $mid = bcdiv(bcadd($low, $high, 18), '2', 18);
+
+            $quote = $this->xrpTokenToXrp(
+                tokenAmount: $mid,
+                currency: $currency,
+                issuer: $issuer,
+                isTestnet: $isTestnet
+            );
+
+            $xrpOut = $quote['xrp_out_estimated'] ?? '0';
+
+            if (bccomp($xrpOut, $targetXrp, 6) >= 0) {
+                $high = $mid;
+            } else {
+                $low = $mid;
+            }
+        }
+
+        // $buffered = bcmul($high, '1.03', 6);
+
+        // return bcadd($buffered, '0', 6);
+        return bcadd($high, '0', 6);
     }
 }
