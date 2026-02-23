@@ -99,7 +99,7 @@ class ExecuteSwapJob implements ShouldQueue
                 null,
                 $swap->id
             );
-        } else {
+        } else if ($blockchainId === 2) {
 
             $result = $xrpl->xrpTokenToXrp(
                 tokenAmount: $deposit->received_token_amount,
@@ -107,6 +107,20 @@ class ExecuteSwapJob implements ShouldQueue
                 tokenIssuer: $swap->fromToken->issuer_address,
                 minXrpOut: '0.0000001'
             );
+        } else {
+            $message = "Unsupported blockchain for internal swap. Blockchain ID: {$blockchainId}";
+
+            SwapEvent::create([
+                'swap_id' => $swap->id,
+                'swap_event_type_id' => 7, // internal swap faield
+                'message' => $message
+            ]);
+
+            $swap->update([
+                'swap_state_id' => 11 // failed
+            ]);
+
+            throw new \RuntimeException($message);
         }
 
         if (!($result['ok'] ?? false)) {
@@ -211,7 +225,7 @@ class ExecuteSwapJob implements ShouldQueue
         SwapEvent::create([
             'swap_id' => $swap->id,
             'swap_event_type_id' => 8,
-            'message' => 'Exchange order created'
+            'message' => 'Exchange order creating'
         ]);
 
         self::dispatch($swap->id);
