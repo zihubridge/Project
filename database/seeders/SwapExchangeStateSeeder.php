@@ -17,16 +17,14 @@ class SwapExchangeStateSeeder extends Seeder
 
         $swap_exchange_states = [
             // Provider order lifecycle
-            'order_creating',
             'order_created',
 
             // Funds transfer to provider
-            'sending_to_provider',
             'sent_to_provider',
 
             // Provider side lifecycle
             'waiting_provider',
-            'provider_exchanging',
+            'recevied_from_provider',
             'provider_completed',
 
             // Controlled failures
