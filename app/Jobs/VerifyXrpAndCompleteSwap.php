@@ -69,7 +69,7 @@ class VerifyXrpAndCompleteSwap implements ShouldQueue
         $exchange->update([
             'received_amount' => $receipt['amount_received'],
             'payout_tx_id'  => $receipt['tx_hash'],
-            'swap_exchange_state_id' => 7 //PROVIDER_COMPLETED,
+            'swap_exchange_state_id' => 5 //PROVIDER_COMPLETED,
         ]);
 
         $swap->update([
