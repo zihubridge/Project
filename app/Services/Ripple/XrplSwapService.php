@@ -574,33 +574,98 @@ class XrplSwapService
      */
     public function sendXrpToExchange(string $toAddress, string $amount, ?string $destinationTag = null): string
     {
-        // Convert XRP to Drops (e.g., "1" XRP becomes "1000000" Drops)
-        $amountInDrops = bcmul($amount, '1000000', 0);
+        try {
+            // Convert XRP to Drops (e.g., "1" XRP becomes "1000000" Drops)
+            $amountInDrops = bcmul($amount, '1000000', 0);
 
-        // Build the transaction array
-        $tx = [
-            'TransactionType' => 'Payment',
-            'Account' => $this->hotWallet,
-            'Destination' => $toAddress,
-            'Amount' => $amountInDrops, // For native XRP, this is a string of drops
-        ];
+            if (bccomp($amountInDrops, '1', 0) <= 0) {
+                throw new RuntimeException('Invalid XRP amount');
+            }
 
-        // Add Destination Tag if provided by ChangeNOW
-        if (!empty($destinationTag)) {
-            $tx['DestinationTag'] = (int) $destinationTag;
+            // Build the transaction array
+            $tx = [
+                'TransactionType' => 'Payment',
+                'Account' => $this->hotWallet,
+                'Destination' => $toAddress,
+                'Amount' => $amountInDrops, // For native XRP, this is a string of drops
+            ];
+
+            // Add Destination Tag if provided by ChangeNOW
+            if (!empty($destinationTag)) {
+                $tx['DestinationTag'] = (int) $destinationTag;
+            }
+
+
+            $wallet = WalletWallet::fromSeed($this->hotWalletSeed);
+            $autofilled = $this->client->autofill($tx);
+
+            $paymentTx = new Payment($autofilled);
+            $signed = $wallet->sign($paymentTx);
+
+            $txBlob = $signed['tx_blob'] ?? null;
+
+            if (!$txBlob) {
+                throw new RuntimeException('Signing failed');
+            }
+
+            // Submit transaction
+            $submitRes = Http::post($this->rpcUrl, [
+                'method' => 'submit',
+                'params' => [[
+                    'tx_blob' => $txBlob
+                ]]
+            ]);
+
+            $submitJson = $submitRes->json();
+
+            $engineResult = data_get($submitJson, 'result.engine_result');
+
+            if ($engineResult !== 'tesSUCCESS') {
+                throw new RuntimeException(
+                    data_get($submitJson, 'result.engine_result_message', 'Unknown submit error')
+                );
+            }
+
+            $txHash = data_get($submitJson, 'result.tx_json.hash');
+
+            if (!$txHash) {
+                throw new RuntimeException('Missing transaction hash');
+            }
+
+            $validated = false;
+
+            for ($i = 0; $i < 20; $i++) {
+
+                usleep(500000);
+
+                $res = Http::post($this->rpcUrl, [
+                    'method' => 'tx',
+                    'params' => [[
+                        'transaction' => $txHash,
+                        'binary' => false
+                    ]]
+                ]);
+
+                $txDetails = $res->json();
+
+                if (data_get($txDetails, 'result.validated')) {
+                    $validated = true;
+                    break;
+                }
+            }
+
+            if (!$validated) {
+                throw new RuntimeException('Transaction not validated');
+            }
+
+            return $txHash;
+        } catch (\Throwable $e) {
+
+            Log::error('[XRPL XRP→EXCHANGE FAILED]', [
+                'error' => $e->getMessage()
+            ]);
+
+            throw $e;
         }
-
-        // Sign and Submit using your established helper
-        $result = $this->signAndSubmit($tx);
-
-        // Check for success
-        if (($result['engine_result'] ?? '') !== 'tesSUCCESS') {
-            throw new \RuntimeException(
-                "Failed to send XRP to ChangeNOW: " . ($result['engine_result_message'] ?? 'Unknown Error')
-            );
-        }
-
-        // Return the hash so we can save it to 'external_tx_id'
-        return $result['tx_json']['hash'];
     }
 }
