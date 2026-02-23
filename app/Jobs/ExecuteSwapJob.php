@@ -219,7 +219,6 @@ class ExecuteSwapJob implements ShouldQueue
             'payout_memo'    => $payoutTag,
             'from_amount' => $coinAmount,
             'expected_amount' => $exchange['toAmount'] ?? null,
-            'swap_exchange_state_id' => 2
         ]);
 
         SwapEvent::create([
@@ -238,6 +237,11 @@ class ExecuteSwapJob implements ShouldQueue
     ): void {
 
         $exchange = $swap->exchange;
+
+        if (!$exchange) {
+            Log::error("Swap {$swap->id} has no exchange.");
+            return;
+        }
 
         if ($exchange->exchange_tx_id) {
             return; // already sent
@@ -261,7 +265,7 @@ class ExecuteSwapJob implements ShouldQueue
 
         $exchange->update([
             'payin_tx_id' => $tx,
-            'swap_exchange_state_id' => 3
+            'swap_exchange_state_id' => 2 //sent_to_provider
         ]);
 
         SwapEvent::create([
