@@ -24,7 +24,7 @@ class SwapExchangeStateSeeder extends Seeder
 
             // Provider side lifecycle
             'waiting_provider',
-            'recevied_from_provider',
+            'received_from_provider',
             'provider_completed',
 
             // Controlled failures
