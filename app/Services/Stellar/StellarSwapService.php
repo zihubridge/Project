@@ -3,6 +3,7 @@
 namespace App\Services\Stellar;
 
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Soneso\StellarSDK\Asset;
 use Soneso\StellarSDK\AssetTypeNative;
@@ -158,7 +159,7 @@ class StellarSwapService
         string $tokenCode,
         string $issuer,
         string $amountIn,
-        string $minTokenOut,
+        string $minTokenOut
     ): array {
         $seed = config('services.stellar.seed');
         $sourceKp = KeyPair::fromSeed($seed);
@@ -191,23 +192,52 @@ class StellarSwapService
         // Submit to Stellar Network
         $response = $this->sdk->submitTransaction($transaction);
 
-        if ($response->isSuccessful()) {
+        if (!$response->isSuccessful()) {
+
+            $error = 'swap_failed';
+
+            if ($response->getExtras()?->getResultCodes()) {
+                $error = $response->getExtras()
+                    ->getResultCodes()
+                    ->getTransactionResultCode();
+            }
+
             return [
-                'ok' => true,
-                'tx_hash' => $response->getHash(),
-                'amount_out' => $minTokenOut,
+                'ok' => false,
+                'error' => $error,
             ];
         }
 
-        // Handle Failure
-        $error = 'swap_failed';
-        if ($response->getExtras() && $response->getExtras()->getResultCodes()) {
-            $error = $response->getExtras()->getResultCodes()->getTransactionResultCode();
+        $txHash = $response->getHash();
+
+        // GET REAL AMOUNT OUT FROM HORIZON
+        $amountOut = $minTokenOut;
+        try {
+
+            $horizon = rtrim(config('services.stellar.horizon_url'), '/');
+
+            $ops = Http::get(
+                "{$horizon}/transactions/{$txHash}/operations"
+            )->json();
+
+            foreach ($ops['_embedded']['records'] ?? [] as $record) {
+
+                if (($record['type'] ?? '') === 'path_payment_strict_send') {
+
+                    $amountOut = $record['amount'] ?? $minTokenOut;
+                    break;
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('[XLM->TOKEN] Failed to fetch real amount_out', [
+                'tx' => $txHash
+            ]);
         }
 
         return [
-            'ok' => false,
-            'error' => $error,
+            'ok' => true,
+            'tx_hash' => $txHash,
+            'amount_out' => $amountOut,
         ];
     }
 
