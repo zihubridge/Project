@@ -101,8 +101,6 @@ class XrplSwapService
                 'Flags'   => 0x00020000, // tfPartialPayment
             ];
 
-            Log::info('[XRPL XRP→TOKEN TX BUILT]', $tx);
-
             $wallet = WalletWallet::fromSeed($this->hotWalletSeed);
 
             $autofilled = $this->client->autofill($tx);
@@ -128,7 +126,6 @@ class XrplSwapService
             }
 
             $submitJson   = $submitRes->json();
-            Log::info('submitJson', $submitJson);
 
             $txHash = data_get($submitJson, 'result.tx_json.hash');
             if (!$txHash) {
@@ -163,8 +160,6 @@ class XrplSwapService
                 throw new RuntimeException('Transaction submitted but not validated within timeout');
             }
 
-            Log::info('txDetails', $txDetails);
-
             // Now safely extract delivered_amount
             $delivered = data_get($txDetails, 'result.meta.delivered_amount');
 
@@ -189,89 +184,6 @@ class XrplSwapService
                 'ok'      => false,
                 'message' => $e->getMessage(),
             ];
-        }
-    }
-
-    /* -------------------------------------------------
-     |  Signing & Submit (stub)
-     |--------------------------------------------------*/
-
-    private function signAndSubmit(array $tx): array
-    {
-        Log::info('[XRPL] signAndSubmit started', [
-            'tx' => $tx,
-        ]);
-
-        try {
-            $wallet = WalletWallet::fromSeed($this->hotWalletSeed);
-
-            Log::info('[XRPL] Wallet loaded', [
-                'address' => method_exists($wallet, 'getAddress') ? $wallet->getAddress() : null,
-            ]);
-
-            $preparedTx = $this->client->autofill($tx);
-
-            Log::info('[XRPL] Transaction autofilled', [
-                'prepared_tx' => $preparedTx,
-            ]);
-
-            $signedTx = $wallet->sign($preparedTx);
-
-            Log::info('[XRPL] Transaction signed', [
-                'has_tx_blob' => isset($signedTx['tx_blob']),
-                'tx_blob_length' => isset($signedTx['tx_blob']) ? strlen($signedTx['tx_blob']) : 0,
-            ]);
-
-            if (empty($signedTx['tx_blob'])) {
-                Log::error('[XRPL] Signing failed: tx_blob missing', [
-                    'signed_tx' => $signedTx,
-                ]);
-
-                return [
-                    'ok' => false,
-                    'reason' => 'signing_failed',
-                    'message' => 'tx_blob missing after signing',
-                ];
-            }
-
-            Log::info('[XRPL] Submitting transaction');
-
-            $response = $this->client->submitAndWait($signedTx);
-            $result = $response->getResult();
-
-            Log::info('[XRPL] Submit response received', [
-                'result' => $result,
-            ]);
-
-            $engineResult = $result['engine_result'] ?? null;
-
-            if ($engineResult === 'tesSUCCESS') {
-                Log::info('[XRPL] Transaction successful', [
-                    'tx_hash' => data_get($result, 'tx_json.hash'),
-                ]);
-
-                return [
-                    'ok' => true,
-                    'tx_hash' => $result['tx_json']['hash'] ?? null,
-                    'amount_out' => $result['tx_json']['Amount']['value'] ?? $result['tx_json']['Amount'],
-                    'engine_result' => $engineResult
-                ];
-            }
-
-            Log::error('[XRPL] Transaction rejected by network', [
-                'engine_result' => $engineResult,
-                'engine_message' => $result['engine_result_message'] ?? null,
-                'full_result' => $result,
-            ]);
-
-            return [
-                'ok' => false,
-                'reason' => $engineResult,
-                'message' => $result['engine_result_message'] ?? 'Unknown error'
-            ];
-        } catch (\Throwable $e) {
-            Log::error("XRPL Critical Failure: " . $e->getMessage());
-            return ['ok' => false, 'reason' => 'exception', 'message' => $e->getMessage()];
         }
     }
 
@@ -310,13 +222,6 @@ class XrplSwapService
         try {
             $cur = $this->xrplCurrency($tokenCurrency);
 
-            Log::info('[XRPL Token→XRP] Starting swap', [
-                'token_amount' => $tokenAmount,
-                'currency' => $cur,
-                'issuer' => $tokenIssuer,
-                'min_xrp_out' => $minXrpOut,
-            ]);
-
             // Calculate DeliverMin in drops (minimum XRP to receive)
             $minXrpDrops = bcmul($minXrpOut, '1000000', 0);
             if (bccomp($minXrpDrops, '100', 0) < 0) {
@@ -340,8 +245,6 @@ class XrplSwapService
                 'Flags' => 131072, // tfPartialPayment (already correct)
             ];
 
-            Log::info('[XRPL Token→XRP TX BUILT]', $tx);
-
             $wallet = WalletWallet::fromSeed($this->hotWalletSeed);
 
             $autofilled = $this->client->autofill($tx);
@@ -362,7 +265,6 @@ class XrplSwapService
             ]);
 
             $submitJson = $submitRes->json();
-            Log::info('[XRPL SUBMIT]', $submitJson);
 
             $txHash = data_get($submitJson, 'result.tx_json.hash');
             if (!$txHash) {
@@ -395,8 +297,6 @@ class XrplSwapService
             if (!$validated) {
                 throw new RuntimeException('Transaction not validated');
             }
-
-            Log::info('txDetails', $txDetails);
 
             // Extract delivered_amount (XRP will be a string in drops)
             $delivered = data_get($txDetails, 'result.meta.delivered_amount');
@@ -528,8 +428,6 @@ class XrplSwapService
                     'value'    => $tokenAmount,
                 ],
             ];
-
-            Log::info('[XRPL SEND TOKEN TX BUILT]', $tx);
 
             $wallet = WalletWallet::fromSeed($this->hotWalletSeed);
 
