@@ -49,7 +49,7 @@ class VerifyXlmAndCompleteSwap implements ShouldQueue
         // ------------------------------------------------------------------
         // STEP 1: Check XLM receipt from Exchange
         // ------------------------------------------------------------------
-        $receipt = $xlm->checkXlmReceipt($swap->destination_tag, $swap->expected_xlm_amount);
+        $receipt = $xlm->checkXlmReceipt((string) $exchange->payout_memo);
 
         if (!$receipt['received']) {
 
@@ -102,7 +102,7 @@ class VerifyXlmAndCompleteSwap implements ShouldQueue
             $xlmResult = $xlm->xlmToToken(
                 tokenCode: $swap->toToken->asset_code,
                 issuer: $swap->toToken->issuer_address,
-                amountIn: $swap->expected_xlm_amount,
+                amountIn: $exchange->expected_amount,
                 minTokenOut: $swap->expected_token_amount ?? $swap->expected_xlm_amount
             );
 

@@ -288,7 +288,7 @@ class StellarSwapService
     /**
      * Polling function to check if ChangeNOW has sent XLM to our wallet.
      */
-    public function checkXlmReceipt(string $memoId, string $expectedXlmAmount): array
+    public function checkXlmReceipt(string $memoId): array
     {
         try {
             $paymentsResponse = $this->sdk->payments()
@@ -297,9 +297,13 @@ class StellarSwapService
                 ->limit(50)
                 ->execute();
 
-            foreach ($paymentsResponse as $payment) {
-                // Filter for native XLM payments only
-                if ($payment->getType() !== 'payment' || $payment->getAssetType() !== 'native') {
+            foreach ($paymentsResponse->getOperations() as $payment) {
+
+                // only normal payments
+                if (
+                    !$payment instanceof
+                        \Soneso\StellarSDK\Responses\Operations\PaymentOperationResponse
+                ) {
                     continue;
                 }
 
@@ -310,18 +314,18 @@ class StellarSwapService
                 $actualMemoValue = '';
 
                 if ($memo) {
-                    $actualMemoValue = $memo->valueAsString();
+                    $actualMemoValue = trim((string)$memo->valueAsString());
                 }
 
-                // Compare Memo and Amount
-                $memoMatches = ($actualMemoValue === (string) $memoId);
-                $amountMatches = (bccomp($payment->getAmount(), $expectedXlmAmount, 7) === 0);
+                $memoMatches =
+                    $actualMemoValue === trim((string)$memoId);
 
-                if ($memoMatches && $amountMatches) {
+                if ($memoMatches) {
                     return [
                         'received' => true,
-                        'tx_hash'  => $txHash,
-                        'amount'   => $payment->getAmount()
+                        'tx_hash' => $txHash,
+                        'amount_received' => $payment->getAmount(),
+                        'from' => $payment->getFrom(),
                     ];
                 }
             }
