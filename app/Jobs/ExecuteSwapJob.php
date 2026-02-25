@@ -276,9 +276,9 @@ class ExecuteSwapJob implements ShouldQueue
         ]);
 
         if ($swap->fromBlockchain->asset_code === 'xlm') {
-            VerifyXrpAndCompleteSwap::dispatch($swap->id);
+            VerifyXrpAndCompleteSwapJob::dispatch($swap->id);
         } else {
-            VerifyXlmAndCompleteSwap::dispatch($swap->id);
+            VerifyXlmAndCompleteSwapJob::dispatch($swap->id);
         }
     }
 }
