@@ -294,7 +294,7 @@ class StellarSwapService
             $paymentsResponse = $this->sdk->payments()
                 ->forAccount(config('services.stellar.wallet'))
                 ->order('desc')
-                ->limit(20)
+                ->limit(50)
                 ->execute();
 
             foreach ($paymentsResponse as $payment) {
