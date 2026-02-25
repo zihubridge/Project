@@ -241,48 +241,99 @@ class StellarSwapService
         return $response->getHash();
     }
 
-    public function sendXlmTokenToDestination(array $operations, ?string $memoText = null): string
-    {
-        // Prepare KeyPair and Account Data
-        $kp = KeyPair::fromSeed(config('services.stellar.seed'));
-        $accountId = $kp->getAccountId();
+    public function sendXlmTokenToDestination(
+        string $amount,
+        string $assetCode,
+        string $issuer,
+        string $destination,
+        ?string $memoText = null
+    ): array {
 
-        // In Soneso, fetching the account state
-        $account = $this->sdk->requestAccount($accountId);
+        try {
 
-        // Initialize Builder
-        $builder = new TransactionBuilder($account);
+            // -------------------------------------------------
+            // Prepare wallet
+            // -------------------------------------------------
 
-        // Add Operations
-        foreach ($operations as $op) {
-            $builder->addOperation($op);
+            $amount = number_format((float) $amount, 7, '.', '');
+            $kp = KeyPair::fromSeed(config('services.stellar.seed'));
+            $sourceAccount = $this->sdk->requestAccount($kp->getAccountId());
+
+            // -------------------------------------------------
+            // Build asset
+            // -------------------------------------------------
+            $asset = $this->asset($assetCode, $issuer);
+
+            // -------------------------------------------------
+            // Build payment operation
+            // -------------------------------------------------
+
+            $builder = new TransactionBuilder($sourceAccount);
+            $payment = (new PaymentOperationBuilder($destination, $asset, $amount))->build();
+
+            if ($memoText) {
+                $builder->addMemo(
+                    Memo::text(substr($memoText, 0, 28))
+                );
+            }
+
+            // -------------------------------------------------
+            // Build and Sign
+            // -------------------------------------------------
+            $builder->addOperation($payment);
+
+            $tx = $builder->build();
+            $tx->sign($kp, $this->network);
+
+            // -------------------------------------------------
+            // Submit
+            // -------------------------------------------------
+            $response = $this->sdk->submitTransaction($tx);
+
+            if ($response->isSuccessful()) {
+
+                $hash = $response->getHash();
+
+                return [
+                    'ok' => true,
+                    'tx_hash' => $hash,
+                ];
+            }
+
+            // -------------------------------------------------
+            // Extract error
+            // -------------------------------------------------
+            $error = 'unknown_stellar_error';
+
+            if (
+                $response->getExtras() &&
+                $response->getExtras()->getResultCodes()
+            ) {
+                $error = $response
+                    ->getExtras()
+                    ->getResultCodes()
+                    ->getTransactionResultCode();
+            }
+
+            Log::error('[STELLAR] Token payout failed', [
+                'error' => $error,
+            ]);
+
+            return [
+                'ok' => false,
+                'message' => $error,
+            ];
+        } catch (\Throwable $e) {
+
+            Log::error('[STELLAR] Exception while sending token', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return [
+                'ok' => false,
+                'message' => $e->getMessage(),
+            ];
         }
-
-        // Add Memo
-        if ($memoText) {
-            // Soneso uses addMemo() which accepts a Memo object
-            $builder->addMemo(Memo::text(substr($memoText, 0, 28)));
-        }
-
-        // Build and Sign
-        $tx = $builder->build();
-        $tx->sign($kp, $this->network);
-
-        // Submit using your method
-        $response = $this->sdk->submitTransaction($tx);
-
-        // Check Success
-        if ($response->isSuccessful()) {
-            return $response->getHash();
-        }
-
-        // Capture the specific error (e.g., 'op_no_trustline' or 'tx_insufficient_balance')
-        $error = 'unknown_stellar_error';
-        if ($response->getExtras() && $response->getExtras()->getResultCodes()) {
-            $error = $response->getExtras()->getResultCodes()->getTransactionResultCode();
-        }
-
-        throw new \RuntimeException("Stellar Transaction Failed: " . $error);
     }
 
     /**
