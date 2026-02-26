@@ -55,8 +55,7 @@ class VerifyXrpAndCompleteSwapJob implements ShouldQueue
         // STEP 1: Check XRP receipt from ChangeNOW
         // ------------------------------------------------------------------
         $receipt = $xrpl->checkXrpReceipt(
-            $exchange->payout_memo,
-            $exchange->expected_amount
+            $exchange->payout_memo
         );
 
          if (($receipt['status'] ?? null) !== 'success') {

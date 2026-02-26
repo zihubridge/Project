@@ -336,8 +336,8 @@ class XrplSwapService
     }
 
 
-    //check if xrp has been received in official ripple wallet from change now or not
-    public function checkXrpReceipt(string $destinationTag, float $expectedXrpAmount): array
+    //check if xrp has been received in official ripple wallet from exchange or not
+    public function checkXrpReceipt(string $destinationTag): array
     {
         // Fetch config values
         $rpcUrl = config('services.xrpl.rpc');
@@ -356,56 +356,47 @@ class XrplSwapService
             ]);
 
             if ($response->failed()) {
-                throw new \RuntimeException("XRPL RPC Error: " . $response->body());
+                throw new \RuntimeException($response->body());
             }
 
-            $result = $response->json()['result'];
-            $transactions = $result['transactions'] ?? [];
+            $transactions = $response->json()['result']['transactions'] ?? [];
 
             foreach ($transactions as $txData) {
+
                 $tx = $txData['tx'];
 
-                // Check if it's a Payment and matches our Destination Tag
-                if (($tx['TransactionType'] ?? '') === 'Payment' &&
-                    isset($tx['DestinationTag']) && (string) $tx['DestinationTag'] === (string) $destinationTag
+                if (
+                    ($tx['TransactionType'] ?? '') !== 'Payment' ||
+                    (string)($tx['DestinationTag'] ?? '') !== (string)$destinationTag
                 ) {
-
-                    // Convert expected XRP to drops (XRP Ledger uses integers for XRP)
-                    $expectedDrops = bcmul($expectedXrpAmount, '1000000', 0);
-
-                    // 0.5% tolerance
-                    $toleranceDrops = bcdiv(
-                        bcmul($expectedDrops, '5', 0),
-                        '1000',
-                        0
-                    );
-
-                    $minAcceptable = bcsub($expectedDrops, $toleranceDrops, 0);
-
-                    // Use meta.delivered_amount ONLY
-                    $delivered = $txData['meta']['delivered_amount'] ?? null;
-
-                    // Must be XRP (drops string)
-                    if (!is_string($delivered)) {
-                        continue;
-                    }
-
-                    $deliveredDrops = $delivered;
-
-                    if (bccomp($deliveredDrops, $minAcceptable, 0) >= 0) {
-                        return [
-                            'status'          => 'success',
-                            'tx_hash'         => $tx['hash'],
-                            'amount_received' => bcdiv($deliveredDrops, '1000000', 6),
-                            'ledger_index'    => $tx['ledger_index'],
-                        ];
-                    }
+                    continue;
                 }
+
+                $delivered = $txData['meta']['delivered_amount'] ?? null;
+
+                if (!is_string($delivered)) {
+                    continue;
+                }
+
+                return [
+                    'status' => 'success',
+                    'tx_hash' => $tx['hash'],
+                    'amount_received' => bcdiv($delivered, '1000000', 6),
+                    'from' => $tx['Account'] ?? null,
+                    'ledger_index' => $tx['ledger_index'] ?? null,
+                    'message' => null,
+                ];
             }
 
-            return ['status' => 'pending', 'message' => 'Payment not found in recent transactions.'];
-        } catch (\Exception $e) {
-            return ['status' => 'error', 'message' => $e->getMessage()];
+            return [
+                'status' => 'pending',
+                'message' => 'Payment not found',
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ];
         }
     }
 
