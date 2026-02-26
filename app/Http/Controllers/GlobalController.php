@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Blockchain;
+use App\Models\Swap;
 use App\Models\Token;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -1194,5 +1195,33 @@ class GlobalController extends Controller
 
         // return bcadd($buffered, '0', 6);
         return bcadd($high, '0', 6);
+    }
+
+    public function getEstimatedSwapTimeSeconds(): ?float
+    {
+        return Swap::query()
+            ->where('swap_state_id', 9)
+            ->whereNotNull('started_at')
+            ->whereNotNull('completed_at')
+            ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, started_at, completed_at)) as avg_seconds')
+            ->value('avg_seconds');
+    }
+
+    public function getEstimatedSwapTimeHuman()
+    {
+        $seconds = $this->getEstimatedSwapTimeSeconds();
+
+        if (!$seconds) {
+            return response()->json([
+                'estimated_time' => 'N/A'
+            ]);
+        }
+
+        $minutes = floor($seconds / 60);
+        $remaining = $seconds % 60;
+
+        return response()->json([
+            'estimated_time' => "{$minutes}m {$remaining}s",
+        ]);
     }
 }

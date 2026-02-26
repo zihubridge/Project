@@ -66,6 +66,17 @@
                         </div>
                     </div>
                 </div>
+                <div class="flex flex-col md:flex-row gap-5 mb-10">
+                    <h2 class="text-lg font-bold text-black w-full md:w-4/12">
+                        Estimated Receive Time:
+                    </h2>
+
+                    <div class="w-full md:w-8/12 px-8">
+                        <p id="estimatedTime" class="text-[#0066FF] font-semibold text-lg">
+                            Calculating...
+                        </p>
+                    </div>
+                </div>
 
                 <!-- Deposit Address & Memo -->
                 <div class="flex flex-col md:flex-row gap-4 md:gap-6">
@@ -291,8 +302,6 @@
                 .then(response => {
                     const data = response.data;
 
-                    console.log('Status update:', data);
-
                     // Only update UI if step changed
                     if (data.current_step !== previousStep) {
                         previousStep = data.current_step;
@@ -321,7 +330,6 @@
                     // Handle completion (swap_state_id === 9)
                     if (data.is_completed) {
                         clearInterval(pollInterval);
-                        console.log('Swap completed!');
 
                         // Optional: Redirect after 2 seconds
                         // setTimeout(() => {
@@ -353,5 +361,20 @@
         window.addEventListener('beforeunload', () => {
             clearInterval(pollInterval);
         });
+
+        function loadEstimatedTime() {
+            axios.get('/global/estimated_swap_time')
+                .then(res => {
+                    const el = document.getElementById('estimatedTime');
+                    if (el) {
+                        el.textContent = res.data.estimated_time;
+                    }
+                })
+                .catch(err => {
+                    console.error('ETA error', err);
+                });
+        }
+
+        loadEstimatedTime();
     </script>
 @endpush
