@@ -9,11 +9,11 @@ p {
 
 .navbar-nav .nav-link {
     margin-right: 1rem;
-    color: #FFF;
+    color: #fff;
 }
 
 .btn-primary-custom {
-    background: linear-gradient(180deg, #0066FF 0%, #003A92 100%);
+    background: linear-gradient(180deg, #0066ff 0%, #003a92 100%);
     border: 2px solid rgba(0, 82, 207, 1);
     border-radius: 10px;
     color: #fff;
@@ -30,7 +30,7 @@ p {
 }
 
 .btn-primary-custom:hover {
-    background: linear-gradient(180deg, #003A92 0%, #0066FF 100%);
+    background: linear-gradient(180deg, #003a92 0%, #0066ff 100%);
     color: #fff;
     transition: all 0.5s ease 0.2s;
 }
@@ -104,7 +104,9 @@ p {
     border-radius: 20px;
     padding: 5rem 2rem;
     overflow: hidden;
-    transition: background 0.5s ease, border-color 0.5s ease;
+    transition:
+        background 0.5s ease,
+        border-color 0.5s ease;
 }
 
 .card-heading p {
@@ -144,7 +146,9 @@ p {
 .hover-img {
     max-width: 100%;
     height: auto;
-    transition: opacity 0.5s ease, transform 0.5s ease;
+    transition:
+        opacity 0.5s ease,
+        transform 0.5s ease;
     position: absolute;
     left: 50%;
     top: 0;
@@ -161,7 +165,7 @@ p {
 }
 
 .how-it-work-card:hover {
-    background: linear-gradient(180deg, #7F1CED 30.77%, #3E4AF1 82.21%);
+    background: linear-gradient(180deg, #7f1ced 30.77%, #3e4af1 82.21%);
 }
 
 .how-it-work-card:hover .card-heading p {
@@ -228,7 +232,7 @@ p {
     width: 5px;
     height: 100%;
     margin-left: -2px;
-    background: #1B1B1B;
+    background: #1b1b1b;
     border-radius: 2px;
 }
 
@@ -270,7 +274,9 @@ p {
     width: 20px;
     height: 5px;
     background: rgba(255, 255, 255, 0.2);
-    transition: background 0.4s ease, box-shadow 0.4s ease;
+    transition:
+        background 0.4s ease,
+        box-shadow 0.4s ease;
     z-index: 0;
 }
 
@@ -288,7 +294,13 @@ p {
 }
 
 .timeline-content {
-    background: linear-gradient(101.94deg, rgba(255, 255, 255, 0.14) -0.71%, rgba(12, 12, 12, 0.14) 21.76%, rgba(12, 12, 12, 0.14) 76.89%, rgba(255, 255, 255, 0.14) 100%);
+    background: linear-gradient(
+        101.94deg,
+        rgba(255, 255, 255, 0.14) -0.71%,
+        rgba(12, 12, 12, 0.14) 21.76%,
+        rgba(12, 12, 12, 0.14) 76.89%,
+        rgba(255, 255, 255, 0.14) 100%
+    );
     padding: 3rem 1.2rem;
     border: 1px solid #ffffff3d;
     border-radius: 10px;
@@ -315,7 +327,12 @@ p {
 }
 
 .timeline-content.active {
-    background: linear-gradient(258.62deg, #FFDA79 -3.8%, #3E4AF1 53.03%, #7F1CED 99.45%);
+    background: linear-gradient(
+        258.62deg,
+        #ffda79 -3.8%,
+        #3e4af1 53.03%,
+        #7f1ced 99.45%
+    );
     color: #fff;
     opacity: 1;
     transform: translateY(0);
@@ -366,18 +383,22 @@ p {
 }
 
 .card-content {
-    background: linear-gradient(101.94deg,
-            rgba(255, 255, 255, 0.14) -0.71%,
-            rgba(12, 12, 12, 0.14) 21.76%,
-            rgba(12, 12, 12, 0.14) 76.89%,
-            rgba(255, 255, 255, 0.14) 100%);
+    background: linear-gradient(
+        101.94deg,
+        rgba(255, 255, 255, 0.14) -0.71%,
+        rgba(12, 12, 12, 0.14) 21.76%,
+        rgba(12, 12, 12, 0.14) 76.89%,
+        rgba(255, 255, 255, 0.14) 100%
+    );
     transition: background 1s ease-in-out;
 }
 
 .card-why-choose-us:hover .card-content {
-    background: linear-gradient(180.04deg,
-            rgba(127, 28, 237, 0) 0.3%,
-            #7f1ced 99.83%);
+    background: linear-gradient(
+        180.04deg,
+        rgba(127, 28, 237, 0) 0.3%,
+        #7f1ced 99.83%
+    );
 }
 
 .card-why-choose-us:hover .card-img img {
@@ -399,7 +420,7 @@ p {
 }
 
 .card-anchor {
-    color: #FEB8FF;
+    color: #feb8ff;
     font-weight: 400;
     font-size: 16px;
     line-height: 100%;
@@ -502,7 +523,6 @@ p {
 }
 
 @media screen and (max-width: 576px) {
-
     .hero-section {
         min-height: 50vh;
     }
@@ -547,12 +567,6 @@ select {
     padding-right: 2.5rem !important;
 }
 
-
-
-
-
 /* NEW STYLES */
-
-
 
 /* NEW STYLES */
