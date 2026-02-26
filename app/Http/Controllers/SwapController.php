@@ -126,6 +126,27 @@ class SwapController extends Controller
             $depositRoutingValue
         ) {
 
+            // CLEANUP OLD UNUSED SWAPS 24 hours old
+            Swap::where('swap_state_id', 2) // waiting_for_deposit
+                ->where('expires_at', '<', now()->subHours(24))
+                ->whereNull('started_at')
+                ->whereDoesntHave('exchange')
+                ->whereDoesntHave('internalSwaps')
+                ->whereDoesntHave('payout')
+                ->whereHas('deposit', function ($q) {
+                    $q->whereNull('tx_hash')
+                        ->where('deposit_state_id', 1);
+                })
+                ->chunkById(100, function ($swaps) {
+                    foreach ($swaps as $swap) {
+                        DB::transaction(function () use ($swap) {
+                            $swap->deposit()->delete();
+                            $swap->events()->delete();
+                            $swap->delete();
+                        });
+                    }
+                });
+
             $swap = Swap::create([
                 'swap_uuid'         => Str::uuid(),
                 'from_blockchain_id' => $fromBlockchainId,
