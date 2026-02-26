@@ -121,6 +121,7 @@ class ScanDepositJob implements ShouldQueue
             // 2. Update swap state
             $swap->update([
                 'swap_state_id' => 3,
+                'started_at' => now(),
             ]);
 
             // 3. Create internal swap row safely (idempotent)

@@ -160,6 +160,7 @@ class VerifyXrpAndCompleteSwapJob implements ShouldQueue
             // ------------------------------------------------------------------
             $swap->update([
                 'swap_state_id' => 9, // complete
+                'completed_at' => now()
             ]);
 
             $payout->update([

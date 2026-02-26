@@ -38,6 +38,8 @@ return new class extends Migration
             $table->unsignedSmallInteger('swap_state_id')->default(1);
             $table->string('failure_reason', 255)->nullable();
             $table->timestamp('expires_at')->nullable();
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('completed_at')->nullable();
 
             $table->timestamps();
         });

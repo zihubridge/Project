@@ -235,6 +235,7 @@ class VerifyXlmAndCompleteSwapJob implements ShouldQueue
 
             $swap->update([
                 'swap_state_id' => 9,
+                'completed_at' => now(),
             ]);
 
             SwapEvent::create([
