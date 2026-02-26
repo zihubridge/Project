@@ -29,7 +29,7 @@ class VerifyXlmAndCompleteSwapJob implements ShouldQueue
         $this->swapId = $swapId;
     }
 
-    public function handle(StellarSwapService $xlm)
+    public function handle(StellarSwapService $xlm): void
     {
         // Reload the swap to get the latest data from the DB
         $swap = Swap::with(['toToken', 'exchange'])->findOrFail($this->swapId);
@@ -60,9 +60,10 @@ class VerifyXlmAndCompleteSwapJob implements ShouldQueue
                 ]);
             }
 
-            Log::info("[POLLING] XLM for Swap #{$this->swapId} not found yet. Retrying in 60s...");
+            Log::info("XLM not received yet from exchange for Swap #{$this->swapId}. Retrying in 60s...");
 
-            return $this->release(60);
+            $this->release(60);
+            return;
         }
 
         // ------------------------------------------------------------------

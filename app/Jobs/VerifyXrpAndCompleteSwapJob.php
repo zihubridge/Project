@@ -59,8 +59,19 @@ class VerifyXrpAndCompleteSwapJob implements ShouldQueue
             $exchange->expected_amount
         );
 
-        if (($receipt['status'] ?? null) !== 'success') {
-            throw new \RuntimeException('XRP not received yet');
+         if (($receipt['status'] ?? null) !== 'success') {
+
+            // Move once: sent_to_provider -> waiting_provider
+            if ($exchange->swap_exchange_state_id === 2) {
+                $exchange->update([
+                    'swap_exchange_state_id' => 3 // waiting_provider
+                ]);
+            }
+
+            Log::info("XRP not received yet from exchange for Swap #{$this->swapId}. Retrying in 60s...");
+
+            $this->release(60);
+            return;
         }
 
         // ------------------------------------------------------------------
