@@ -95,8 +95,6 @@ class VerifyXrpAndCompleteSwapJob implements ShouldQueue
         $internalSwap = InternalSwap::create([
             'swap_id' => $swap->id,
             'blockchain_id' => $swap->to_blockchain_id,
-            'from_token_id' => $swap->from_token_id,
-            'to_token_id' => $swap->to_token_id,
             'leg' => 'destination',
             'amount_in' => $exchange->received_amount,
             'internal_swap_state_id' => 1, //creating
@@ -175,6 +173,7 @@ class VerifyXrpAndCompleteSwapJob implements ShouldQueue
             // ------------------------------------------------------------------
             $swap->update([
                 'swap_state_id' => 9, // complete
+                'to_final_token_amount' => $internalSwap->amount_out,
                 'completed_at' => now()
             ]);
 

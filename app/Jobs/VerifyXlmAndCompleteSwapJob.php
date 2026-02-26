@@ -110,8 +110,6 @@ class VerifyXlmAndCompleteSwapJob implements ShouldQueue
             ],
             [
                 'blockchain_id' => $swap->to_blockchain_id,
-                'from_token_id' => $swap->from_token_id,
-                'to_token_id' => $swap->to_token_id,
                 'amount_in' => $exchange->received_amount,
                 'internal_swap_state_id' => 1
             ]
@@ -119,8 +117,6 @@ class VerifyXlmAndCompleteSwapJob implements ShouldQueue
 
         // run swap ONLY if not completed yet
         if (!$internalSwap->tx_hash) {
-
-            Log::info("[JOB] Running internal XLM->Token swap for {$swap->id}");
 
             $xlmResult = $xlm->xlmToToken(
                 tokenCode: $swap->toToken->asset_code,

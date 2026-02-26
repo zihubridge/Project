@@ -19,9 +19,6 @@ return new class extends Migration
 
             $table->unsignedBigInteger('blockchain_id')->index();
 
-            $table->unsignedBigInteger('from_token_id')->nullable()->index();
-            $table->unsignedBigInteger('to_token_id')->nullable()->index();
-
             $table->decimal('amount_in', 36, 18);
             $table->decimal('amount_out', 36, 18)->nullable();
 
