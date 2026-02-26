@@ -1,74 +1,74 @@
-        html,
-        body {
-            height: 100%;
-            overflow-y: auto !important;
-            -webkit-overflow-scrolling: touch;
-        }
+html,
+body {
+    height: 100%;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+}
 
-        html::-webkit-scrollbar,
-        body::-webkit-scrollbar,
-        *::-webkit-scrollbar {
-            width: 0px !important;
-            height: 0px !important;
-            background: transparent !important;
-            display: none !important;
-        }
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+    width: 0px !important;
+    height: 0px !important;
+    background: transparent !important;
+    display: none !important;
+}
 
-        html,
-        body,
-        * {
-            scrollbar-width: none !important;
-            -ms-overflow-style: none !important;
-        }
+html,
+body,
+* {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
 
-        .hide-scrollbar,
-        .hide-scrollbar * {
-            scrollbar-width: none !important;
-        }
+.hide-scrollbar,
+.hide-scrollbar * {
+    scrollbar-width: none !important;
+}
 
-        /* Heartbeat Animation */
-        @keyframes heartBeat {
-            0% {
-                transform: scale(1);
-            }
+/* Heartbeat Animation */
+@keyframes heartBeat {
+    0% {
+        transform: scale(1);
+    }
 
-            25% {
-                transform: scale(1.18);
-            }
+    25% {
+        transform: scale(1.18);
+    }
 
-            50% {
-                transform: scale(1);
-            }
+    50% {
+        transform: scale(1);
+    }
 
-            75% {
-                transform: scale(1.15);
-            }
+    75% {
+        transform: scale(1.15);
+    }
 
-            100% {
-                transform: scale(1);
-            }
-        }
+    100% {
+        transform: scale(1);
+    }
+}
 
-        .animate-heartBeat {
-            animation: heartBeat 3s infinite ease-in-out;
-        }
+.animate-heartBeat {
+    animation: heartBeat 3s infinite ease-in-out;
+}
 
-        /* Glow Pulse Animation */
-        @keyframes pulseGlow {
-            0% {
-                box-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
-            }
+/* Glow Pulse Animation */
+@keyframes pulseGlow {
+    0% {
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
+    }
 
-            50% {
-                box-shadow: 0 0 25px rgba(255, 255, 255, 0.7);
-                transform: scale(1.1);
-            }
+    50% {
+        box-shadow: 0 0 25px rgba(255, 255, 255, 0.7);
+        transform: scale(1.1);
+    }
 
-            100% {
-                box-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
-            }
-        }
+    100% {
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
+    }
+}
 
-        .animate-pulseGlow {
-            animation: pulseGlow 5s infinite ease-in-out;
-        }
+.animate-pulseGlow {
+    animation: pulseGlow 5s infinite ease-in-out;
+}
