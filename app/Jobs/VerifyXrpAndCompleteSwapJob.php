@@ -123,7 +123,12 @@ class VerifyXrpAndCompleteSwapJob implements ShouldQueue
                 throw new RuntimeException('XRP to token swap failed');
             }
 
-            $internalSwap->update(['amount_out' => $xrplResult['amount_out'], 'tx_hash' => $xrplResult['tx_hash'], 'internal_swap_state_id' => 2 ]);
+             $internalSwap->update([
+                'amount_out' => $xrplResult['amount_out'],
+                'tx_hash' => $xrplResult['tx_hash'],
+                'internal_swap_state_id' => 2,
+                'meta' => json_encode($xrplResult)
+            ]);
 
             // ------------------------------------------------------------------
             // STEP 4: Send token to user
