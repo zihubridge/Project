@@ -72,3 +72,32 @@ body,
 .animate-pulseGlow {
     animation: pulseGlow 5s infinite ease-in-out;
 }
+
+/* Step circle base */
+.step-circle {
+    position: relative;
+}
+
+/* rotating loader ring */
+.step-loading::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 9999px;
+
+    /* loader ring */
+    border: 2px solid rgba(32, 48, 82, 0.2);
+    border-top-color: #203052; /* visible moving part */
+
+    animation: stepRotate 1s linear infinite;
+}
+
+/* clockwise rotation */
+@keyframes stepRotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

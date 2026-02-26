@@ -183,7 +183,8 @@
                     <div class="flex flex-col items-center w-16 sm:w-20" data-step="{{ $index + 1 }}">
                         <div
                             class="step-circle p-2.5 sm:p-3 rounded-full transition-colors duration-300
-                            {{ $index + 1 <= $currentStep ? 'bg-[#203052]' : 'bg-[#D7E2F0]' }}">
+                            {{ $index + 1 <= $currentStep ? 'bg-[#203052]' : 'bg-[#D7E2F0]' }}
+                            {{ $index + 1 == $currentStep ? 'step-loading' : '' }}">
                             <img src="{{ asset('assets/new assets/' . $step['icon']) }}" class="w-5 sm:w-6" alt="">
                         </div>
                         <span class="text-black font-medium text-center text-xs mt-2 leading-tight">
@@ -317,9 +318,14 @@
                             const stepNum = parseInt(stepEl.dataset.step);
                             const circle = stepEl.querySelector('.step-circle');
 
-                            if (stepNum <= data.current_step) {
+                            circle.classList.remove('step-loading');
+                            if (stepNum < data.current_step) {
                                 circle.classList.remove('bg-[#D7E2F0]');
                                 circle.classList.add('bg-[#203052]');
+                            } else if (stepNum === data.current_step) {
+                                circle.classList.remove('bg-[#D7E2F0]');
+                                circle.classList.add('bg-[#203052]');
+                                circle.classList.add('step-loading');
                             } else {
                                 circle.classList.remove('bg-[#203052]');
                                 circle.classList.add('bg-[#D7E2F0]');
