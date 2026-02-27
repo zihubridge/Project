@@ -82,7 +82,7 @@ class ScanDepositJob implements ShouldQueue
 
             SwapEvent::create([
                 'swap_id' => $swap->id,
-                'swap_event_type_id' => 3, // Deposit Expired
+                'swap_event_type_id' => 4, // Deposit Expired
                 'message' => 'User did not deposit before expiry',
             ]);
 

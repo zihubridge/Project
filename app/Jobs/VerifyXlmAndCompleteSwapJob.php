@@ -83,14 +83,14 @@ class VerifyXlmAndCompleteSwapJob implements ShouldQueue
 
             SwapEvent::create([
                 'swap_id' => $swap->id,
-                'swap_event_type_id' => 11, //EXCHANGE_ORDER_COMPLETED,
+                'swap_event_type_id' => 12,
                 'message' => 'Exchange completed and funds received',
                 'meta' => json_encode($receipt),
             ]);
 
             SwapEvent::create([
                 'swap_id' => $swap->id,
-                'swap_event_type_id' => 5,
+                'swap_event_type_id' => 6,
                 'message' => 'Internal swap started',
                 'meta' => json_encode([
                     'leg' => 'destination'
@@ -129,7 +129,7 @@ class VerifyXlmAndCompleteSwapJob implements ShouldQueue
 
                 SwapEvent::create([
                     'swap_id' => $swap->id,
-                    'swap_event_type_id' => 7,
+                    'swap_event_type_id' => 8,
                     'message' => 'Internal swap failed',
                     'meta' => json_encode([
                         'leg' => 'destination'
@@ -150,7 +150,7 @@ class VerifyXlmAndCompleteSwapJob implements ShouldQueue
 
             SwapEvent::create([
                 'swap_id' => $swap->id,
-                'swap_event_type_id' => 6,
+                'swap_event_type_id' => 7,
                 'message' => 'Internal swap completed',
                 'meta' => json_encode([
                     'leg' => 'destination'
@@ -237,7 +237,7 @@ class VerifyXlmAndCompleteSwapJob implements ShouldQueue
 
             SwapEvent::create([
                 'swap_id' => $swap->id,
-                'swap_event_type_id' => 17 //SWAP_COMPLETED,
+                'swap_event_type_id' => 18
             ]);
         }
 

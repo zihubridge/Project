@@ -88,7 +88,7 @@ class VerifyXrpAndCompleteSwapJob implements ShouldQueue
 
         SwapEvent::create([
             'swap_id' => $swap->id,
-            'swap_event_type_id' => 11, //EXCHANGE_ORDER_COMPLETED,
+            'swap_event_type_id' => 12, //EXCHANGE_ORDER_COMPLETED,
             'meta' => json_encode($receipt),
         ]);
 
@@ -184,7 +184,7 @@ class VerifyXrpAndCompleteSwapJob implements ShouldQueue
 
             SwapEvent::create([
                 'swap_id' => $swap->id,
-                'swap_event_type_id' => 17 //SWAP_COMPLETED,
+                'swap_event_type_id' => 18 //SWAP_COMPLETED,
             ]);
         } catch (\Throwable $e) {
             Log::error('[VerifyXrp] Finalization failed', [

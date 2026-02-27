@@ -17,6 +17,7 @@ class SwapEventTypeSeeder extends Seeder
             // Deposit
             ['name' => 'Deposit Detected', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Deposit Confirmed', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Deposit Late', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Deposit Expired', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Deposit Failed', 'created_at' => now(), 'updated_at' => now()],
 
@@ -25,7 +26,7 @@ class SwapEventTypeSeeder extends Seeder
             ['name' => 'Internal Swap Completed', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Internal Swap Failed', 'created_at' => now(), 'updated_at' => now()],
 
-            // PROVIDER (ChangeNOW)
+            // PROVIDER (Exchange)
             ['name' => 'Exchange Order Created', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Exchange Funds Sent', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Exchange Funds Received', 'created_at' => now(), 'updated_at' => now()],

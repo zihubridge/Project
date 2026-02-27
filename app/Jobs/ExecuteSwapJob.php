@@ -82,7 +82,7 @@ class ExecuteSwapJob implements ShouldQueue
 
         SwapEvent::create([
             'swap_id' => $swap->id,
-            'swap_event_type_id' => 5,
+            'swap_event_type_id' => 6,
             'message' => 'Internal swap started'
         ]);
 
@@ -112,7 +112,7 @@ class ExecuteSwapJob implements ShouldQueue
 
             SwapEvent::create([
                 'swap_id' => $swap->id,
-                'swap_event_type_id' => 7, // internal swap faield
+                'swap_event_type_id' => 8, // internal swap failed
                 'message' => $message
             ]);
 
@@ -132,7 +132,7 @@ class ExecuteSwapJob implements ShouldQueue
 
             SwapEvent::create([
                 'swap_id' => $swap->id,
-                'swap_event_type_id' => 7,
+                'swap_event_type_id' => 8,
                 'message' => 'Internal swap failed',
                 'meta' => json_encode($result)
             ]);
@@ -153,7 +153,7 @@ class ExecuteSwapJob implements ShouldQueue
 
         SwapEvent::create([
             'swap_id' => $swap->id,
-            'swap_event_type_id' => 6,
+            'swap_event_type_id' => 7,
             'message' => 'Internal swap completed',
             'meta' => json_encode($result)
         ]);
@@ -223,7 +223,7 @@ class ExecuteSwapJob implements ShouldQueue
 
         SwapEvent::create([
             'swap_id' => $swap->id,
-            'swap_event_type_id' => 8,
+            'swap_event_type_id' => 9,
             'message' => 'Exchange order creating'
         ]);
 
@@ -270,7 +270,7 @@ class ExecuteSwapJob implements ShouldQueue
 
         SwapEvent::create([
             'swap_id' => $swap->id,
-            'swap_event_type_id' => 9,
+            'swap_event_type_id' => 10,
             'message' => 'Funds sent to provider',
             'meta' => json_encode(['tx' => $tx])
         ]);
