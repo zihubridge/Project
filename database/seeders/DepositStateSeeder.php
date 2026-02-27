@@ -59,6 +59,13 @@ class DepositStateSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            [
+                'id' => 7,
+                'key' => 'late_received',
+                'label' => 'Late Received',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
     }
 }

@@ -33,6 +33,7 @@ class SwapStatesSeeder extends Seeder
             'completed',
             'expired',
             'failed',
+            'late_received',
             'refunded',
         ];
 
