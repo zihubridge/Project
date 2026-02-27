@@ -29,6 +29,7 @@ return new class extends Migration
 
             $table->decimal('received_token_amount', 36, 18)->nullable();
             $table->string('tx_hash', 128)->nullable()->unique();
+            $table->string('refund_tx_hash', 128)->nullable()->unique();
             $table->string('sender_address', 128)->nullable();
 
             $table->unsignedSmallInteger('deposit_state_id')->default(1);
