@@ -424,4 +424,94 @@ class StellarSwapService
             'timeout'  => 10,
         ]);
     }
+
+    public function refundToken(
+        string $amount,
+        string $assetCode,
+        string $issuer,
+        string $destination,
+        string $memoText
+    ): array {
+
+        try {
+
+            // -------------------------------------------------
+            // Prepare wallet
+            // -------------------------------------------------
+
+            $amount = number_format((float) $amount, 7, '.', '');
+            $kp = KeyPair::fromSeed(config('services.stellar.seed'));
+            $sourceAccount = $this->sdk->requestAccount($kp->getAccountId());
+
+            // -------------------------------------------------
+            // Build asset
+            // -------------------------------------------------
+            $asset = $this->asset($assetCode, $issuer);
+
+            // -------------------------------------------------
+            // Build payment operation
+            // -------------------------------------------------
+
+            $builder = new TransactionBuilder($sourceAccount);
+            $payment = (new PaymentOperationBuilder($destination, $asset, $amount))->build();
+            $builder->addMemo(Memo::text(substr($memoText, 0, 28)));
+
+            // -------------------------------------------------
+            // Build and Sign
+            // -------------------------------------------------
+            $builder->addOperation($payment);
+
+            $tx = $builder->build();
+            $tx->sign($kp, $this->network);
+
+            // -------------------------------------------------
+            // Submit
+            // -------------------------------------------------
+            $response = $this->sdk->submitTransaction($tx);
+
+            if ($response->isSuccessful()) {
+
+                $hash = $response->getHash();
+
+                return [
+                    'ok' => true,
+                    'tx_hash' => $hash,
+                ];
+            }
+
+            // -------------------------------------------------
+            // Extract error
+            // -------------------------------------------------
+            $error = 'unknown_stellar_error';
+
+            if (
+                $response->getExtras() &&
+                $response->getExtras()->getResultCodes()
+            ) {
+                $error = $response
+                    ->getExtras()
+                    ->getResultCodes()
+                    ->getTransactionResultCode();
+            }
+
+            Log::error('[STELLAR] Token payout failed', [
+                'error' => $error,
+            ]);
+
+            return [
+                'ok' => false,
+                'message' => $error,
+            ];
+        } catch (\Throwable $e) {
+
+            Log::error('[STELLAR] Exception while sending token', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return [
+                'ok' => false,
+                'message' => $e->getMessage(),
+            ];
+        }
+    }
 }
