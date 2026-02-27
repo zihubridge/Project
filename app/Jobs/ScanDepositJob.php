@@ -60,7 +60,7 @@ class ScanDepositJob implements ShouldQueue
         }
 
         // If swap already failed or expired, stop
-        if (in_array($swap->swap_state_id, [10, 11, 12])) {
+        if (in_array($swap->swap_state_id, [11, 12])) {
             Log::info('[ScanDepositJob] Swap already closed', [
                 'swap_id' => $swap->id,
             ]);
@@ -104,6 +104,38 @@ class ScanDepositJob implements ShouldQueue
 
         if (!$found || !is_array($found) || !isset($found['tx_hash'], $found['sender'], $found['amount'])) {
             $this->release(20);
+            return;
+        }
+
+        // Handle late deposit first
+        if ($swap->swap_state_id == 10) {
+
+            DB::transaction(function () use ($SwapDeposit, $swap, $found) {
+
+                $deposit = SwapDeposit::lockForUpdate()->find($SwapDeposit->id);
+
+                if ($deposit->refund_tx_hash) {
+                    return;
+                }
+
+                // Update deposit
+                $deposit->update([
+                    'deposit_state_id' => 7,
+                    'tx_hash' => $found['tx_hash'],
+                    'sender_address' => $found['sender'],
+                    'received_token_amount' => $found['amount'],
+                    'received_at' => now(),
+                ]);
+
+                SwapEvent::create([
+                    'swap_id' => $swap->id,
+                    'swap_event_type_id' => 3,
+                    'message' => 'Late deposit detected after expiration'
+                ]);
+
+                RefundExpiredSwapJob::dispatch($swap->id);
+            });
+
             return;
         }
 

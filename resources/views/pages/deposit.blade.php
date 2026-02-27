@@ -28,6 +28,25 @@
                 <!-- Heading -->
                 <div class="w-full text-center py-5">
                     <h2 id="statusHeading" class="text-xl font-bold text-black">{{ $stepName }}</h2>
+
+                    @if ($swap->swap_state_id == 2)
+                        <div class="flex justify-center mt-4">
+                            <div id="expiryBox"
+                                class="flex items-center gap-2 px-4 py-2 rounded-full bg-orange-50 border border-orange-200">
+
+                                <ion-icon name="time-outline" class="text-orange-500 text-lg"></ion-icon>
+
+                                <span class="text-sm font-semibold text-orange-600">
+                                    Expires in
+                                </span>
+
+                                <span id="countdown" class="font-mono font-bold text-orange-700 tracking-wide">
+                                    --:--
+                                </span>
+                            </div>
+                        </div>
+                    @endif
+
                 </div>
 
                 <!-- Send Deposit -->
@@ -336,11 +355,6 @@
                     // Handle completion (swap_state_id === 9)
                     if (data.is_completed) {
                         clearInterval(pollInterval);
-
-                        // Optional: Redirect after 2 seconds
-                        // setTimeout(() => {
-                        //     window.location.href = '/swap/success';
-                        // }, 2000);
                     }
 
                     // Handle failure
@@ -382,5 +396,43 @@
         }
 
         loadEstimatedTime();
+
+        const expiresAt = "{{ optional($swap->deposit)->expires_at }}";
+
+        function startCountdown() {
+            if (!expiresAt) return;
+
+            const countdownEl = document.getElementById('countdown');
+            if (!countdownEl) return;
+
+            const expiry = new Date(expiresAt).getTime();
+
+            const interval = setInterval(() => {
+                const now = new Date().getTime();
+                const diff = expiry - now;
+
+                if (diff <= 0) {
+                    clearInterval(interval);
+                    countdownEl.textContent = "Expired";
+                    countdownEl.classList.remove("text-orange-600");
+                    countdownEl.classList.add("text-red-600");
+                    return;
+                }
+
+                const minutes = Math.floor(diff / 1000 / 60);
+                const seconds = Math.floor((diff / 1000) % 60);
+
+                countdownEl.textContent =
+                    `${minutes}m ${seconds.toString().padStart(2, '0')}s`;
+
+                if (minutes < 3) {
+                    countdownEl.classList.remove("text-orange-600");
+                    countdownEl.classList.add("text-red-600");
+                }
+
+            }, 1000);
+        }
+
+        startCountdown();
     </script>
 @endpush
