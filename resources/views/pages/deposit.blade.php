@@ -427,7 +427,7 @@
 
         loadEstimatedTime();
 
-        const expiresAt = "{{ optional($swap->deposit)->expires_at }}";
+        const expiresAt = {{ optional($swap->deposit)->expires_at?->timestamp * 1000 }};
 
         function startCountdown() {
             if (!expiresAt) return;
@@ -435,10 +435,10 @@
             const countdownEl = document.getElementById('countdown');
             if (!countdownEl) return;
 
-            const expiry = new Date(expiresAt).getTime();
+            const expiry = expiresAt;
 
             const interval = setInterval(() => {
-                const now = new Date().getTime();
+                const now = Date.now();
                 const diff = expiry - now;
 
                 if (diff <= 0) {

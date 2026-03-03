@@ -1213,7 +1213,7 @@ class GlobalController extends Controller
 
         if (!$seconds) {
             return response()->json([
-                'estimated_time' => 'N/A'
+                'estimated_time' => '2m 10s'
             ]);
         }
 
