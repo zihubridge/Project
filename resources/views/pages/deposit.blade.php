@@ -234,6 +234,32 @@
         </div>
 
     </section>
+
+    <div id="successModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+
+        <div class="bg-white rounded-2xl shadow-xl w-[90%] max-w-md p-8 text-center">
+
+            <div class="flex justify-center mb-4">
+                <div class="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                    <ion-icon name="checkmark-outline" class="text-green-600 text-3xl"></ion-icon>
+                </div>
+            </div>
+
+            <h3 class="text-xl font-bold text-gray-900 mb-2">
+                Swap Completed
+            </h3>
+
+            <p class="text-sm text-gray-600 mb-6">
+                Your tokens have been successfully delivered to your wallet.
+            </p>
+
+            <button id="closeSuccessModal"
+                class="bg-[#203052] text-white px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition">
+                Close
+            </button>
+
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -355,6 +381,10 @@
                     // Handle completion (swap_state_id === 9)
                     if (data.is_completed) {
                         clearInterval(pollInterval);
+                        const modal = document.getElementById('successModal');
+                        if (modal) {
+                            modal.classList.remove('hidden');
+                        }
                     }
 
                     // Handle failure
@@ -434,5 +464,9 @@
         }
 
         startCountdown();
+
+        document.getElementById('closeSuccessModal')?.addEventListener('click', function() {
+            document.getElementById('successModal').classList.add('hidden');
+        });
     </script>
 @endpush
