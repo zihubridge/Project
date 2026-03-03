@@ -128,14 +128,14 @@ class SwapController extends Controller
 
             // CLEANUP OLD UNUSED SWAPS 24 hours old
             Swap::where('swap_state_id', 2) // waiting_for_deposit
-                ->where('expires_at', '<', now()->subHours(24))
                 ->whereNull('started_at')
                 ->whereDoesntHave('exchange')
                 ->whereDoesntHave('internalSwaps')
                 ->whereDoesntHave('payout')
                 ->whereHas('deposit', function ($q) {
                     $q->whereNull('tx_hash')
-                        ->where('deposit_state_id', 1);
+                        ->where('deposit_state_id', 1)
+                        ->where('expires_at', '<', now()->subHours(24));
                 })
                 ->chunkById(100, function ($swaps) {
                     foreach ($swaps as $swap) {
@@ -158,7 +158,6 @@ class SwapController extends Controller
                 'destination_address' => $destinationAddress,
                 'destination_tag'   => $destinationTag,
                 'swap_state_id'     => 2, //WAITING_FOR_DEPOSIT,
-                'expires_at'        => now()->addMinutes(15),
             ]);
 
             SwapDeposit::create([
@@ -169,7 +168,7 @@ class SwapController extends Controller
                 'expected_token_id'    => $fromTokenId,
                 'expected_token_amount' => $fromTokenAmount,
                 'deposit_state_id'     => 1, //WAITING,
-                'expires_at'           => $swap->expires_at,
+                'expires_at'           => now()->addMinutes(15),
             ]);
 
             SwapEvent::create([

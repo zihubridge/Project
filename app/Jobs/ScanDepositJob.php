@@ -68,7 +68,7 @@ class ScanDepositJob implements ShouldQueue
         }
 
         // Expired → mark failed
-        if (now()->greaterThan($SwapDeposit->expires_at) && $swap->swap_state_id == 2) {
+        if (now()->greaterThan($SwapDeposit->expires_at) && $swap->swap_state_id == 2 && $SwapDeposit->deposit_state_id == 1) {
             Log::info('[ScanDepositJob] Deposit expired', [
                 'deposit_id' => $SwapDeposit->id,
             ]);
