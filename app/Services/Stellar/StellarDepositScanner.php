@@ -15,7 +15,7 @@ class StellarDepositScanner
 
         $url = rtrim($baseUrl, '/') . "/accounts/{$address}/payments?order=desc&limit=100";
 
-        Log::info('[StellarScanner] Scanning account', [
+        Log::info('[StellarDepositScanner] Scanning account', [
             'deposit_id' => $deposit->id,
             'address' => $address,
             'url' => $url,
@@ -25,7 +25,7 @@ class StellarDepositScanner
             $res = Http::timeout(15)->get($url);
 
             if ($res->failed()) {
-                Log::error('[StellarScanner] Horizon payments failed', [
+                Log::error('[StellarDepositScanner] Horizon payments failed', [
                     'status' => $res->status(),
                     'body' => $res->body(),
                 ]);
@@ -65,7 +65,7 @@ class StellarDepositScanner
                 $txRes = Http::timeout(15)->get($txUrl);
 
                 if ($txRes->failed()) {
-                    Log::error('[StellarScanner] Horizon transaction fetch failed', [
+                    Log::error('[StellarDepositScanner] Horizon transaction fetch failed', [
                         'tx_hash' => $txHash,
                         'status' => $txRes->status(),
                     ]);
@@ -86,7 +86,7 @@ class StellarDepositScanner
                     continue;
                 }
 
-                Log::info('[StellarScanner] Valid deposit found', [
+                Log::info('[StellarDepositScanner] Valid deposit found', [
                     'deposit_id' => $deposit->id,
                     'tx_hash' => $txHash,
                     'amount' => $p['amount'],
@@ -106,7 +106,7 @@ class StellarDepositScanner
             ];
         } catch (\Throwable $e) {
 
-            Log::error('[StellarScanner] Unexpected exception', [
+            Log::error('[StellarDepositScanner] Unexpected exception', [
                 'deposit_id' => $deposit->id,
                 'error' => $e->getMessage(),
             ]);
