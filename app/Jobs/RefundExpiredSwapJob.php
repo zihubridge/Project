@@ -75,8 +75,8 @@ class RefundExpiredSwapJob implements ShouldQueue
 
                 $result = $stellar->refundToken(
                     amount: $deposit->received_token_amount,
-                    assetCode: $swap->fromToken->code,
-                    issuer: $swap->fromToken->issuer,
+                    assetCode: $swap->fromToken->asset_code,
+                    issuer: $swap->fromToken->issuer_address,
                     destination: $deposit->sender_address,
                     memoText: "Refund Zihu Swap"
                 );
@@ -84,8 +84,8 @@ class RefundExpiredSwapJob implements ShouldQueue
 
                 $result = $xrpl->refundToken(
                     amount: $deposit->received_token_amount,
-                    currency: $swap->fromToken->code,
-                    issuer: $swap->fromToken->issuer,
+                    currency: $swap->fromToken->asset_code,
+                    issuer: $swap->fromToken->issuer_address,
                     destination: $deposit->sender_address,
                     memo: "Refund Zihu Swap"
                 );
