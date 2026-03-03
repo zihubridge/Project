@@ -107,38 +107,6 @@ class ScanDepositJob implements ShouldQueue
             return;
         }
 
-        // Handle late deposit first
-        if ($swap->swap_state_id == 10) {
-
-            DB::transaction(function () use ($SwapDeposit, $swap, $found) {
-
-                $deposit = SwapDeposit::lockForUpdate()->find($SwapDeposit->id);
-
-                if ($deposit->refund_tx_hash) {
-                    return;
-                }
-
-                // Update deposit
-                $deposit->update([
-                    'deposit_state_id' => 7,
-                    'tx_hash' => $found['tx_hash'],
-                    'sender_address' => $found['sender'],
-                    'received_token_amount' => $found['amount'],
-                    'received_at' => now(),
-                ]);
-
-                SwapEvent::create([
-                    'swap_id' => $swap->id,
-                    'swap_event_type_id' => 3,
-                    'message' => 'Late deposit detected after expiration'
-                ]);
-
-                RefundExpiredSwapJob::dispatch($swap->id);
-            });
-
-            return;
-        }
-
         DB::transaction(function () use ($SwapDeposit, $swap, $found) {
 
             // 1. Update deposit first
