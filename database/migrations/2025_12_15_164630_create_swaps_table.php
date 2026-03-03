@@ -41,6 +41,7 @@ return new class extends Migration
             $table->timestamp('completed_at')->nullable();
 
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

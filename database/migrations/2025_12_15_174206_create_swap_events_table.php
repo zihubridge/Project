@@ -18,6 +18,7 @@ return new class extends Migration
             $table->text('message')->nullable();
             $table->json('meta')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

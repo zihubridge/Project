@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Swap extends Model
 {
     protected $guarded = [];
+    use SoftDeletes;
 
     public function fromBlockchain()
     {
