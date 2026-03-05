@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZihuBridge</title>
 
+    <link rel="icon" type="image/png" href="{{ asset('assets/images/favicon.png') }}">
+
     {{-- Load Tailwind & JS using Vite --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
