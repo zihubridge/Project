@@ -187,13 +187,18 @@ class SwapController extends Controller
             ->with(['fromToken', 'toToken', 'fromBlockchain', 'toBlockchain', 'swapState'])
             ->firstOrFail();
 
+        $state = $swap->swapState->name;
+
         return response()->json([
             'swap_state_id' => $swap->swap_state_id,
-            'swap_state_name' => $swap->swapState->name,
+            'swap_state_name' => $state,
             'current_step' => $swap->getFrontendStep(),
             'step_name' => $swap->getFrontendStepName(),
-            'is_completed' => $swap->swapState->name === 'completed',
-            'is_failed' => in_array($swap->swapState->name, ['expired', 'failed', 'refunded']),
+            'is_completed' => $state === 'completed',
+            'is_expired'   => $state === 'expired',
+            'is_refunded'  => $state === 'refunded',
+            'is_failed'    => $state === 'failed',
+
             'failure_reason' => $swap->failure_reason,
             'to_final_token_amount' => $swap->to_final_token_amount,
         ]);

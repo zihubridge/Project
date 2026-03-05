@@ -34,9 +34,9 @@
                             <div id="expiryBox"
                                 class="flex items-center gap-2 px-4 py-2 rounded-full bg-orange-50 border border-orange-200">
 
-                                <ion-icon name="time-outline" class="text-orange-500 text-lg"></ion-icon>
+                                <ion-icon name="time-outline" id="expiryIcon" class="text-orange-500 text-lg"></ion-icon>
 
-                                <span class="text-sm font-semibold text-orange-600">
+                                <span id="expiryLabel" class="text-sm font-semibold text-orange-600">
                                     Expires in
                                 </span>
 
@@ -68,7 +68,7 @@
 
                 <div class="flex flex-col md:flex-row gap-5 mb-10">
                     <h2 class="text-lg font-bold text-black w-full md:w-4/12">
-                        You Will Receive:
+                        You Will Receive (Estimated):
                     </h2>
 
                     <div class="flex flex-wrap items-center gap-3 w-full md:w-8/12 px-8">
@@ -111,7 +111,7 @@
                     <div class="w-full md:w-8/12 px-8">
 
                         <!-- Unified Deposit Card -->
-                        <div class="border border-[#E3E3E3] rounded-xl overflow-hidden">
+                        <div id="depositCard" class="border border-[#E3E3E3] rounded-xl overflow-hidden relative">
 
                             <!-- Deposit Address -->
                             <div class="bg-[#F7F8FA] p-5">
@@ -184,7 +184,7 @@
         </div>
 
         <!-- Progress Steps -->
-        <div class="max-w-5xl mx-auto mt-10 px-4">
+        <div id="progressSteps" class="max-w-5xl mx-auto mt-10 px-4">
             <div class="flex justify-center items-start gap-4 sm:gap-6 md:gap-8">
                 @php
                     $steps = [
@@ -348,6 +348,11 @@
                 .then(response => {
                     const data = response.data;
 
+                    if (data.is_expired) {
+                        applyExpiredState();
+                        return;
+                    }
+
                     // Only update UI if step changed
                     if (data.current_step !== previousStep) {
                         previousStep = data.current_step;
@@ -443,9 +448,7 @@
 
                 if (diff <= 0) {
                     clearInterval(interval);
-                    countdownEl.textContent = "Expired";
-                    countdownEl.classList.remove("text-orange-600");
-                    countdownEl.classList.add("text-red-600");
+                    applyExpiredState();
                     return;
                 }
 
@@ -468,5 +471,56 @@
         document.getElementById('closeSuccessModal')?.addEventListener('click', function() {
             document.getElementById('successModal').classList.add('hidden');
         });
+
+        function applyExpiredState() {
+            clearInterval(pollInterval);
+
+            document.getElementById('statusHeading')?.classList.add('hidden');
+
+            const depositCard = document.getElementById('depositCard');
+            if (depositCard) {
+                depositCard.classList.add('opacity-50', 'pointer-events-none');
+            }
+
+            document.getElementById('progressSteps')?.classList.add('hidden');
+
+            const expiryBox = document.getElementById('expiryBox');
+            const expiryLabel = document.getElementById('expiryLabel');
+            const countdownEl = document.getElementById('countdown');
+            const expiryIcon = document.getElementById('expiryIcon');
+
+            if (expiryBox) {
+                expiryBox.classList.remove('bg-orange-50', 'border-orange-200');
+                expiryBox.classList.add('bg-red-50', 'border-red-300');
+            }
+
+            if (expiryLabel) {
+                expiryLabel.textContent = "Expired";
+                expiryLabel.classList.remove("text-orange-600");
+                expiryLabel.classList.add("text-red-600");
+            }
+
+            if (countdownEl) {
+                countdownEl.remove();
+            }
+
+            if (expiryIcon) {
+                expiryIcon.classList.remove("text-orange-500");
+                expiryIcon.classList.add("text-red-500");
+            }
+
+            document.querySelectorAll('.step-circle').forEach(circle => {
+                circle.classList.remove('step-loading');
+            });
+
+            const warning = document.createElement('div');
+            warning.className = "mt-4 text-center text-red-600 font-semibold";
+            warning.innerText = "This swap has expired. Sending funds now may result in refund.";
+
+            const headingWrapper = statusHeading?.parentElement;
+            if (headingWrapper) {
+                headingWrapper.appendChild(warning);
+            }
+        }
     </script>
 @endpush
