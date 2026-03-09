@@ -201,8 +201,6 @@ class GlobalController extends Controller
                 flow: 'standard'
             );
 
-            log('limit', $limits);
-
             $minXrpRequired = $limits['minAmount'];
 
             // Minimum token needed
@@ -213,8 +211,6 @@ class GlobalController extends Controller
                 targetXrp: $minXrpRequired,
                 isTestnet: $this->isTestnet
             );
-
-            log('minQuote', $minQuote);
 
             if (!($minQuote['is_enough'] ?? false)) {
 
@@ -1117,8 +1113,6 @@ class GlobalController extends Controller
                 issuer: $tokenIssuer,
                 isTestnet: $isTestnet
             );
-
-            Log::debug('xrpTokenToXrp', $quote);
 
             $xrpOut = $quote['xrp_out_estimated'] ?? '0';
 
