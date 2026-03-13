@@ -18,14 +18,16 @@
                 </p>
 
                 <div class="d-flex flex-wrap align-items-center gap-3 hero-section-top">
-                    <button class="btn btn-primary-custom">
+                    {{-- <button class="btn btn-primary-custom">
                         <img src="{{ asset('assets/images/button-image.png') }}" alt="icon" class="btn-icon" />
                         Get Early Access
-                    </button>
-                    <button class="btn btn-secondary-custom">
-                        <img src="{{ asset('assets/images/button-image2.png') }}" alt="icon" class="btn-icon" />
-                        Join Community
-                    </button>
+                    </button> --}}
+                    <a href="{{ asset('whitepaper.pdf') }}" target="_blank" class="text-decoration-none">
+                        <button class="btn btn-secondary-custom">
+                            <img src="{{ asset('assets/images/button-image2.png') }}" alt="icon" class="btn-icon" />
+                            Whitepaper
+                        </button>
+                    </a>
                 </div>
             </div>
 
