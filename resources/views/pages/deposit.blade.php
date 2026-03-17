@@ -394,6 +394,19 @@
                     // Handle completion (swap_state_id === 9)
                     if (data.is_completed) {
                         clearInterval(pollInterval);
+
+                        // stop all loading animations
+                        document.querySelectorAll('.step-circle').forEach(circle => {
+                            circle.classList.remove('step-loading');
+                        });
+
+                        // mark all steps as completed
+                        document.querySelectorAll('[data-step]').forEach(stepEl => {
+                            const circle = stepEl.querySelector('.step-circle');
+                            circle.classList.remove('bg-[#D7E2F0]');
+                            circle.classList.add('bg-[#203052]');
+                        });
+
                         const modal = document.getElementById('successModal');
                         if (modal) {
                             modal.classList.remove('hidden');
