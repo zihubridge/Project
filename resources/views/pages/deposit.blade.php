@@ -348,6 +348,14 @@
                 .then(response => {
                     const data = response.data;
 
+                    // Hide expiry timer once deposit detected
+                    if (data.current_step > 1) {
+                        const expiryBox = document.getElementById('expiryBox');
+                        if (expiryBox) {
+                            expiryBox.classList.add('hidden');
+                        }
+                    }
+
                     if (data.is_expired) {
                         applyExpiredState();
                         return;
