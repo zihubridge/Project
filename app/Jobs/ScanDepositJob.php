@@ -22,7 +22,8 @@ class ScanDepositJob implements ShouldQueue
 
     public int $depositId;
 
-    public int $tries = 45;        // 45 × 20s ≈ 15 minutes
+    public int $tries = 100;       
+    public int $timeout = 30;        
 
     public function __construct(int $depositId)
     {
