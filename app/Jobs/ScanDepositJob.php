@@ -133,8 +133,6 @@ class ScanDepositJob implements ShouldQueue
                 ],
                 [
                     'blockchain_id'          => $swap->from_blockchain_id,
-                    'from_token_id'          => $swap->from_token_id,
-                    'to_token_id'            => $swap->to_token_id,
                     'amount_in'              => $SwapDeposit->received_token_amount,
                     'internal_swap_state_id' => 1, // creating
                 ]
