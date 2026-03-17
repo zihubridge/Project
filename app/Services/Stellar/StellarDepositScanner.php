@@ -15,12 +15,6 @@ class StellarDepositScanner
 
         $url = rtrim($baseUrl, '/') . "/accounts/{$address}/payments?order=desc&limit=100";
 
-        Log::info('[StellarDepositScanner] Scanning account', [
-            'deposit_id' => $deposit->id,
-            'address' => $address,
-            'url' => $url,
-        ]);
-
         try {
             $res = Http::timeout(15)->get($url);
 
@@ -85,12 +79,6 @@ class StellarDepositScanner
                 if ($memoValue !== $expectedMemo) {
                     continue;
                 }
-
-                Log::info('[StellarDepositScanner] Valid deposit found', [
-                    'deposit_id' => $deposit->id,
-                    'tx_hash' => $txHash,
-                    'amount' => $p['amount'],
-                ]);
 
                 return [
                     'status' => 'success',
