@@ -43,25 +43,52 @@
             </p>
 
             <!-- ===== CARD UI ===== -->
-            <div class="bg-white rounded-3xl shadow-xl mt-10 p-6 w-full max-w-[35rem] flex flex-col gap-5">
+            <div class="bg-white rounded-3xl shadow-xl mt-10 p-6 w-full max-w-[35rem] flex flex-col gap-6">
 
-                <h2 class="text-xl font-bold text-black">Select Blockchain</h2>
-
-                <select id="fromBlockchain" class="bg-[#EEF2F9] rounded-xl px-5 py-3 w-full text-black shadow-sm">
-                    <option value="" selected disabled>From Blockchain</option>
-                </select>
-
-                <div class="w-12 h-12 flex items-center justify-center rounded bg-[#EEF2F9] mx-auto">
-                    <img src="{{ asset('assets/new assets/Icon.png') }}" class="w-6" alt="">
+                <!-- TITLE -->
+                <div class="text-center">
+                    <h2 class="text-xl font-bold text-black">Swap Across Chains</h2>
+                    <p class="text-sm text-gray-500">Fast, secure, no accounts required</p>
                 </div>
 
-                <select id="toBlockchain" class="bg-[#EEF2F9] rounded-xl px-5 py-3 w-full text-black shadow-sm">
-                    <option value="" selected disabled>To Blockchain</option>
-                </select>
+                <!-- FROM -->
+                <div>
+                    <div class="relative">
+                        <select id="fromBlockchain"
+                            class="appearance-none w-full bg-[#F7F9FC] border border-gray-200 rounded-xl px-4 py-3 text-black focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                            <option disabled selected>Select source chain</option>
+                        </select>
+                        <div class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
+                            ▼
+                        </div>
+                    </div>
+                </div>
 
-                <button id="swapBtn" type="button"
-                    class="w-full bg-blue-600 text-white py-2 rounded-full text-lg font-semibold hover:bg-transparent hover:text-blue-600 border border-blue-600 transition">
-                    Swap Now
+                <!-- SWITCH -->
+                <div class="flex justify-center">
+                    <div
+                        class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shadow-sm hover:scale-105 transition">
+                        <img src="{{ asset('assets/new assets/Icon.png') }}" class="w-5">
+                    </div>
+                </div>
+
+                <!-- TO -->
+                <div>
+                    <div class="relative">
+                        <select id="toBlockchain"
+                            class="appearance-none w-full bg-[#F7F9FC] border border-gray-200 rounded-xl px-4 py-3 text-black focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                            <option disabled selected>Select destination chain</option>
+                        </select>
+                        <div class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
+                            ▼
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CTA -->
+                <button id="swapBtn"
+                    class="w-full bg-blue-600 text-white py-3 rounded-xl text-lg font-semibold hover:bg-blue-700 active:scale-[0.98] transition-all shadow-md hover:shadow-lg">
+                    Continue
                 </button>
             </div>
         </div>
