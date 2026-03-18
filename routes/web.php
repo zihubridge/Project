@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
 Route::get('/', function () {
-    return view('newIndex');
+    return view('index');
 })->name('home');
 
 Route::get('/exchange', function (Request $request) {
