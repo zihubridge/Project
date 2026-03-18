@@ -3,7 +3,7 @@
         <!-- Logo -->
         <div class="flex items-center">
             <a href="{{ route('home') }}">
-                <img src="{{ asset('assets/images/logo.png') }}" alt="LOGO" class="w-[65px] md:w-[80px] h-auto">
+                <img src="{{ asset('assets/images/updatedLogo.png') }}" alt="LOGO" class=" h-[40px]">
             </a>
         </div>
 

@@ -3,7 +3,7 @@
 
         <!-- Brand -->
         <div>
-            <img src="{{ asset('assets/new assets/logo.png') }}" alt="logo" class="w-44 mb-4">
+            <img src="{{ asset('assets/images/updatedLogo.png') }}" alt="logo" class="w-44 mb-4">
 
             <p class="text-sm leading-relaxed text-gray-400">
                 Fast, secure, and low-fee crypto swaps. Built for simplicity and real usage.
