@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
 Route::get('/', function () {
-    return view('newIndex');
+    return view('index');
 })->name('home');
 
 Route::get('/exchange', function (Request $request) {
@@ -21,6 +21,10 @@ Route::get('/exchange', function (Request $request) {
     ]);
 })->name('exchange');
 
+Route::view('/privacy', 'pages.privacy')->name('privacy');
+Route::view('/terms', 'pages.terms')->name('terms');
+Route::view('/about', 'pages.about')->name('about');
+Route::view('contact', 'pages.contact')->name('contact');
 
 Route::prefix('global')->group(function () {
     Route::get('blockchains', [GlobalController::class, 'blockchains'])->name('global.blockchains');

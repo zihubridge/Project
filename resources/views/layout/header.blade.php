@@ -3,7 +3,7 @@
         <!-- Logo -->
         <div class="flex items-center">
             <a href="{{ route('home') }}">
-                <img src="{{ asset('assets/images/logo.png') }}" alt="LOGO" class="w-[65px] md:w-[80px] h-auto">
+                <img src="{{ asset('assets/images/logo.png') }}" alt="LOGO" class=" h-[40px]">
             </a>
         </div>
 
@@ -29,13 +29,13 @@
                     </a>
                 </li> --}}
                 <li class="relative group">
-                    <a href="#"
+                    <a href="{{ route('about') }}"
                         class="hover:text-[#2b68e0] hover:tracking-wide hover:underline underline-offset-4 transition-all duration-300 font-light">
                         About Us
                     </a>
                 </li>
                 <li class="relative group">
-                    <a href="#"
+                    <a href="{{ route('contact') }}"
                         class="hover:text-[#2b68e0] hover:tracking-wide hover:underline underline-offset-4 transition-all duration-300 font-light">
                         Contact
                     </a>
