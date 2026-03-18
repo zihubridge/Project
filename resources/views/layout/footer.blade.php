@@ -10,7 +10,8 @@
             </p>
 
             <div class="flex gap-3 mt-5">
-                <a href="#" class="w-9 h-9 flex items-center justify-center rounded-full bg-[#1A1F2E] hover:bg-blue-500 hover:text-white transition">
+                <a href="#"
+                    class="w-9 h-9 flex items-center justify-center rounded-full bg-[#1A1F2E] hover:bg-blue-500 hover:text-white transition">
                     <ion-icon name="logo-twitter"></ion-icon>
                 </a>
             </div>
@@ -20,8 +21,8 @@
         <div>
             <h3 class="text-white font-semibold mb-4">Company</h3>
             <ul class="space-y-2 text-sm">
-                <li><a href="#" class="hover:text-white">About Us</a></li>
-                <li><a href="#" class="hover:text-white">Contact</a></li>
+                <li><a href="{{ route('about') }}" class="hover:text-white">About Us</a></li>
+                <li><a href="{{ route('contact') }}" class="hover:text-white">Contact</a></li>
             </ul>
         </div>
 
@@ -29,16 +30,22 @@
         <div>
             <h3 class="text-white font-semibold mb-4">Legal</h3>
             <ul class="space-y-2 text-sm">
-                <li><a href="#" class="hover:text-white">Privacy Policy</a></li>
-                <li><a href="#" class="hover:text-white">Terms & Conditions</a></li>
+                <li><a href="{{ route('privacy') }}" class="hover:text-white">Privacy Policy</a></li>
+                <li><a href="{{ route('terms') }}" class="hover:text-white">Terms & Conditions</a></li>
             </ul>
         </div>
 
     </div>
 
     <!-- Divider -->
-    <div class="border-t border-gray-800 mt-12 pt-6 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-        <p>© 2026 GlideSwap. All rights reserved</p>
+    <div
+        class="border-t border-gray-800 mt-12 pt-6 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
+        <p>© 2026 GlideSwap. All rights reserved. A product by
+            <a href="https://corehives.com" target="_blank"
+                class="text-decoration-none text-white fw-semibold hover-purple">
+                CoreHives
+            </a>
+        </p>
         <p class="mt-2 md:mt-0">Built for the decentralized future</p>
     </div>
 </footer>

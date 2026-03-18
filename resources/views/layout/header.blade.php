@@ -29,13 +29,13 @@
                     </a>
                 </li> --}}
                 <li class="relative group">
-                    <a href="#"
+                    <a href="{{ route('about') }}"
                         class="hover:text-[#2b68e0] hover:tracking-wide hover:underline underline-offset-4 transition-all duration-300 font-light">
                         About Us
                     </a>
                 </li>
                 <li class="relative group">
-                    <a href="#"
+                    <a href="{{ route('contact') }}"
                         class="hover:text-[#2b68e0] hover:tracking-wide hover:underline underline-offset-4 transition-all duration-300 font-light">
                         Contact
                     </a>
