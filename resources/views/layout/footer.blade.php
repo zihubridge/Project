@@ -10,7 +10,7 @@
             </p>
 
             <div class="flex gap-3 mt-5">
-                <a href="#"
+                <a href="https://x.com/ZihuBridge" target="_blank" rel="noopener noreferrer"
                     class="w-9 h-9 flex items-center justify-center rounded-full bg-[#1A1F2E] hover:bg-blue-500 hover:text-white transition">
                     <ion-icon name="logo-twitter"></ion-icon>
                 </a>
