@@ -47,8 +47,7 @@
 
                 <h2 class="text-xl font-bold text-black">Select Blockchain</h2>
 
-                <select id="fromBlockchain"
-                    class="bg-[#EEF2F9] rounded-xl px-5 py-3 w-full text-black shadow-sm">
+                <select id="fromBlockchain" class="bg-[#EEF2F9] rounded-xl px-5 py-3 w-full text-black shadow-sm">
                     <option value="" selected disabled>From Blockchain</option>
                 </select>
 
@@ -56,8 +55,7 @@
                     <img src="{{ asset('assets/new assets/Icon.png') }}" class="w-6" alt="">
                 </div>
 
-                <select id="toBlockchain"
-                    class="bg-[#EEF2F9] rounded-xl px-5 py-3 w-full text-black shadow-sm">
+                <select id="toBlockchain" class="bg-[#EEF2F9] rounded-xl px-5 py-3 w-full text-black shadow-sm">
                     <option value="" selected disabled>To Blockchain</option>
                 </select>
 
