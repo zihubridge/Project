@@ -40,7 +40,7 @@
     <!-- Divider -->
     <div
         class="border-t border-gray-800 mt-12 pt-6 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-        <p>© 2026 GlideSwap. All rights reserved. A product by
+        <p>© 2026 ZihuBridge. All rights reserved. A product by
             <a href="https://corehives.com" target="_blank"
                 class="text-decoration-none text-white fw-semibold hover-purple">
                 CoreHives
