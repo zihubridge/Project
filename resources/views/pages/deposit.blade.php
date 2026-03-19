@@ -190,7 +190,7 @@
                     $steps = [
                         ['name' => 'Awaiting Deposit', 'icon' => 'awaiting_deposit.png'],
                         ['name' => 'Deposit Confirmed', 'icon' => 'deposit_confirmed.png'],
-                        ['name' => 'Swapping to Coin', 'icon' => 'icon11.png'],
+                        ['name' => 'Swapping to Coin', 'icon' => 'swapping.png'],
                         ['name' => 'Exchanging Coins', 'icon' => 'icon2.png'],
                         ['name' => 'Swapping to Token', 'icon' => 'swapping_tokens.png'],
                         ['name' => 'Sending Tokens', 'icon' => 'icon1.png'],
