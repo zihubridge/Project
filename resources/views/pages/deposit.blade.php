@@ -190,7 +190,7 @@
                     $steps = [
                         ['name' => 'Awaiting Deposit', 'icon' => 'awaiting_deposit.png'],
                         ['name' => 'Deposit Confirmed', 'icon' => 'deposit_confirmed.png'],
-                        ['name' => 'Swapping to Coin', 'icon' => 'icon10.png'],
+                        ['name' => 'Swapping to Coin', 'icon' => 'icon11.png'],
                         ['name' => 'Exchanging Coins', 'icon' => 'icon2.png'],
                         ['name' => 'Swapping to Token', 'icon' => 'swapping_tokens.png'],
                         ['name' => 'Sending Tokens', 'icon' => 'icon1.png'],
@@ -347,6 +347,8 @@
             axios.get(`/swap/${swapUuid}/status`)
                 .then(response => {
                     const data = response.data;
+
+                    console.log("PREVIOUS:", previousStep, "NEW:", data.current_step, data.step_name);
 
                     // Hide expiry timer once deposit detected
                     if (data.current_step > 1) {
