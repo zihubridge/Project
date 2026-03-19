@@ -363,8 +363,12 @@
                         return;
                     }
 
-                    // Only update UI if step changed
-                    if (data.current_step !== previousStep) {
+                    if (data.current_step < previousStep) {
+                        console.log("IGNORED REGRESSION:", previousStep, "->", data.current_step);
+                        return;
+                    }
+
+                    if (data.current_step > previousStep) {
                         previousStep = data.current_step;
 
                         // Update heading
