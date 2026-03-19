@@ -1,7 +1,6 @@
 @extends('layout.master')
 @section('content')
-    <div id="copyToast"
-        class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0066FF] text-white text-sm py-2 px-5 rounded-2xl flex items-center gap-2">
+    <div id="copyToast" class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0066FF] text-white text-sm py-2 px-5 rounded-2xl flex items-center gap-2 z-[9999]">
         <ion-icon name="checkmark-circle-outline" class="text-lg"></ion-icon>
         <span>Copied!</span>
     </div>
