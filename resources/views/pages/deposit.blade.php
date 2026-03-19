@@ -54,7 +54,7 @@
                     <h2 class="text-lg font-bold text-black w-full md:w-4/12">Send Deposit:</h2>
 
                     <div class="flex flex-wrap items-center gap-3 w-full md:w-8/12 px-8">
-                        <p class="text-black font-semibold text-xl">{{ $swap->from_token_amount }}
+                        <p class="text-black font-semibold text-xl">{{ rtrim(rtrim(number_format($swap->from_token_amount, 6, '.', ''), '0'), '.') }}
                             {{ $swap->fromToken->asset_code }}
                         </p>
 
