@@ -191,9 +191,9 @@
                         ['name' => 'Awaiting Deposit', 'icon' => 'icon4.png'],
                         ['name' => 'Deposit Confirmed', 'icon' => 'icon3.png'],
                         ['name' => 'Swapping to Coin', 'icon' => 'icon3.png'],
-                        ['name' => 'Exchanging Coins', 'icon' => 'icon2.png'],
+                        ['name' => 'Exchanging Coins', 'icon' => 'Icon2.png'],
                         ['name' => 'Swapping to Token', 'icon' => 'icon3.png'],
-                        ['name' => 'Sending Tokens', 'icon' => 'icon1.png'],
+                        ['name' => 'Sending Tokens', 'icon' => 'Icon1.png'],
                         ['name' => 'Completed', 'icon' => 'icon3.png'],
                     ];
                 @endphp
