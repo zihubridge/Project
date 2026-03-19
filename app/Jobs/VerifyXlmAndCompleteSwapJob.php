@@ -60,9 +60,9 @@ class VerifyXlmAndCompleteSwapJob implements ShouldQueue
                 ]);
             }
 
-            Log::info("XLM not received yet from exchange for Swap #{$this->swapId}. Retrying in 30s...");
+            Log::info("XLM not received yet from exchange for Swap #{$this->swapId}. Retrying in 10s...");
 
-            $this->release(30);
+            $this->release(10);
             return;
         }
 

@@ -67,9 +67,9 @@ class VerifyXrpAndCompleteSwapJob implements ShouldQueue
                 ]);
             }
 
-            Log::info("XRP not received yet from exchange for Swap #{$this->swapId}. Retrying in 30s...");
+            Log::info("XRP not received yet from exchange for Swap #{$this->swapId}. Retrying in 10s...");
 
-            $this->release(30);
+            $this->release(10);
             return;
         }
 
