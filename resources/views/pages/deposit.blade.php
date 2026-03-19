@@ -188,13 +188,13 @@
             <div class="flex justify-center items-start gap-4 sm:gap-6 md:gap-8">
                 @php
                     $steps = [
-                        ['name' => 'Awaiting Deposit', 'icon' => 'icon4.png'],
-                        ['name' => 'Deposit Confirmed', 'icon' => 'icon3.png'],
-                        ['name' => 'Swapping to Coin', 'icon' => 'icon3.png'],
+                        ['name' => 'Awaiting Deposit', 'icon' => 'awaiting_deposit.png'],
+                        ['name' => 'Deposit Confirmed', 'icon' => 'deposit_confirmed.png'],
+                        ['name' => 'Swapping to Coin', 'icon' => 'swapping.png'],
                         ['name' => 'Exchanging Coins', 'icon' => 'Icon2.png'],
-                        ['name' => 'Swapping to Token', 'icon' => 'icon3.png'],
+                        ['name' => 'Swapping to Token', 'icon' => 'swapping_tokens.png'],
                         ['name' => 'Sending Tokens', 'icon' => 'Icon1.png'],
-                        ['name' => 'Completed', 'icon' => 'icon3.png'],
+                        ['name' => 'Completed', 'icon' => 'success.png'],
                     ];
                 @endphp
 
