@@ -47,8 +47,8 @@ class ScanLateDepositsJob implements ShouldQueue
                         DB::transaction(function () use ($deposit, $swap, $found) {
 
                             $deposit->update([
-                                'deposit_state_id' => 7,
-                                'tx_hash' => $found['tx_hash'],
+                                'deposit_state_id' => 6,
+                                'refund_tx_hash' => $found['tx_hash'],
                                 'sender_address' => $found['sender'],
                                 'received_token_amount' => $found['amount'],
                                 'received_at' => now(),
