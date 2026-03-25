@@ -18,6 +18,19 @@
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DEK0DQGH5K"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+        gtag('js', new Date());
+
+        gtag('config', 'G-DEK0DQGH5K');
+    </script>
+
 </head>
 
 <body class="font-sans absolute top-0 right-0 left-0 bottom-0">
