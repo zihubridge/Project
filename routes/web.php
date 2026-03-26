@@ -26,6 +26,10 @@ Route::view('/terms', 'pages.terms')->name('terms');
 Route::view('/about', 'pages.about')->name('about');
 Route::view('contact', 'pages.contact')->name('contact');
 
+Route::get('/whitepaper', function () {
+    return response()->file(public_path('whitepaper.pdf'));
+})->name('whitepaper');
+
 Route::prefix('global')->group(function () {
     Route::get('blockchains', [GlobalController::class, 'blockchains'])->name('global.blockchains');
     Route::post('tokens', [GlobalController::class, 'tokens'])->name('global.tokens');
