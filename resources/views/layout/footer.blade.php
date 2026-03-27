@@ -1,4 +1,4 @@
-<footer class="bg-[#0B0F1A] text-gray-400 pt-14 pb-6 px-6 md:px-16">
+<footer class="bg-black text-gray-400 pt-14 pb-6 px-6 md:px-16">
     <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
 
         <!-- Brand -->
@@ -23,6 +23,7 @@
             <ul class="space-y-2 text-sm">
                 <li><a href="{{ route('about') }}" class="hover:text-white">About Us</a></li>
                 <li><a href="{{ route('contact') }}" class="hover:text-white">Contact</a></li>
+                <li><a href="{{ route('whitepaper') }}" class="hover:text-white">Whitepaper</a></li>
             </ul>
         </div>
 

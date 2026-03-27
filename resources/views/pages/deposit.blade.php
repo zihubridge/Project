@@ -1,7 +1,6 @@
 @extends('layout.master')
 @section('content')
-    <div id="copyToast"
-        class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0066FF] text-white text-sm py-2 px-5 rounded-2xl flex items-center gap-2">
+    <div id="copyToast" class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0066FF] text-white text-sm py-2 px-5 rounded-2xl flex items-center gap-2 z-[9999]">
         <ion-icon name="checkmark-circle-outline" class="text-lg"></ion-icon>
         <span>Copied!</span>
     </div>
@@ -54,7 +53,8 @@
                     <h2 class="text-lg font-bold text-black w-full md:w-4/12">Send Deposit:</h2>
 
                     <div class="flex flex-wrap items-center gap-3 w-full md:w-8/12 px-8">
-                        <p class="text-black font-semibold text-xl">{{ $swap->from_token_amount }}
+                        <p class="text-black font-semibold text-xl">
+                            {{ rtrim(rtrim(number_format($swap->from_token_amount, 6, '.', ''), '0'), '.') }}
                             {{ $swap->fromToken->asset_code }}
                         </p>
 
@@ -188,13 +188,13 @@
             <div class="flex justify-center items-start gap-4 sm:gap-6 md:gap-8">
                 @php
                     $steps = [
-                        ['name' => 'Awaiting Deposit', 'icon' => 'icon4.png'],
-                        ['name' => 'Deposit Confirmed', 'icon' => 'icon3.png'],
-                        ['name' => 'Swapping to Coin', 'icon' => 'icon3.png'],
+                        ['name' => 'Awaiting Deposit', 'icon' => 'awaiting_deposit.png'],
+                        ['name' => 'Deposit Confirmed', 'icon' => 'deposit_confirmed.png'],
+                        ['name' => 'Swapping to Coin', 'icon' => 'swapping.png'],
                         ['name' => 'Exchanging Coins', 'icon' => 'icon2.png'],
-                        ['name' => 'Swapping to Token', 'icon' => 'icon3.png'],
+                        ['name' => 'Swapping to Token', 'icon' => 'swapping_tokens.png'],
                         ['name' => 'Sending Tokens', 'icon' => 'icon1.png'],
-                        ['name' => 'Completed', 'icon' => 'icon3.png'],
+                        ['name' => 'Completed', 'icon' => 'success.png'],
                     ];
                 @endphp
 
@@ -342,6 +342,16 @@
         const swapUuid = "{{ $swap->swap_uuid }}";
         let pollInterval;
         let previousStep = {{ $currentStep }};
+        let targetStep = previousStep;
+        let isAnimating = false;
+        let completionHandled = false;
+        let isInitialLoad = true;
+
+        if (previousStep === 7) {
+            document.querySelectorAll('.step-circle').forEach(circle => {
+                circle.classList.remove('step-loading');
+            });
+        }
 
         function updateSwapStatus() {
             axios.get(`/swap/${swapUuid}/status`)
@@ -361,56 +371,29 @@
                         return;
                     }
 
-                    // Only update UI if step changed
-                    if (data.current_step !== previousStep) {
-                        previousStep = data.current_step;
+                    if (data.current_step < previousStep) {
+                        console.log("IGNORED REGRESSION:", previousStep, "->", data.current_step);
+                        return;
+                    }
 
-                        // Update heading
-                        const heading = document.getElementById('statusHeading');
-                        if (heading) {
-                            heading.textContent = data.step_name;
-                        }
-
-                        // Update step circles
-                        document.querySelectorAll('[data-step]').forEach(stepEl => {
-                            const stepNum = parseInt(stepEl.dataset.step);
-                            const circle = stepEl.querySelector('.step-circle');
-
-                            circle.classList.remove('step-loading');
-                            if (stepNum < data.current_step) {
-                                circle.classList.remove('bg-[#D7E2F0]');
-                                circle.classList.add('bg-[#203052]');
-                            } else if (stepNum === data.current_step) {
-                                circle.classList.remove('bg-[#D7E2F0]');
-                                circle.classList.add('bg-[#203052]');
-                                circle.classList.add('step-loading');
-                            } else {
-                                circle.classList.remove('bg-[#203052]');
-                                circle.classList.add('bg-[#D7E2F0]');
-                            }
-                        });
+                    if (data.current_step > targetStep || data.is_completed) {
+                        targetStep = Math.max(targetStep, data.current_step);
+                        processStepQueue();
                     }
 
                     // Handle completion (swap_state_id === 9)
-                    if (data.is_completed) {
+                    if (data.is_completed && !completionHandled) {
+                        completionHandled = true;
+
                         clearInterval(pollInterval);
 
-                        // stop all loading animations
-                        document.querySelectorAll('.step-circle').forEach(circle => {
-                            circle.classList.remove('step-loading');
-                        });
-
-                        // mark all steps as completed
-                        document.querySelectorAll('[data-step]').forEach(stepEl => {
-                            const circle = stepEl.querySelector('.step-circle');
-                            circle.classList.remove('bg-[#D7E2F0]');
-                            circle.classList.add('bg-[#203052]');
-                        });
-
-                        const modal = document.getElementById('successModal');
-                        if (modal) {
-                            modal.classList.remove('hidden');
+                        if (isInitialLoad && previousStep === 7) {
+                            return;
                         }
+
+                        targetStep = 7;
+                        processStepQueue();
+                        waitForCompletion();
                     }
 
                     // Handle failure
@@ -421,6 +404,8 @@
                         // Show error
                         alert('Swap failed: ' + (data.failure_reason || 'Unknown error'));
                     }
+
+                    isInitialLoad = false;
                 })
                 .catch(error => {
                     console.error('Error fetching swap status:', error);
@@ -542,6 +527,83 @@
             if (headingWrapper) {
                 headingWrapper.appendChild(warning);
             }
+        }
+
+        function processStepQueue() {
+            if (isAnimating) return;
+
+            if (previousStep >= targetStep) return;
+
+            isAnimating = true;
+
+            const nextStep = previousStep + 1;
+
+            updateUI(nextStep);
+
+            previousStep = nextStep;
+
+            setTimeout(() => {
+                isAnimating = false;
+                processStepQueue();
+            }, 1200); // adjust speed (1000–1500 feels good)
+        }
+
+        function updateUI(step) {
+            const heading = document.getElementById('statusHeading');
+            if (heading) {
+                heading.textContent = getStepName(step);
+            }
+
+            document.querySelectorAll('[data-step]').forEach(stepEl => {
+                const stepNum = parseInt(stepEl.dataset.step);
+                const circle = stepEl.querySelector('.step-circle');
+
+                circle.classList.remove('step-loading');
+
+                if (stepNum < step) {
+                    circle.classList.remove('bg-[#D7E2F0]');
+                    circle.classList.add('bg-[#203052]');
+                } else if (stepNum === step) {
+                    circle.classList.remove('bg-[#D7E2F0]');
+                    circle.classList.add('bg-[#203052]');
+                    circle.classList.add('step-loading');
+                } else {
+                    circle.classList.remove('bg-[#203052]');
+                    circle.classList.add('bg-[#D7E2F0]');
+                }
+            });
+        }
+
+        function getStepName(step) {
+            const names = {
+                1: 'Awaiting Deposit',
+                2: 'Deposit Confirmed',
+                3: 'Swapping to Coin',
+                4: 'Exchanging Coins',
+                5: 'Swapping to Token',
+                6: 'Sending Tokens',
+                7: 'Completed',
+            };
+            return names[step] || 'Processing';
+        }
+
+        function waitForCompletion() {
+            const check = setInterval(() => {
+                if (previousStep >= targetStep) {
+                    clearInterval(check);
+
+                    // stop loading animations
+                    document.querySelectorAll('.step-circle').forEach(circle => {
+                        circle.classList.remove('step-loading');
+                    });
+
+                    // show modal AFTER animation finishes
+                    const modal = document.getElementById('successModal');
+                    if (modal) {
+                        modal.classList.remove('hidden');
+                    }
+                }
+            }, 200);
         }
     </script>
 @endpush

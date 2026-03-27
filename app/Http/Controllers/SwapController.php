@@ -85,17 +85,7 @@ class SwapController extends Controller
 
         ScanDepositJob::dispatch($swap->id);
 
-        $currentStep = $swap->getFrontendStep();
-        $stepName = $swap->getFrontendStepName();
-
-        return view('pages.deposit', compact(
-            'swap',
-            'depositAddress',
-            'routingValue',
-            'url',
-            'currentStep',
-            'stepName'
-        ));
+        return redirect()->route('swap.show', $swap->swap_uuid);
     }
 
 
@@ -202,5 +192,47 @@ class SwapController extends Controller
             'failure_reason' => $swap->failure_reason,
             'to_final_token_amount' => $swap->to_final_token_amount,
         ]);
+    }
+
+    public function show($uuid)
+    {
+        $swap = Swap::with([
+            'fromToken',
+            'toToken',
+            'fromBlockchain',
+            'toBlockchain',
+            'deposit'
+        ])->where('swap_uuid', $uuid)->first();
+
+        if (!$swap) {
+            abort(404, 'Invalid exchange ID');
+        }
+
+        $depositAddress = $swap->deposit->deposit_address;
+        $routingValue   = $swap->deposit->deposit_routing_value;
+
+        if ($swap->fromBlockchain->id === 1) {
+            $baseUrl = $this->isPublic
+                ? config('services.explorers.stellar.mainnet')
+                : config('services.explorers.stellar.testnet');
+        } else {
+            $baseUrl = $this->isPublic
+                ? config('services.explorers.xrpl.mainnet')
+                : config('services.explorers.xrpl.testnet');
+        }
+
+        $url = $baseUrl . $depositAddress;
+
+        $currentStep = $swap->getFrontendStep();
+        $stepName    = $swap->getFrontendStepName();
+
+        return view('pages.deposit', compact(
+            'swap',
+            'depositAddress',
+            'routingValue',
+            'url',
+            'currentStep',
+            'stepName'
+        ));
     }
 }

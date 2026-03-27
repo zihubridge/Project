@@ -26,6 +26,10 @@ Route::view('/terms', 'pages.terms')->name('terms');
 Route::view('/about', 'pages.about')->name('about');
 Route::view('contact', 'pages.contact')->name('contact');
 
+Route::get('/whitepaper', function () {
+    return response()->file(public_path('whitepaper.pdf'));
+})->name('whitepaper');
+
 Route::prefix('global')->group(function () {
     Route::get('blockchains', [GlobalController::class, 'blockchains'])->name('global.blockchains');
     Route::post('tokens', [GlobalController::class, 'tokens'])->name('global.tokens');
@@ -37,4 +41,5 @@ Route::prefix('global')->group(function () {
 Route::prefix('swap')->group(function () {
     Route::post('start', [SwapController::class, 'start'])->name('swap.start');
     Route::get('{uuid}/status', [SwapController::class, 'getStatus'])->name('swap.status');
+    Route::get('{uuid}', [SwapController::class, 'show'])->name('swap.show');
 });
