@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\GlobalController;
 use App\Http\Controllers\SwapController;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +26,8 @@ Route::view('/privacy', 'pages.privacy')->name('privacy');
 Route::view('/terms', 'pages.terms')->name('terms');
 Route::view('/about', 'pages.about')->name('about');
 Route::view('contact', 'pages.contact')->name('contact');
+
+Route::post('/contact', [ContactController::class, 'send'])->name('contact.send');
 
 Route::get('/whitepaper', function () {
     return response()->file(public_path('whitepaper.pdf'));
