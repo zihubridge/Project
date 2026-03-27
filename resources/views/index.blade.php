@@ -202,6 +202,186 @@
     <div class="pt-50 pb-30 mt-[-9rem]"
         style="background-image: url('{{ asset('assets/new assets/bg-gradient.png') }}'); background-repeat: no-repeat; background-size: cover; ">
 
+        <div class="max-w-7xl mx-auto px-4 py-12 bg-[linear-gradient(135deg,#F2EEFE_0%,#F5FAFF_19%,#F6FCFF_63%,#E0ECFD_100%)] rounded-4xl flex flex-col items-center">
+            <!-- Heading -->
+            <h2 class="text-center text-3xl font-bold mt-10">Top Pairs on ZihuBridge</h2>
+            <p class="text-center text-gray-600 mt-2 max-w-2xl">
+                Explore sensational features to prepare your best investment in cryptocurrency
+            </p>
+
+            <!-- Two Columns -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-15 mt-14 w-full p-7">
+
+                <!-- Column 1 -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-4">Stellar-to-Ripple</h3>
+                    <div class="grid grid-cols-1 gap-10 mt-5 w-full">
+
+                        <!-- ROW TEMPLATE - COPY FOR ALL ROWS -->
+                        <div class="bg-white p-3 flex flex-wrap items-center justify-between gap-3 rounded-xl">
+                            <div class="text-sm">1</div>
+
+                            <div class="flex items-center gap-2 min-w-[80px]">
+                                <img src="{{ asset('assets/new assets/eth.png') }}" alt="">
+                                <span class="font-semibold text-sm">TKG</span>
+                            </div>
+
+                            <div class="bg-[#7ABCE7] text-white py-1 px-3 rounded-full text-sm">XLM</div>
+
+                            <div class="text-2xl font-light text-[#B3B3B3] shrink-0">⟶</div>
+
+                            <div class="flex items-center gap-2 min-w-[80px] font-semibold">
+                                <img src="{{ asset('assets/new assets/solana.png') }}" alt="">
+                                <span>XRP</span>
+                            </div>
+
+                            <div class="bg-[#9B6CEA] text-white py-1 px-3 rounded-full text-sm">ARMY</div>
+
+                            <div class="shrink-0">
+                                <ion-icon class="text-[#B3B3B3] text-xl" name="chevron-forward-outline"></ion-icon>
+                            </div>
+                        </div>
+                        <!-- END TEMPLATE -->
+
+                        <!-- Row 2 -->
+                        <div class="bg-white p-3 flex flex-wrap items-center justify-between gap-3 rounded-xl">
+                            <div class="text-sm">2</div>
+
+                            <div class="flex items-center gap-2 min-w-[80px]">
+                                <img src="{{ asset('assets/new assets/solana.png') }}" alt="">
+                                <span class="font-semibold text-sm">AQUA</span>
+                            </div>
+
+                            <div class="bg-[#9B6CEA] text-white py-1 px-3 rounded-full text-sm">XLM</div>
+
+                            <div class="text-2xl font-light text-[#B3B3B3] shrink-0">⟶</div>
+
+                            <div class="flex items-center gap-2 min-w-[80px] font-semibold">
+                                <img src="{{ asset('assets/new assets/eth.png') }}" alt="">
+                                <span>XRP</span>
+                            </div>
+
+                            <div class="bg-[#7ABCE7] text-white py-1 px-3 rounded-full text-sm">ARMY</div>
+
+                            <div class="shrink-0">
+                                <ion-icon class="text-[#B3B3B3] text-xl" name="chevron-forward-outline"></ion-icon>
+                            </div>
+                        </div>
+
+                        <!-- Row 3 -->
+                        <div class="bg-white p-3 flex flex-wrap items-center justify-between gap-3 rounded-xl">
+                            <div class="text-sm">3</div>
+
+                            <div class="flex items-center gap-2 min-w-[80px]">
+                                <img src="{{ asset('assets/new assets/eth.png') }}" alt="">
+                                <span class="font-semibold text-sm">TKG</span>
+                            </div>
+
+                            <div class="bg-[#7ABCE7] text-white py-1 px-3 rounded-full text-sm">XLM</div>
+
+                            <div class="text-2xl font-light text-[#B3B3B3] shrink-0">⟶</div>
+
+                            <div class="flex items-center gap-2 min-w-[80px] font-semibold">
+                                <img src="{{ asset('assets/new assets/bitcoin.png') }}" alt="">
+                                <span>XRP</span>
+                            </div>
+
+                            <div class="bg-[#F0AC3B] text-white py-1 px-3 rounded-full text-sm">XYILED</div>
+
+                            <div class="shrink-0">
+                                <ion-icon class="text-[#B3B3B3] text-xl" name="chevron-forward-outline"></ion-icon>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column 2 -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-4">Fiat-to-crypto</h3>
+
+                    <div class="grid grid-cols-1 gap-10 mt-5 w-full">
+
+                        <!-- ROW TEMPLATE - COPY FOR ALL ROWS -->
+                        <div class="bg-white p-3 flex flex-wrap items-center justify-between gap-3 rounded-xl">
+                            <div class="text-sm">1</div>
+
+                            <div class="flex items-center gap-2 min-w-[80px]">
+                                <img src="{{ asset('assets/new assets/eth.png') }}" alt="">
+                                <span class="font-semibold text-sm">ETH</span>
+                            </div>
+
+                            <div class="bg-[#7ABCE7] text-white py-1 px-3 rounded-full text-sm">ETH</div>
+
+                            <div class="text-2xl font-light text-[#B3B3B3] shrink-0">⟶</div>
+
+                            <div class="flex items-center gap-2 min-w-[80px] font-semibold">
+                                <img src="{{ asset('assets/new assets/solana.png') }}" alt="">
+                                <span>SOL</span>
+                            </div>
+
+                            <div class="bg-[#9B6CEA] text-white py-1 px-3 rounded-full text-sm">SOL</div>
+
+                            <div class="shrink-0">
+                                <ion-icon class="text-[#B3B3B3] text-xl" name="chevron-forward-outline"></ion-icon>
+                            </div>
+                        </div>
+                        <!-- END TEMPLATE -->
+
+                        <!-- Row 2 -->
+                        <div class="bg-white p-3 flex flex-wrap items-center justify-between gap-3 rounded-xl">
+                            <div class="text-sm">2</div>
+
+                            <div class="flex items-center gap-2 min-w-[80px]">
+                                <img src="{{ asset('assets/new assets/solana.png') }}" alt="">
+                                <span class="font-semibold text-sm">SOL</span>
+                            </div>
+
+                            <div class="bg-[#9B6CEA] text-white py-1 px-3 rounded-full text-sm">SOL</div>
+
+                            <div class="text-2xl font-light text-[#B3B3B3] shrink-0">⟶</div>
+
+                            <div class="flex items-center gap-2 min-w-[80px] font-semibold">
+                                <img src="{{ asset('assets/new assets/eth.png') }}" alt="">
+                                <span>ETH</span>
+                            </div>
+
+                            <div class="bg-[#7ABCE7] text-white py-1 px-3 rounded-full text-sm">ETH</div>
+
+                            <div class="shrink-0">
+                                <ion-icon class="text-[#B3B3B3] text-xl" name="chevron-forward-outline"></ion-icon>
+                            </div>
+                        </div>
+
+                        <!-- Row 3 -->
+                        <div class="bg-white p-3 flex flex-wrap items-center justify-between gap-3 rounded-xl">
+                            <div class="text-sm">3</div>
+
+                            <div class="flex items-center gap-2 min-w-[80px]">
+                                <img src="{{ asset('assets/new assets/eth.png') }}" alt="">
+                                <span class="font-semibold text-sm">ETH</span>
+                            </div>
+
+                            <div class="bg-[#7ABCE7] text-white py-1 px-3 rounded-full text-sm">ETH</div>
+
+                            <div class="text-2xl font-light text-[#B3B3B3] shrink-0">⟶</div>
+
+                            <div class="flex items-center gap-2 min-w-[80px] font-semibold">
+                                <img src="{{ asset('assets/new assets/bitcoin.png') }}" alt="">
+                                <span>BTC</span>
+                            </div>
+
+                            <div class="bg-[#F0AC3B] text-white py-1 px-3 rounded-full text-sm">BTC</div>
+
+                            <div class="shrink-0">
+                                <ion-icon class="text-[#B3B3B3] text-xl" name="chevron-forward-outline"></ion-icon>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Get Started Section -->
         <div class="max-w-7xl mx-auto px-4 mt-40">
             <!-- Heading -->
