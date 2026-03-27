@@ -5,6 +5,7 @@ use App\Http\Controllers\GlobalController;
 use App\Http\Controllers\SwapController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 Route::get('/', function () {
     return view('index');
@@ -45,4 +46,9 @@ Route::prefix('swap')->group(function () {
     Route::post('start', [SwapController::class, 'start'])->name('swap.start');
     Route::get('{uuid}/status', [SwapController::class, 'getStatus'])->name('swap.status');
     Route::get('{uuid}', [SwapController::class, 'show'])->name('swap.show');
+});
+
+Route::get('/test-mail', function () {
+    Mail::raw('Test email from ZihuBridge', fn($m) => $m->to('support@zihubridge.com')->subject('Test'));
+    return 'Email sent! Check your inbox.';
 });
