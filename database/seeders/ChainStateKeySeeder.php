@@ -13,7 +13,7 @@ class ChainStateKeySeeder extends Seeder
      */
     public function run(): void
     {
-         DB::table('chain_state_keys')->insert([
+        DB::table('chain_state_keys')->insert([
             [
                 'name' => 'Payments Cursor',
                 'created_at' => now(),

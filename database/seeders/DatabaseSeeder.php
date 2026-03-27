@@ -14,10 +14,13 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(BlockchainSeeder::class);
-        $this->call(TokenSeeder::class);
         $this->call(ChainStateKeySeeder::class);
-        $this->call(ExecutionTypesSeeder::class);
-        $this->call(SwapStatesSeeder::class);
+        $this->call(DepositStateSeeder::class);
+        $this->call(InternalSwapStateSeeder::class);
         $this->call(SwapEventTypeSeeder::class);
+        $this->call(SwapExchangeStateSeeder::class);
+        $this->call(SwapPayoutStateSeeder::class);
+        $this->call(SwapStatesSeeder::class);
+        $this->call(TokenSeeder::class);
     }
 }

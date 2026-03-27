@@ -17,28 +17,33 @@ class SwapEventTypeSeeder extends Seeder
             // Deposit
             ['name' => 'Deposit Detected', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Deposit Confirmed', 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Deposit Failed', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Deposit Late', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Deposit Expired', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Deposit Failed', 'created_at' => now(), 'updated_at' => now()],
 
-            // Swap legs
-            ['name' => 'Leg Started', 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Leg Completed', 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Leg Failed', 'created_at' => now(), 'updated_at' => now()],
+            // INTERNAL SWAP LEG
+            ['name' => 'Internal Swap Started', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Internal Swap Completed', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Internal Swap Failed', 'created_at' => now(), 'updated_at' => now()],
 
-            // Provider / bridge
-            ['name' => 'Provider Order Created', 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Provider Order Completed', 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'Provider Order Failed', 'created_at' => now(), 'updated_at' => now()],
+            // PROVIDER (Exchange)
+            ['name' => 'Exchange Order Created', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Exchange Funds Sent', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Exchange Funds Received', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Exchange Order Completed', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Exchange Order Failed', 'created_at' => now(), 'updated_at' => now()],
 
-            // Payout
+            // PAYOUT
             ['name' => 'Payout Initiated', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Payout Sent', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Payout Confirmed', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Payout Failed', 'created_at' => now(), 'updated_at' => now()],
 
-            // Final
+            // FINAL
             ['name' => 'Swap Completed', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Swap Failed', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Swap Refunded', 'created_at' => now(), 'updated_at' => now()],
+
         ]);
     }
 }

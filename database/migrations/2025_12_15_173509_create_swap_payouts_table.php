@@ -15,14 +15,17 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('swap_id')->unique();
 
+            $table->unsignedBigInteger('blockchain_id')->index();
             $table->unsignedBigInteger('token_id')->index();
             $table->decimal('amount', 36, 18);
 
+            $table->string('from_address', 128)->nullable();
             $table->string('to_address', 128);
-            $table->string('tx_hash', 128)->nullable()->unique();
-            $table->unsignedBigInteger('swap_states')->default(0);
-            $table->json('meta')->nullable();
 
+            $table->string('tx_hash', 128)->nullable()->unique();
+            $table->unsignedSmallInteger('swap_payout_state_id')->default(1);
+
+            $table->json('meta')->nullable();
             $table->timestamps();
         });
     }
