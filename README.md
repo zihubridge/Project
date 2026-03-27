@@ -2,8 +2,6 @@
   <img src="public/assets/images/logo.png" width="200" alt="ZihuBridge Logo">
 </p>
 
-<h1 align="center">ZihuBridge</h1>
-
 <p align="center">
   Swap tokens between <b>Stellar</b> and <b>XRPL</b> — without centralized exchanges.
 </p>
