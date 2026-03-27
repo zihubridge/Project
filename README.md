@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="/assets/images/logo.png" width="200" alt="ZihuBridge Logo">
+  <img src="public/assets/images/logo.png" width="200" alt="ZihuBridge Logo">
 </p>
 
 <h1 align="center">ZihuBridge</h1>
