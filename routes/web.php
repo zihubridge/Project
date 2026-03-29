@@ -12,12 +12,12 @@ Route::get('/', function () {
 Route::get('/exchange', function (Request $request) {
     $request->validate([
         'fromasset' => 'required|exists:blockchains,asset_code',
-        'toasset'   => 'required|exists:blockchains,asset_code|different:fromasset',
+        'toasset' => 'required|exists:blockchains,asset_code|different:fromasset',
     ]);
 
     return view('pages.exchange', [
         'fromAsset' => $request->query('fromasset'),
-        'toAsset'   => $request->query('toasset'),
+        'toAsset' => $request->query('toasset'),
     ]);
 })->name('exchange');
 
@@ -43,3 +43,11 @@ Route::prefix('swap')->group(function () {
     Route::get('{uuid}/status', [SwapController::class, 'getStatus'])->name('swap.status');
     Route::get('{uuid}', [SwapController::class, 'show'])->name('swap.show');
 });
+
+
+
+
+
+// Route for new UI Home Page Redesign 
+Route::view('/new-home', 'index-new');
+// Route for new UI Home Page Redesign
