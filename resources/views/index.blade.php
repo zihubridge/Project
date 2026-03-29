@@ -202,7 +202,8 @@
     <div class="pt-50 pb-30 mt-[-9rem]"
         style="background-image: url('{{ asset('assets/new assets/bg-gradient.png') }}'); background-repeat: no-repeat; background-size: cover; ">
 
-        <div class="max-w-7xl mx-auto px-4 py-12 bg-[linear-gradient(135deg,#F2EEFE_0%,#F5FAFF_19%,#F6FCFF_63%,#E0ECFD_100%)] rounded-4xl flex flex-col items-center">
+        <div
+            class="max-w-7xl mx-auto px-4 py-12 bg-[linear-gradient(135deg,#F2EEFE_0%,#F5FAFF_19%,#F6FCFF_63%,#E0ECFD_100%)] rounded-4xl flex flex-col items-center">
             <!-- Heading -->
             <h2 class="text-center text-3xl font-bold mt-10">Top Pairs on ZihuBridge</h2>
             <p class="text-center text-gray-600 mt-2 max-w-2xl">
