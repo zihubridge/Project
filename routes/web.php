@@ -24,7 +24,7 @@ Route::get('/exchange', function (Request $request) {
 Route::view('/privacy', 'pages.privacy')->name('privacy');
 Route::view('/terms', 'pages.terms')->name('terms');
 Route::view('/about', 'pages.about')->name('about');
-Route::view('contact', 'pages.contact')->name('contact');
+Route::view('/contact', 'pages.contact')->name('contact');
 
 Route::get('/whitepaper', function () {
     return response()->file(public_path('whitepaper.pdf'));

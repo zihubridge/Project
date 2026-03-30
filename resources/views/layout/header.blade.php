@@ -13,14 +13,32 @@
             <ul class="flex items-center gap-8 text-gray-200 font-medium">
 
                 <li>
-                    <a href="#"
+                    <a href="/"
                         class="hover:text-[#2b68e0] hover:underline underline-offset-4 transition-all duration-300 font-light text-sm">
-                        How It Works
+                        Home
+                    </a>
+                </li>
+                <li>
+                    <a href="/whitepaper"
+                        class="hover:text-[#2b68e0] hover:underline underline-offset-4 transition-all duration-300 font-light text-sm">
+                        Whitepaper
+                    </a>
+                </li>
+                <li>
+                    <a href="/about"
+                        class="hover:text-[#2b68e0] hover:underline underline-offset-4 transition-all duration-300 font-light text-sm">
+                        About Us
+                    </a>
+                </li>
+                <li>
+                    <a href="contact"
+                        class="hover:text-[#2b68e0] hover:underline underline-offset-4 transition-all duration-300 font-light text-sm">
+                        Contact
                     </a>
                 </li>
 
                 <!-- Customer Benefits -->
-                <li class="relative dropdown-menu">
+                {{-- <li class="relative dropdown-menu">
                     <a href="#"
                         class="flex items-center gap-1 hover:text-[#2b68e0] hover:underline underline-offset-4 transition-all duration-300 font-light text-sm">
                         Customer Benefits
@@ -36,10 +54,10 @@
                         <li><a href="#" class="block px-4 py-2 text-black hover:bg-gray-100 text-sm">Option 3</a>
                         </li>
                     </ul>
-                </li>
+                </li> --}}
 
                 <!-- Analytics -->
-                <li class="relative dropdown-menu">
+                {{-- <li class="relative dropdown-menu">
                     <a href="#"
                         class="flex items-center gap-1 hover:text-[#2b68e0] hover:underline underline-offset-4 transition-all duration-300 font-light text-sm">
                         Analytics
@@ -54,10 +72,10 @@
                         <li><a href="#" class="block px-4 py-2 text-black hover:bg-gray-100 text-sm">Insights</a>
                         </li>
                     </ul>
-                </li>
+                </li> --}}
 
                 <!-- Currencies -->
-                <li class="relative dropdown-menu">
+                {{-- <li class="relative dropdown-menu">
                     <a href="#"
                         class="flex items-center gap-1 hover:text-[#2b68e0] hover:underline underline-offset-4 transition-all duration-300 font-light text-sm">
                         Currencies
@@ -70,10 +88,10 @@
                         <li><a href="#" class="block px-4 py-2 text-black hover:bg-gray-100 text-sm">EUR</a></li>
                         <li><a href="#" class="block px-4 py-2 text-black hover:bg-gray-100 text-sm">GBP</a></li>
                     </ul>
-                </li>
+                </li> --}}
 
                 <!-- Business -->
-                <li class="relative dropdown-menu">
+                {{-- <li class="relative dropdown-menu">
                     <a href="#"
                         class="flex items-center gap-1 hover:text-[#2b68e0] hover:underline underline-offset-4 transition-all duration-300 font-light text-sm">
                         Business
@@ -89,10 +107,10 @@
                         <li><a href="#" class="block px-4 py-2 text-black hover:bg-gray-100 text-sm">Partners</a>
                         </li>
                     </ul>
-                </li>
+                </li> --}}
 
                 <!-- Language Selector -->
-                <li class="relative dropdown-menu">
+                {{-- <li class="relative dropdown-menu">
                     <button id="langBtn"
                         class="flex items-center gap-2 text-gray-200 hover:text-[#2b68e0] transition-all duration-300 font-light">
                         <img id="activeFlagImg" src="https://flagcdn.com/w20/us.png" alt="EN"
@@ -136,7 +154,7 @@
                             </a>
                         </li>
                     </ul>
-                </li>
+                </li> --}}
 
             </ul>
         </div>
@@ -173,8 +191,33 @@
                     </a>
                 </li>
 
+                <li>
+                    <a href="/"
+                        class="block px-4 py-3 rounded-lg hover:bg-gray-800 hover:text-[#2b68e0] transition-all duration-200 font-light">
+                        Home
+                    </a>
+                </li>
+                <li>
+                    <a href="/whitepaper"
+                        class="block px-4 py-3 rounded-lg hover:bg-gray-800 hover:text-[#2b68e0] transition-all duration-200 font-light">
+                        Whitepaper
+                    </a>
+                </li>
+                <li>
+                    <a href="/about"
+                        class="block px-4 py-3 rounded-lg hover:bg-gray-800 hover:text-[#2b68e0] transition-all duration-200 font-light">
+                        About Us
+                    </a>
+                </li>
+                <li>
+                    <a href="contact"
+                        class="block px-4 py-3 rounded-lg hover:bg-gray-800 hover:text-[#2b68e0] transition-all duration-200 font-light">
+                        Contact
+                    </a>
+                </li>
+
                 <!-- Mobile Accordion: Customer Benefits -->
-                <li class="mobile-accordion">
+                {{-- <li class="mobile-accordion">
                     <button
                         class="accordion-trigger w-full flex justify-between items-center px-4 py-3 rounded-lg hover:bg-gray-800 transition-all duration-200 font-light text-left">
                         Customer Benefits
@@ -192,10 +235,10 @@
                                 class="block px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all">Option
                                 3</a></li>
                     </ul>
-                </li>
+                </li> --}}
 
                 <!-- Mobile Accordion: Analytics -->
-                <li class="mobile-accordion">
+                {{-- <li class="mobile-accordion">
                     <button
                         class="accordion-trigger w-full flex justify-between items-center px-4 py-3 rounded-lg hover:bg-gray-800 transition-all duration-200 font-light text-left">
                         Analytics
@@ -213,10 +256,10 @@
                                 class="block px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all">Insights</a>
                         </li>
                     </ul>
-                </li>
+                </li> --}}
 
                 <!-- Mobile Accordion: Currencies -->
-                <li class="mobile-accordion">
+                {{-- <li class="mobile-accordion">
                     <button
                         class="accordion-trigger w-full flex justify-between items-center px-4 py-3 rounded-lg hover:bg-gray-800 transition-all duration-200 font-light text-left">
                         Currencies
@@ -234,10 +277,10 @@
                                 class="block px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all">GBP</a>
                         </li>
                     </ul>
-                </li>
+                </li> --}}
 
                 <!-- Mobile Accordion: Business -->
-                <li class="mobile-accordion">
+                {{-- <li class="mobile-accordion">
                     <button
                         class="accordion-trigger w-full flex justify-between items-center px-4 py-3 rounded-lg hover:bg-gray-800 transition-all duration-200 font-light text-left">
                         Business
@@ -255,10 +298,10 @@
                                 class="block px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all">Partners</a>
                         </li>
                     </ul>
-                </li>
+                </li> --}}
 
                 <!-- Mobile Accordion: Language -->
-                <li class="mobile-accordion">
+                {{-- <li class="mobile-accordion">
                     <button
                         class="accordion-trigger w-full flex justify-between items-center px-4 py-3 rounded-lg hover:bg-gray-800 transition-all duration-200 font-light text-left">
                         <span class="flex items-center gap-2">
@@ -318,7 +361,7 @@
                             </a>
                         </li>
                     </ul>
-                </li>
+                </li> --}}
 
             </ul>
         </div>
