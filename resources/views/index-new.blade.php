@@ -76,8 +76,8 @@
             <div class="w-full md:w-1/2">
                 <!-- Gradient Header -->
                 <div
-                    class="rounded-t-2xl bg-gradient-to-br from-[#2AD5F1] via-[#365FB5] to-[#9777DB] px-4 py-4 text-center text-xl font-medium text-white sm:text-2xl lg:text-3xl">
-                    Get <span class="text-[#FFDA58]">10% OFF</span> Per Coin Exchange
+                    class="rounded-t-2xl bg-gradient-to-br from-[#2AD5F1] via-[#365FB5] to-[#9777DB] px-4 py-4 text-center text-lg font-medium text-white sm:text-xl lg:text-2xl">
+                    Swap Tokens Across <span class="text-[#FFDA58]">Stellar</span> & <span class="text-[#FFDA58]">XRPL</span>
                 </div>
 
                 <!-- Gradient Border Wrapper -->
@@ -368,7 +368,7 @@
                     </div>
                     <h3 class="text-lg font-semibold mb-2">Sign-up is not required</h3>
                     <p class="text-gray-400 text-sm leading-relaxed">
-                        SimpleSwap provides cryptocurrency exchange without registration.
+                        ZihuBridge provides cryptocurrency exchange without registration.
                     </p>
                 </div>
 
@@ -419,7 +419,7 @@
 
                 <div class="text-center max-w-2xl mx-auto my-5">
                     <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">
-                        Top Pairs on SimpleSwap
+                        Top Pairs on ZihuBridge
                     </h2>
                     <p class="text-gray-300 leading-relaxed">
                         Explore sensational features to prepare your best investment in cryptocurrency
