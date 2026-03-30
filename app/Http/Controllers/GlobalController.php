@@ -1218,4 +1218,50 @@ class GlobalController extends Controller
             'estimated_time' => "{$minutes}m {$remaining}s",
         ]);
     }
+
+    public function bridgePairs()
+    {
+        $stellarToRipple = $this->getBridgePairs('Stellar', 'Ripple');
+        $rippleToStellar = $this->getBridgePairs('Ripple', 'Stellar');
+
+        return response()->json([
+            'stellar_to_ripple' => $stellarToRipple,
+            'ripple_to_stellar' => $rippleToStellar,
+        ]);
+    }
+
+    private function getBridgePairs(string $fromChain, string $toChain)
+    {
+        $fromBlockchain = Blockchain::where('name', $fromChain)->firstOrFail();
+        $toBlockchain = Blockchain::where('name', $toChain)->firstOrFail();
+
+        $fromTokens = Token::where('blockchain_id', $fromBlockchain->id)
+            ->where('status', 1)
+            ->get();
+
+        $toTokens = Token::where('blockchain_id', $toBlockchain->id)
+            ->where('status', 1)
+            ->get();
+
+        $pairs = [];
+
+        foreach ($fromTokens as $fromToken) {
+            foreach ($toTokens as $toToken) {
+                $pairs[] = [
+                    'from' => [
+                        'name' => $fromToken->name,
+                        'asset_code' => $fromToken->asset_code,
+                        'image' => asset($fromToken->image),
+                    ],
+                    'to' => [
+                        'name' => $toToken->name,
+                        'asset_code' => $toToken->asset_code,
+                        'image' => asset($toToken->image),
+                    ],
+                ];
+            }
+        }
+
+        return $pairs;
+    }
 }
