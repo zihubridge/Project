@@ -7,25 +7,25 @@
         <!-- COIN 1 -->
         <div
             class="hidden lg:flex absolute top-26 left-10 lg:left-20 xl:left-60 2xl:left-90 h-[65px] w-[65px] rounded-full bg-[rgba(254,231,21,0.15)] animate-pulseGlow items-center justify-center">
-            <img src="{{ asset('assets/new assets/coin1.png') }}" class="w-10" alt="">
+            <img src="{{ asset('assets/images/coin1.png') }}" class="w-10" alt="">
         </div>
 
         <!-- COIN 2 -->
         <div
             class="hidden lg:flex absolute top-66 left-0 lg:left-5 xl:left-40 2xl:left-70 h-[65px] w-[65px] rounded-full bg-[rgba(90,40,176,0.15)] animate-heartBeat items-center justify-center">
-            <img src="{{ asset('assets/new assets/coin4.png') }}" class="w-10" alt="">
+            <img src="{{ asset('assets/images/coin4.png') }}" class="w-10" alt="">
         </div>
 
         <!-- COIN 3 -->
         <div
             class="hidden lg:flex absolute top-26 right-10 lg:right-20 xl:right-60 2xl:right-90 h-[65px] w-[65px] rounded-full bg-[rgba(51,135,90,0.15)] animate-heartBeat items-center justify-center">
-            <img src="{{ asset('assets/new assets/coin2.png') }}" class="w-10" alt="">
+            <img src="{{ asset('assets/images/coin2.png') }}" class="w-10" alt="">
         </div>
 
         <!-- COIN 4 -->
         <div
             class="hidden lg:flex absolute top-66 right-0 lg:right-5 xl:right-40 2xl:right-70 h-[65px] w-[65px] rounded-full bg-[rgba(204,49,61,0.15)] animate-pulseGlow items-center justify-center">
-            <img src="{{ asset('assets/new assets/coin3.png') }}" class="w-10" alt="">
+            <img src="{{ asset('assets/images/coin3.png') }}" class="w-10" alt="">
         </div>
 
 
@@ -101,7 +101,7 @@
 
             <!-- Left column: Image -->
             <div class="flex justify-center md:justify-start">
-                <img src="{{ asset('assets/new assets/planet.png') }}" alt="Sample"
+                <img src="{{ asset('assets/images/planet.png') }}" alt="Sample"
                     class="w-xl h-auto rounded-lg object-cover">
             </div>
 
