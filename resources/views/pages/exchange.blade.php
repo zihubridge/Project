@@ -1,7 +1,7 @@
 @extends('layout.master')
 @section('content')
     <section class="bg-[#F6F7F9]">
-        <div class="max-w-7xl px-5 py-20 mx-auto">
+        <div class="max-w-6xl px-5 py-20 mx-auto my-10">
             <div class="flex flex-col md:flex-row md:space-x-6">
 
                 <!-- Left column: 4/12 -->
@@ -42,19 +42,19 @@
                 </div>
 
                 <!-- Right column: 8/12 -->
-                <div class="w-full md:w-2/3 bg-white rounded-3xl p-6 space-y-4">
+                <div class="w-full md:w-2/3 bg-white rounded-3xl p-6 space-y-2">
                     <h2 class="text-2xl font-bold text-center">Swap tokens</h2>
-                    <div class="mb-8 space-y-5 pb-10 border-b-1 border-[#D8D8D8]">
+                    <div class="mb-8 space-y-2 pb-10 border-b-1 border-[#D8D8D8]">
 
                         <!-- Send -->
-                        <div class="flex flex-col sm:flex-row gap-4 w-full group">
+                        <div class="flex flex-col sm:flex-row gap-2 w-full group">
                             <div
-                                class="w-full bg-[#EEF2F9] border border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-2xl px-5 py-4 flex items-center justify-between transition-all">
+                                class="w-full bg-[#EEF2F9] border border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-2xl px-4 py-2 flex items-center justify-between transition-all">
 
                                 <div class="flex flex-col gap-1">
                                     <span class="text-gray-500 text-xs font-bold uppercase tracking-wider">You Send</span>
                                     <input id="sendAmount" type="text" placeholder="0.0"
-                                        class="bg-transparent text-black text-2xl font-bold focus:outline-none w-full" />
+                                        class="bg-transparent text-black text-1xl font-bold focus:outline-none w-full" />
                                 </div>
 
                                 <div class="flex flex-col items-end gap-2 min-w-[140px]">
@@ -71,32 +71,30 @@
                                 </div>
                             </div>
                         </div>
+                        <div id="swap-error-message" class="hidden mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <div class="flex items-start gap-2">
+                                <ion-icon name="alert-circle-outline"
+                                    class="text-red-600 text-xl flex-shrink-0 mt-0.5"></ion-icon>
+                                <span id="swap-error-text" class="text-red-600 text-sm font-medium"></span>
+                            </div>
+                        </div>
 
                         <!-- Receive -->
                         <div class="flex flex-col sm:flex-row gap-4 w-full group">
                             <div
-                                class="w-full bg-[#EEF2F9] border border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-2xl px-5 py-4 flex items-center justify-between transition-all">
-
+                                class="w-full bg-[#EEF2F9] border border-transparent focus-within:border-blue-500 focus-within:bg-white rounded-2xl px-4 py-2 flex items-center justify-between transition-all">
                                 <div class="flex flex-col gap-1">
                                     <span class="text-gray-500 text-xs font-bold uppercase tracking-wider">You Get</span>
                                     <input id="receiveAmount" type="text" placeholder="0.0" readonly
-                                        class="bg-transparent text-black text-2xl font-bold focus:outline-none w-full cursor-default" />
-                                    <div id="swap-error-message"
-                                        class="hidden mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                                        <div class="flex items-start gap-2">
-                                            <ion-icon name="alert-circle-outline"
-                                                class="text-red-600 text-xl flex-shrink-0 mt-0.5"></ion-icon>
-                                            <span id="swap-error-text" class="text-red-600 text-sm font-medium"></span>
-                                        </div>
-                                    </div>
+                                        class="bg-transparent text-black text-1xl font-bold focus:outline-none w-full cursor-default" />
+
                                 </div>
 
                                 <div class="flex flex-col items-end gap-2 min-w-[140px]">
                                     <div
                                         class="flex items-center gap-1.5 bg-white/80 px-2 py-1 rounded-full border border-gray-200 shadow-sm">
                                         <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                                        <span
-                                            class="text-[10px] font-black text-gray-600 uppercase">{{ $toAsset }}</span>
+                                        <span class="text-[10px] font-black text-gray-600 uppercase">{{ $toAsset }}</span>
                                     </div>
 
                                     <div class="relative w-full">
@@ -116,21 +114,22 @@
                             </div>
                         </div>
                     </div>
+
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
-                        <h2 class="text-base sm:text-lg font-bold text-center sm:text-left">
+                        <h2 class="text-base sm:text-md font-bold text-center sm:text-left">
                             Enter The Destination Wallet
                         </h2>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-4 w-full mb-2">
-                        <div class="w-full bg-[#EEF2F9] rounded-xl px-4 sm:px-5 py-3 flex items-center justify-between">
+                        <div class="w-full bg-[#EEF2F9] rounded-xl px-4 sm:px-4 py-2 flex items-center justify-between">
                             <input id="destinationAddress" type="text" placeholder="The Recipients Address"
-                                class="bg-transparent text-black text-lg sm:text-xl w-full focus:outline-none" />
+                                class="bg-transparent text-black text-sm sm:text-lg w-full focus:outline-none" />
                         </div>
                     </div>
 
                     <p id="destError" class="text-sm text-red-600 hidden"></p>
                     <button id="swapBtn" type="button"
-                        class="block w-full text-center bg-blue-600 text-white py-2 rounded-full text-lg font-semibold hover:bg-transparent hover:text-blue-600 border border-blue-600 transition mb-5 disabled:opacity-50 disabled:cursor-not-allowed">
+                        class="block w-full text-center bg-blue-600 text-white py-2 rounded-full text-md font-semibold hover:bg-transparent hover:text-blue-600 border border-blue-600 transition mb-5 disabled:opacity-50 disabled:cursor-not-allowed mt-5" >
                         Swap Tokens
                     </button>
                     <div class="flex justify-center font-semibold text-black mb-10">
@@ -144,7 +143,7 @@
             @csrf
             <input type="hidden" name="amount" id="post_amount">
             <input type="hidden" name="estimated_token_amount" id="post_estimated_token_amount">
-            
+
             <input type="hidden" name="from_blockchain" id="post_from_blockchain">
             <input type="hidden" name="to_blockchain" id="post_to_blockchain">
 
@@ -197,7 +196,7 @@
                 updateSwapButton();
             }
 
-            function setEstimateLoading(on) { 
+            function setEstimateLoading(on) {
                 estimating = on;
 
                 if (on) {
@@ -337,11 +336,11 @@
             function showSwapError(message) {
                 const errorEl = document.getElementById('swap-error-message');
                 const errorText = document.getElementById('swap-error-text');
-                
+
                 if (errorEl && errorText) {
                     errorText.textContent = message;
                     errorEl.classList.remove('hidden');
-                    hasEstimateError = true; 
+                    hasEstimateError = true;
                     updateSwapButton();
                 }
             }
@@ -351,7 +350,7 @@
                 if (errorEl) {
                     errorEl.classList.add('hidden');
                     hasEstimateError = false;
-                    updateSwapButton(); 
+                    updateSwapButton();
                 }
             }
 
@@ -415,16 +414,16 @@
             function loadTokens(assetCode, selectId) {
 
                 return fetch("/global/tokens", {
-                        method: "POST",
-                        headers: {
-                            "Accept": "application/json",
-                            "Content-Type": "application/json",
-                            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
-                        },
-                        body: JSON.stringify({
-                            asset_code: assetCode
-                        }),
-                    })
+                    method: "POST",
+                    headers: {
+                        "Accept": "application/json",
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify({
+                        asset_code: assetCode
+                    }),
+                })
                     .then(res => res.json())
                     .then(json => {
                         const select = document.getElementById(selectId);

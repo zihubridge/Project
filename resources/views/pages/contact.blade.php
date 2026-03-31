@@ -2,10 +2,10 @@
 
 @section('content')
     <section class="bg-[#0B0F1A] text-gray-300">
-        <div class="max-w-7xl mx-auto px-5 py-20">
+        <div class="max-w-6xl mx-auto py-30 px-10 lg:px-0 xl:px-0">
 
             <!-- Header -->
-            <div class="mb-16 text-center">
+            <div class="mb-10 text-center">
                 <h1 class="text-4xl font-bold text-white mb-3">Contact Us</h1>
                 <p class="text-gray-400 max-w-2xl mx-auto">
                     Have a question, issue, or feedback? Reach out and we’ll get back to you.
