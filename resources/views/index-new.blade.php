@@ -1,34 +1,96 @@
 @extends('layout.master')
 @section('content')
 
+    <style>
+        .vetors::after {
+            content: '';
+            animation: float 4s ease-in-out infinite;
+            position: absolute;
+            left: -5%;
+            top: 5%;
+            height: 50px;
+            width: 50px;
+            background: url({{ asset('assets/images/coin3.png') }});
+            background-size: 30px;
+            background-repeat: no-repeat;
+            background-color: rgba(204, 49, 61, 0.15);
+            border-radius: 50%;
+            background-position: center;
+        }
+
+        .vetors::before {
+            content: '';
+            animation: float 4s ease-in-out infinite;
+            position: absolute;
+            left: 5%;
+            top: -10%;
+            height: 50px;
+            width: 50px;
+            background: url({{ asset('assets/images/coin1.png') }});
+            background-size: 30px;
+            background-repeat: no-repeat;
+            background-color: rgba(204, 49, 61, 0.15);
+            border-radius: 50%;
+            background-position: center;
+        }
+
+        .vectors-2::after {
+            content: '';
+            animation: float 4s ease-in-out infinite;
+            position: absolute;
+            left: 45%;
+            top: 20%;
+            height: 50px;
+            width: 50px;
+            background: url({{ asset('assets/images/coin2.png') }});
+            background-size: 30px;
+            background-repeat: no-repeat;
+            background-color: rgba(90, 40, 176, 0.15);
+            border-radius: 50%;
+            background-position: center;
+        }
+
+        .vectors-2::before {
+            content: '';
+            animation: float 4s ease-in-out infinite;
+            position: absolute;
+            left: 48%;
+            top: 0%;
+            height: 50px;
+            width: 50px;
+            background: url({{ asset('assets/images/coin4.png') }});
+            background-size: 30px;
+            background-repeat: no-repeat;
+            background-color: rgba(204, 49, 61, 0.15);
+            border-radius: 50%;
+            background-position: center;
+        }
+
+        @media screen and (max-width: 1024px) {
+
+            .vetors::after {
+                display: none;
+            }
+
+            .vetors::before {
+                display: none;
+            }
+
+            .vectors-2::after {
+                display: none;
+            }
+
+            .vectors-2::before {
+                display: none;
+            }
+        }
+    </style>
+
     <!-- Hero Section -->
     <section
         class="relative min-h-screen w-full overflow-hidden bg-cover bg-center px-4 pt-32 pb-12 sm:px-6 sm:pt-36 sm:pb-16 lg:px-8 lg:pt-40  "
         style="background-image: url('{{ asset('assets/images/hero-bg.png') }}');">
 
-        <!-- COIN 1 -->
-        <div
-            class="animate-float absolute left-[6%] top-[18%] hidden h-7 w-7 items-center justify-center rounded-full bg-[rgba(254,231,21,0.15)] md:flex lg:left-[10%] lg:top-[15%] lg:h-9 lg:w-9 xl:left-[14%] xl:top-[20%]">
-            <img src="{{ asset('assets/images/coin1.png') }}" class="w-4 lg:w-6" alt="">
-        </div>
-
-        <!-- COIN 2 -->
-        <div
-            class="animate-float absolute right-[8%] top-[30%] hidden h-10 w-10 items-center justify-center rounded-full bg-[rgba(90,40,176,0.15)] md:flex lg:right-[46%] lg:top-[34%] lg:h-[55px] lg:w-[55px] xl:right-[48%] xl:top-[33%]">
-            <img src="{{ asset('assets/images/coin4.png') }}" class="w-5 lg:w-8" alt="">
-        </div>
-
-        <!-- COIN 3 -->
-        <div
-            class="animate-float absolute right-[14%] top-[20%] hidden h-8 w-8 items-center justify-center rounded-full bg-[rgba(51,135,90,0.15)] md:flex lg:left-[49%] lg:right-auto lg:top-[20%] lg:h-[55px] lg:w-[55px] xl:left-[50%]">
-            <img src="{{ asset('assets/images/coin2.png') }}" class="w-4 lg:w-8" alt="">
-        </div>
-
-        <!-- COIN 4 -->
-        <div
-            class="animate-float absolute bottom-[20%] left-[5%] hidden h-8 w-8 items-center justify-center rounded-full bg-[rgba(204,49,61,0.15)] md:flex lg:bottom-auto lg:left-[40%] lg:top-[40%] lg:h-[55px] lg:w-[55px] xl:left-[8%] xl:top-[26%]">
-            <img src="{{ asset('assets/images/coin3.png') }}" class="w-4 lg:w-8" alt="">
-        </div>
         <div class="relative z-10 mx-auto flex max-w-6xl flex-col gap-12 md:flex-row  md:gap-12 lg:gap-20 xl:gap-28">
 
             <div class="w-full lg:w-1/2">
@@ -36,7 +98,7 @@
                     <div>
                         <!-- Heading -->
                         <p
-                            class="max-w-xl pb-6 text-3xl font-semibold leading-tight text-white sm:text-4xl md:pb-8 md:text-[2.75rem] lg:text-5xl">
+                            class="max-w-xl pb-6 text-3xl font-semibold leading-tight text-white sm:text-4xl md:pb-8 md:text-[2.75rem] lg:text-5xl vetors">
                             Limitless <span class="text-[#FFDA58]">Web3.0</span>
                             Crypto Exchange by <span class="text-[#FFDA58] font-bold">ZIHU</span> <span
                                 class="font-bold">Bridge</span>
@@ -76,7 +138,7 @@
             <div class="w-full md:w-1/2">
                 <!-- Gradient Header -->
                 <div
-                    class="rounded-t-2xl bg-gradient-to-br from-[#2AD5F1] via-[#365FB5] to-[#9777DB] px-4 py-4 text-center text-xl font-medium text-white sm:text-2xl lg:text-3xl">
+                    class="rounded-t-2xl bg-gradient-to-br from-[#2AD5F1] via-[#365FB5] to-[#9777DB] px-4 py-4 text-center text-xl font-medium text-white sm:text-2xl lg:text-3xl vectors-2">
                     Get <span class="text-[#FFDA58]">10% OFF</span> Per Coin Exchange
                 </div>
 
