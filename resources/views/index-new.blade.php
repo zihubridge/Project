@@ -138,8 +138,9 @@
             <div class="w-full md:w-1/2">
                 <!-- Gradient Header -->
                 <div
-                    class="rounded-t-2xl bg-gradient-to-br from-[#2AD5F1] via-[#365FB5] to-[#9777DB] px-4 py-4 text-center text-xl font-medium text-white sm:text-2xl lg:text-3xl vectors-2">
-                    Get <span class="text-[#FFDA58]">10% OFF</span> Per Coin Exchange
+                    class="rounded-t-2xl bg-gradient-to-br from-[#2AD5F1] via-[#365FB5] to-[#9777DB] px-4 py-4 text-center text-lg font-medium text-white sm:text-xl lg:text-2xl vectors-2">
+                    Swap Tokens Across <span class="text-[#FFDA58]">Stellar</span> & <span
+                        class="text-[#FFDA58]">XRPL</span>
                 </div>
 
                 <!-- Gradient Border Wrapper -->
@@ -148,13 +149,15 @@
                     <div class="w-full bg-[#1f1132] p-5 sm:p-6 lg:p-8" style="border-radius: 0 0 14px 14px;">
 
                         <!-- From Currency -->
-                        <div class="relative currency-select mb-5">
-                            <button
+                        <div class="relative currency-select mb-5" data-blockchain-select data-select-role="from">
+                            <button type="button"
                                 class="currency-btn w-full flex items-center justify-between gap-2 px-4 py-4 bg-[#eef2f908] border border-white/10 rounded-xl text-white hover:border-white/30 transition-all duration-200">
                                 <span class="flex items-center gap-2">
                                     <img class="currency-flag w-6 h-6 rounded-full object-cover"
-                                        src="{{ asset('assets/images/btc.png') }}" alt="BTC">
-                                    <span class="currency-name text-sm font-medium">BTC</span>
+                                        src="{{ asset('assets/images/stellar.png') }}" alt="Select blockchain">
+                                    <span class="flex flex-col text-left leading-tight">
+                                        <span class="currency-name text-sm font-medium">Select blockchain</span>
+                                    </span>
                                 </span>
                                 <ion-icon name="chevron-down-outline"
                                     class="currency-chevron text-white/50 text-lg transition-transform duration-300"></ion-icon>
@@ -164,40 +167,7 @@
                             <ul
                                 class="currency-dropdown hidden absolute left-0 top-full mt-2 w-full bg-[#1a0f2e] border border-white/10 rounded-lg z-50 overflow-hidden">
                                 <li>
-                                    <a href="#"
-                                        class="currency-option flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-all"
-                                        data-name="BTC" data-img="{{ asset('assets/images/btc.png') }}">
-                                        <img src="{{ asset('assets/images/btc.png') }}"
-                                            class="w-6 h-6 rounded-full object-cover">
-                                        <div>
-                                            <p class="text-white text-sm font-medium">Bitcoin</p>
-                                            <p class="text-white/40 text-xs">BTC</p>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#"
-                                        class="currency-option flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-all"
-                                        data-name="XRP" data-img="{{ asset('assets/images/ripple.png') }}">
-                                        <img src="{{ asset('assets/images/ripple.png') }}"
-                                            class="w-6 h-6 rounded-full object-cover">
-                                        <div>
-                                            <p class="text-white text-sm font-medium">Ripple</p>
-                                            <p class="text-white/40 text-xs">XRP</p>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#"
-                                        class="currency-option flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-all"
-                                        data-name="XLM" data-img="{{ asset('assets/images/stellar.png') }}">
-                                        <img src="{{ asset('assets/images/stellar.png') }}"
-                                            class="w-6 h-6 rounded-full object-cover">
-                                        <div>
-                                            <p class="text-white text-sm font-medium">Stellar</p>
-                                            <p class="text-white/40 text-xs">XLM</p>
-                                        </div>
-                                    </a>
+                                    <div class="px-4 py-3 text-sm text-white/50">Loading blockchains...</div>
                                 </li>
                             </ul>
                         </div>
@@ -205,7 +175,7 @@
                         <!-- Swap Icon -->
                         <div class="my-5 flex items-center gap-3">
                             <!-- <div class="flex-1 h-px bg-white/10"></div> -->
-                            <button
+                            <button type="button"
                                 class="w-9 h-9 flex items-center justify-center mx-auto rounded-sm bg-white/10 hover:bg-white/20 transition-all duration-200 text-white">
                                 <ion-icon name="swap-vertical-outline" class="text-xl"></ion-icon>
                             </button>
@@ -213,13 +183,15 @@
                         </div>
 
                         <!-- To Currency -->
-                        <div class="relative currency-select mb-5">
-                            <button
+                        <div class="relative currency-select mb-5" data-blockchain-select data-select-role="to">
+                            <button type="button"
                                 class="currency-btn w-full flex items-center justify-between gap-2 px-4 py-4 bg-[#eef2f908] border border-white/10 rounded-xl text-white hover:border-white/30 transition-all duration-200">
                                 <span class="flex items-center gap-2">
                                     <img class="currency-flag w-6 h-6 rounded-full object-cover"
-                                        src="{{ asset('assets/images/ripple.png') }}" alt="XRP">
-                                    <span class="currency-name text-sm font-medium">XRP</span>
+                                        src="{{ asset('assets/images/ripple.png') }}" alt="Select blockchain">
+                                    <span class="flex flex-col text-left leading-tight">
+                                        <span class="currency-name text-sm font-medium">Select blockchain</span>
+                                    </span>
                                 </span>
                                 <ion-icon name="chevron-down-outline"
                                     class="currency-chevron text-white/50 text-lg transition-transform duration-300"></ion-icon>
@@ -229,45 +201,12 @@
                             <ul
                                 class="currency-dropdown hidden absolute left-0 top-full mt-2 w-full bg-[#1a0f2e] border border-white/10 rounded-lg z-50 overflow-hidden">
                                 <li>
-                                    <a href="#"
-                                        class="currency-option flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-all"
-                                        data-name="BTC" data-img="{{ asset('assets/images/btc.png') }}">
-                                        <img src="{{ asset('assets/images/btc.png') }}"
-                                            class="w-6 h-6 rounded-full object-cover">
-                                        <div>
-                                            <p class="text-white text-sm font-medium">Bitcoin</p>
-                                            <p class="text-white/40 text-xs">BTC</p>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#"
-                                        class="currency-option flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-all"
-                                        data-name="XRP" data-img="{{ asset('assets/images/ripple.png') }}">
-                                        <img src="{{ asset('assets/images/ripple.png') }}"
-                                            class="w-6 h-6 rounded-full object-cover">
-                                        <div>
-                                            <p class="text-white text-sm font-medium">Ripple</p>
-                                            <p class="text-white/40 text-xs">XRP</p>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#"
-                                        class="currency-option flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-all"
-                                        data-name="XLM" data-img="{{ asset('assets/images/stellar.png') }}">
-                                        <img src="{{ asset('assets/images/stellar.png') }}"
-                                            class="w-6 h-6 rounded-full object-cover">
-                                        <div>
-                                            <p class="text-white text-sm font-medium">Stellar</p>
-                                            <p class="text-white/40 text-xs">XLM</p>
-                                        </div>
-                                    </a>
+                                    <div class="px-4 py-3 text-sm text-white/50">Loading blockchains...</div>
                                 </li>
                             </ul>
                         </div>
 
-                        <button
+                        <button id="swapBtnCustom" type="button"
                             class="w-full px-6 py-3 font-semibold text-white rounded-lg bg-gradient-to-r from-[#365FB5] to-[#9777DB] hover:from-[#9777DB] hover:to-[#365FB5] transition-all duration-300 my-5">
                             Exchange
                         </button>
@@ -430,7 +369,7 @@
                     </div>
                     <h3 class="text-lg font-semibold mb-2">Sign-up is not required</h3>
                     <p class="text-gray-400 text-sm leading-relaxed">
-                        SimpleSwap provides cryptocurrency exchange without registration.
+                        ZihuBridge provides cryptocurrency exchange without registration.
                     </p>
                 </div>
 
@@ -481,7 +420,7 @@
 
                 <div class="text-center max-w-2xl mx-auto my-5">
                     <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">
-                        Top Pairs on SimpleSwap
+                        Top Pairs on ZihuBridge
                     </h2>
                     <p class="text-gray-300 leading-relaxed">
                         Explore sensational features to prepare your best investment in cryptocurrency
@@ -577,49 +516,3 @@
     <!-- How to get started -->
 
 @endsection
-@push('scripts')
-    <script>
-        // Currency Dropdowns
-        document.querySelectorAll('.currency-select').forEach(select => {
-            const btn = select.querySelector('.currency-btn');
-            const dropdown = select.querySelector('.currency-dropdown');
-            const chevron = select.querySelector('.currency-chevron');
-
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isHidden = dropdown.classList.contains('hidden');
-
-                // Close all first
-                document.querySelectorAll('.currency-select').forEach(other => {
-                    other.querySelector('.currency-dropdown').classList.add('hidden');
-                    other.querySelector('.currency-chevron').style.transform = 'rotate(0deg)';
-                });
-
-                // Open if was closed
-                if (isHidden) {
-                    dropdown.classList.remove('hidden');
-                    chevron.style.transform = 'rotate(180deg)';
-                }
-            });
-
-            // Select option
-            select.querySelectorAll('.currency-option').forEach(option => {
-                option.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    select.querySelector('.currency-flag').src = option.dataset.img;
-                    select.querySelector('.currency-name').textContent = option.dataset.name;
-                    dropdown.classList.add('hidden');
-                    chevron.style.transform = 'rotate(0deg)';
-                });
-            });
-        });
-
-        // Close on outside click
-        document.addEventListener('click', () => {
-            document.querySelectorAll('.currency-select').forEach(select => {
-                select.querySelector('.currency-dropdown').classList.add('hidden');
-                select.querySelector('.currency-chevron').style.transform = 'rotate(0deg)';
-            });
-        });
-    </script>
-@endpush
