@@ -5,7 +5,7 @@
         <span>Copied!</span>
     </div>
 
-    <section class="bg-[#F6F7F9] py-10">
+    <section class="bg-[#F6F7F9] pt-28 py-10">
         <div class="max-w-6xl mx-auto px-4 mb-5">
             <div class="bg-white rounded-2xl p-5 flex flex-col md:flex-row md:justify-between gap-4 md:gap-0">
                 <div class="flex flex-wrap justify-center md:justify-start gap-3 items-center">
