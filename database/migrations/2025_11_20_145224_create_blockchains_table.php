@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name', 32);
             $table->string('asset_code', 10);
+            $table->string('image')->nullable();
             $table->timestamps();
         });
     }

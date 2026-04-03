@@ -2,15 +2,15 @@
 
 @section('content')
 <section class="bg-[#0B0F1A] text-gray-300">
-    <div class="max-w-7xl mx-auto px-5 py-20">
+    <div class="max-w-6xl mx-auto py-30 px-10 lg:px-0 xl:px-0">
         
         <!-- Header -->
-        <div class="mb-16">
+        <div class="mb-10">
             <h1 class="text-4xl font-bold text-white mb-3">About</h1>
         </div>
 
         <!-- Content -->
-        <div class="max-w-3xl space-y-10">
+        <div class="space-y-10">
 
             <div>
                 <h2 class="text-xl font-semibold text-white mb-3">About ZihuBridge</h2>

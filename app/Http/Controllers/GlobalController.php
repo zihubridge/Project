@@ -1218,4 +1218,81 @@ class GlobalController extends Controller
             'estimated_time' => "{$minutes}m {$remaining}s",
         ]);
     }
+
+    public function bridgePairs()
+    {
+        $stellarToRipple = $this->getBridgePairs('Stellar', 'Ripple');
+        $rippleToStellar = $this->getBridgePairs('Ripple', 'Stellar');
+
+        return response()->json([
+            'stellar_to_ripple' => $stellarToRipple,
+            'ripple_to_stellar' => $rippleToStellar,
+        ]);
+    }
+
+    private function getBridgePairs(string $fromChain, string $toChain)
+    {
+        $fromBlockchain = Blockchain::where('name', $fromChain)->firstOrFail();
+        $toBlockchain = Blockchain::where('name', $toChain)->firstOrFail();
+
+        $fromTokens = Token::where('blockchain_id', $fromBlockchain->id)
+            ->where('status', 1)
+            ->get();
+
+        $toTokens = Token::where('blockchain_id', $toBlockchain->id)
+            ->where('status', 1)
+            ->get();
+
+        $pairs = [];
+
+        foreach ($fromTokens as $fromToken) {
+            foreach ($toTokens as $toToken) {
+                $pairs[] = [
+                    'from' => [
+                        'name' => $fromToken->name,
+                        'asset_code' => $fromToken->asset_code,
+                        'image' => asset($fromToken->image),
+                    ],
+                    'to' => [
+                        'name' => $toToken->name,
+                        'asset_code' => $toToken->asset_code,
+                        'image' => asset($toToken->image),
+                    ],
+                ];
+            }
+        }
+
+        return $pairs;
+    }
+
+    public function getPopularPairs()
+    {
+        return \App\Models\Swap::query()
+            ->with([
+                'fromToken:id,asset_code,image',
+                'toToken:id,asset_code,image',
+            ])
+            ->selectRaw('
+            from_token_id,
+            to_token_id,
+            COUNT(*) as total_swaps,
+            AVG(to_final_token_amount / NULLIF(from_token_amount, 0)) as avg_quote
+        ')
+            ->where('swap_state_id', 9)
+            ->groupBy('from_token_id', 'to_token_id')
+            ->orderByDesc('total_swaps')
+            ->limit(5)
+            ->get()
+            ->map(function ($swap) {
+                return [
+                    'pair' => $swap->fromToken->asset_code . ' ⇄ ' . $swap->toToken->asset_code,
+                    'from_asset_code' => $swap->fromToken->asset_code,
+                    'to_asset_code' => $swap->toToken->asset_code,
+                    'from_image' => $swap->fromToken->image,
+                    'to_image' => $swap->toToken->image,
+                    'swap_quote' => number_format($swap->avg_quote, 6),
+                    'total_swaps' => $swap->total_swaps,
+                ];
+            });
+    }
 }

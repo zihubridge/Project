@@ -1,8 +1,9 @@
 <footer class="bg-black text-gray-400 pt-14 pb-6 px-6 md:px-16">
-    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
+
+    <div class="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-8">
 
         <!-- Brand -->
-        <div>
+        <div class="sm:col-span-2 lg:col-span-2">
             <img src="{{ asset('assets/images/logo.png') }}" alt="logo" class="w-44 mb-4">
 
             <p class="text-sm leading-relaxed text-gray-400">
@@ -46,11 +47,11 @@
     <div
         class="border-t border-gray-800 mt-12 pt-6 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
         <p>© 2026 ZihuBridge. All rights reserved. A product by
-            <a href="https://corehives.com" target="_blank"
-                class="text-decoration-none text-white fw-semibold hover-purple">
+            <a href="https://corehives.com" target="_blank" class="text-white font-semibold hover:text-purple-400">
                 CoreHives
             </a>
         </p>
         <p class="mt-2 md:mt-0">Built for the decentralized future</p>
     </div>
+
 </footer>

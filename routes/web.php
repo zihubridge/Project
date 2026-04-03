@@ -8,18 +8,20 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
 Route::get('/', function () {
-    return view('index');
+$popularPairs = app(GlobalController::class)->getPopularPairs();
+
+    return view('index-new', compact('popularPairs'));
 })->name('home');
 
 Route::get('/exchange', function (Request $request) {
     $request->validate([
         'fromasset' => 'required|exists:blockchains,asset_code',
-        'toasset'   => 'required|exists:blockchains,asset_code|different:fromasset',
+        'toasset' => 'required|exists:blockchains,asset_code|different:fromasset',
     ]);
 
     return view('pages.exchange', [
         'fromAsset' => $request->query('fromasset'),
-        'toAsset'   => $request->query('toasset'),
+        'toAsset' => $request->query('toasset'),
     ]);
 })->name('exchange');
 
@@ -40,6 +42,7 @@ Route::prefix('global')->group(function () {
     Route::post('token_swapping_amount', [GlobalController::class, 'tokenSwappingAmount'])->name('global.tokenSwappingAmount');
     Route::post('destination_wallet', [GlobalController::class, 'destinationWallet'])->name('global.destinationWallet');
     Route::get('estimated_swap_time', [GlobalController::class, 'getEstimatedSwapTimeHuman'])->name('global.getEstimatedSwapTimeHuman');
+    Route::get('bridge-pairs', [GlobalController::class, 'bridgePairs'])->name('global.bridgePairs');
 });
 
 Route::prefix('swap')->group(function () {
@@ -52,3 +55,10 @@ Route::get('/test-mail', function () {
     Mail::raw('Test email from ZihuBridge', fn($m) => $m->to('support@zihubridge.com')->subject('Test'));
     return 'Email sent! Check your inbox.';
 });
+
+
+
+
+// Route for new UI Home Page Redesign 
+Route::view('/new-home', 'index-new');
+// Route for new UI Home Page Redesign

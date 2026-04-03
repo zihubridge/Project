@@ -26,51 +26,21 @@ body,
     scrollbar-width: none !important;
 }
 
-/* Heartbeat Animation */
-@keyframes heartBeat {
-    0% {
-        transform: scale(1);
-    }
 
-    25% {
-        transform: scale(1.18);
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0px);
     }
 
     50% {
-        transform: scale(1);
-    }
-
-    75% {
-        transform: scale(1.15);
-    }
-
-    100% {
-        transform: scale(1);
+        transform: translateY(-15px);
     }
 }
 
-.animate-heartBeat {
-    animation: heartBeat 3s infinite ease-in-out;
-}
-
-/* Glow Pulse Animation */
-@keyframes pulseGlow {
-    0% {
-        box-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
-    }
-
-    50% {
-        box-shadow: 0 0 25px rgba(255, 255, 255, 0.7);
-        transform: scale(1.1);
-    }
-
-    100% {
-        box-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
-    }
-}
-
-.animate-pulseGlow {
-    animation: pulseGlow 5s infinite ease-in-out;
+.animate-float {
+    animation: float 4s ease-in-out infinite;
 }
 
 /* Step circle base */
@@ -87,7 +57,8 @@ body,
 
     /* loader ring */
     border: 2px solid rgba(32, 48, 82, 0.2);
-    border-top-color: #203052; /* visible moving part */
+    border-top-color: #203052;
+    /* visible moving part */
 
     animation: stepRotate 1s linear infinite;
 }
@@ -97,6 +68,7 @@ body,
     from {
         transform: rotate(0deg);
     }
+
     to {
         transform: rotate(360deg);
     }
