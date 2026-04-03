@@ -107,7 +107,6 @@
                         <!-- List -->
                         <ul
                             class="list-disc space-y-3 pb-8 pl-5 text-base leading-relaxed font-medium text-white sm:text-lg md:pb-10">
-                            <li>Best prices across top-10 exchanges</li>
                             <li>Lower fees on every trade</li>
                             <li>No custodial funds required</li>
                             <li>Fast setup & execution</li>
@@ -153,8 +152,7 @@
                             <button type="button"
                                 class="currency-btn w-full flex items-center justify-between gap-2 px-4 py-4 bg-[#eef2f908] border border-white/10 rounded-xl text-white hover:border-white/30 transition-all duration-200">
                                 <span class="flex items-center gap-2">
-                                    <img class="currency-flag w-6 h-6 rounded-full object-cover"
-                                        src="{{ asset('assets/images/stellar.png') }}" alt="Select blockchain">
+
                                     <span class="flex flex-col text-left leading-tight">
                                         <span class="currency-name text-sm font-medium">Select blockchain</span>
                                     </span>
@@ -187,8 +185,6 @@
                             <button type="button"
                                 class="currency-btn w-full flex items-center justify-between gap-2 px-4 py-4 bg-[#eef2f908] border border-white/10 rounded-xl text-white hover:border-white/30 transition-all duration-200">
                                 <span class="flex items-center gap-2">
-                                    <img class="currency-flag w-6 h-6 rounded-full object-cover"
-                                        src="{{ asset('assets/images/ripple.png') }}" alt="Select blockchain">
                                     <span class="flex flex-col text-left leading-tight">
                                         <span class="currency-name text-sm font-medium">Select blockchain</span>
                                     </span>
@@ -223,7 +219,9 @@
 
             <!-- Left column: Image -->
             <div class="">
-                <p class=" lg:text-lg xl:text-xl 2xl:text-3xl font-bold">Best Rate Crypto Exchange by ZIHU Bridge</p>
+                <p class=" lg:text-lg xl:text-xl 2xl:text-3xl font-bold">
+                    Trending Swaps Across Chains
+                </p>
                 <div class="flex justify-center md:justify-start">
                     <img src="{{ asset('assets/images/planet.png') }}" alt="Sample"
                         class="w-sm h-auto rounded-lg object-cover">
@@ -241,99 +239,32 @@
                         <!-- <div class="text-right">24h</div> -->
                     </div>
 
-                    <!-- Row -->
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between mt-5 gap-3">
+                    @foreach ($popularPairs as $pair)
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between mt-5 gap-3">
 
-                        <!-- Pill -->
-                        <div
-                            class="flex items-center gap-2 rounded-full border border-[#E1E1E1] py-2 px-4 w-full md:w-[160px]">
+                            <div
+                                class="flex items-center gap-2 rounded-full border border-[#E1E1E1] py-2 px-4 w-full md:w-[220px]">
+                                <div class="flex -space-x-3">
+                                    <img src="{{ asset($pair['from_image']) }}" class="w-6 h-6 rounded-full">
+                                    <img src="{{ asset($pair['to_image']) }}" class="w-6 h-6 rounded-full">
+                                </div>
 
-                            <div class="flex -space-x-3">
-                                <img src="{{ asset('assets/images/solana.png') }}" class="w-6 h-6" alt="">
-                                <img src="{{ asset('assets/images/eth.png') }}" class="w-6 h-6" alt="">
+                                <div class="font-bold whitespace-nowrap">
+                                    {{ $pair['from_asset_code'] }}
+                                    <ion-icon name="swap-horizontal-outline"></ion-icon>
+                                    {{ $pair['to_asset_code'] }}
+                                </div>
                             </div>
 
-                            <div class="font-bold whitespace-nowrap">
-                                SOL <ion-icon name="swap-horizontal-outline"></ion-icon> ETH
+                            <div class="hidden md:block font-semibold">
+                                1 {{ $pair['from_asset_code'] }} ≈ {{ $pair['swap_quote'] }} {{ $pair['to_asset_code'] }}
                             </div>
-                        </div>
 
-                        <!-- Rate -->
-                        <div class="text-sm md:text-base hidden md:block font-semibold">
-                            1 SOL - 1.00022 ETH
-                        </div>
-
-                        <!-- Change -->
-                        <div class="text-sm md:text-base md:text-right font-semibold text-[#529540]">
-                            +0% / 24h
-                        </div>
-                    </div>
-
-                    <!-- Repeat rows -->
-
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between mt-5 gap-3">
-                        <div
-                            class="flex items-center gap-2 rounded-full border border-[#E1E1E1] py-2 px-4 w-full md:w-[160px]">
-                            <div class="flex -space-x-3">
-                                <img src="{{ asset('assets/images/bitcoin.png') }}" class="w-6 h-6" alt="">
-                                <img src="{{ asset('assets/images/solana.png') }}" class="w-6 h-6" alt="">
-                            </div>
-                            <div class="font-bold whitespace-nowrap">
-                                BTC <ion-icon name="swap-horizontal-outline"></ion-icon> SOL
+                            <div class="md:text-right font-semibold text-[#529540]">
+                                {{ $pair['total_swaps'] }} swaps
                             </div>
                         </div>
-
-                        <div class="hidden md:block font-semibold">1 SOL - 1.00022 ETH</div>
-                        <div class="md:text-right font-semibold text-[#529540]">+6.05% / 24h</div>
-                    </div>
-
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between mt-5 gap-3">
-                        <div
-                            class="flex items-center gap-2 rounded-full border border-[#E1E1E1] py-2 px-4 w-full md:w-[160px]">
-                            <div class="flex -space-x-3">
-                                <img src="{{ asset('assets/images/eth.png') }}" class="w-6 h-6" alt="">
-                                <img src="{{ asset('assets/images/bitcoin.png') }}" class="w-6 h-6" alt="">
-                            </div>
-                            <div class="font-bold whitespace-nowrap">
-                                ETH <ion-icon name="swap-horizontal-outline"></ion-icon> BTC
-                            </div>
-                        </div>
-
-                        <div class="hidden md:block font-semibold">1 SOL - 1.00022 ETH</div>
-                        <div class="md:text-right font-semibold text-[#AB1C1C]">+0.76% / 24h</div>
-                    </div>
-
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between mt-5 gap-3">
-                        <div
-                            class="flex items-center gap-2 rounded-full border border-[#E1E1E1] py-2 px-4 w-full md:w-[160px]">
-                            <div class="flex -space-x-3">
-                                <img src="{{ asset('assets/images/bitcoin.png') }}" class="w-6 h-6" alt="">
-                                <img src="{{ asset('assets/images/ripple.png') }}" class="w-6 h-6" alt="">
-                            </div>
-                            <div class="font-bold whitespace-nowrap">
-                                BTC <ion-icon name="swap-horizontal-outline"></ion-icon> RIP
-                            </div>
-                        </div>
-
-                        <div class="hidden md:block font-semibold">1 SOL - 1.00022 ETH</div>
-                        <div class="md:text-right font-semibold text-[#AB1C1C]">-1.54% / 24h</div>
-                    </div>
-
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between mt-5 gap-3">
-                        <div
-                            class="flex items-center gap-2 rounded-full border border-[#E1E1E1] py-2 px-4 w-full md:w-[160px]">
-                            <div class="flex -space-x-3">
-                                <img src="{{ asset('assets/images/stellar.png') }}" class="w-6 h-6" alt="">
-                                <img src="{{ asset('assets/images/ripple.png') }}" class="w-6 h-6" alt="">
-                            </div>
-                            <div class="font-bold whitespace-nowrap">
-                                STE <ion-icon name="swap-horizontal-outline"></ion-icon> RIP
-                            </div>
-                        </div>
-
-                        <div class="hidden md:block font-semibold">1 SOL - 1.00022 ETH</div>
-                        <div class="md:text-right font-semibold text-[#AB1C1C]">-1.54% / 24h</div>
-                    </div>
+                    @endforeach
 
                 </div>
             </div>
@@ -342,17 +273,18 @@
     <!-- Crypto Exchange -->
 
     <!-- Features -->
-    <section class="py-20 bg-cover bg-center" style="background-image: url('{{ asset('assets/images/feature-bg.png') }}');">
+    <section class="py-20 bg-cover bg-center"
+        style="background-image: url('{{ asset('assets/images/feature-bg.png') }}');">
 
         <div class="max-w-6xl mx-auto px-6">
 
             <!-- Heading -->
             <div class="text-center max-w-2xl mx-auto mb-12">
                 <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">
-                    CryptoCap Amazing Features
+                    Why Use ZihuBridge
                 </h2>
                 <p class="text-gray-300 leading-relaxed">
-                    Explore sensational features to prepare your best investment in cryptocurrency
+                    Instant wallet-to-wallet swaps across chains with transparent routes and secure execution
                 </p>
             </div>
 
@@ -362,56 +294,57 @@
                 <!-- Card 1 -->
                 <div class="p-6 rounded-xl bg-[#140A20] border border-[#2F1C4A] text-white">
                     <div class="bg-[#2F1C4A] px-4 py-2 rounded-lg w-max mb-4 text-xs font-medium mb-5">
-                        Privacy
+                        No Sign-Up
                     </div>
                     <div>
-                        <img src="{{ asset('assets/images/icon1.png') }}" class="h-15 w-15 mb-5" alt="Privacy">
+                        <img src="{{ asset('assets/images/icon1.png') }}" class="h-15 w-15 mb-5" alt="No Sign-Up">
                     </div>
-                    <h3 class="text-lg font-semibold mb-2">Sign-up is not required</h3>
+                    <h3 class="text-lg font-semibold mb-2">Swap Without Registration</h3>
                     <p class="text-gray-400 text-sm leading-relaxed">
-                        ZihuBridge provides cryptocurrency exchange without registration.
+                        Connect your wallet, choose your route, and complete swaps instantly without creating an account.
                     </p>
                 </div>
 
                 <!-- Card 2 -->
                 <div class="p-6 rounded-xl bg-[#140A20] border border-[#2F1C4A] text-white">
                     <div class="bg-[#2F1C4A] px-4 py-2 rounded-lg w-max mb-4 text-xs font-medium mb-5">
-                        Wide choice
+                        Smart Routing
                     </div>
                     <div>
-                        <img src="{{ asset('assets/images/icon2.png') }}" class="h-15 w-15 mb-5" alt="Privacy">
+                        <img src="{{ asset('assets/images/icon2.png') }}" class="h-15 w-15 mb-5" alt="Smart Routing">
                     </div>
-                    <h3 class="text-lg font-semibold mb-2">1500 cryptocurrencies</h3>
+                    <h3 class="text-lg font-semibold mb-2">Best Available Bridge Routes</h3>
                     <p class="text-gray-400 text-sm leading-relaxed">
-                        Hundreds of crypto and fiat currencies are available for exchange.
+                        ZihuBridge finds optimized cross-chain routes to deliver fast execution and competitive swap
+                        outcomes.
                     </p>
                 </div>
 
                 <!-- Card 3 -->
                 <div class="p-6 rounded-xl bg-[#140A20] border border-[#2F1C4A] text-white">
                     <div class="bg-[#2F1C4A] px-4 py-2 rounded-lg w-max mb-4 text-xs font-medium mb-5">
-                        24/7 support
+                        Live Tracking
                     </div>
                     <div>
-                        <img src="{{ asset('assets/images/icon3.png') }}" class="h-15 w-15 mb-5" alt="Privacy">
+                        <img src="{{ asset('assets/images/icon3.png') }}" class="h-15 w-15 mb-5" alt="Live Tracking">
                     </div>
-                    <h3 class="text-lg font-semibold mb-2">You won’t be left alone</h3>
+                    <h3 class="text-lg font-semibold mb-2">Real-Time Swap Status</h3>
                     <p class="text-gray-400 text-sm leading-relaxed">
-                        Our support team is easy to reach and ready to answer your questions.
+                        Track every stage of your bridge transaction from initiation to destination wallet confirmation.
                     </p>
                 </div>
 
                 <!-- Card 4 -->
                 <div class="p-6 rounded-xl bg-[#140A20] border border-[#2F1C4A] text-white">
                     <div class="bg-[#2F1C4A] px-4 py-2 rounded-lg w-max mb-4 text-xs font-medium mb-5">
-                        Safety
+                        Security
                     </div>
                     <div>
-                        <img src="{{ asset('assets/images/icon4.png') }}" class="h-15 w-15 mb-5" alt="Privacy">
+                        <img src="{{ asset('assets/images/icon4.png') }}" class="h-15 w-15 mb-5" alt="Security">
                     </div>
-                    <h3 class="text-lg font-semibold mb-2">Non-custodial</h3>
+                    <h3 class="text-lg font-semibold mb-2">Direct Wallet Delivery</h3>
                     <p class="text-gray-400 text-sm leading-relaxed">
-                        Crypto is sent directly to your wallet, we don’t store it on our service.
+                        Your swapped assets are sent directly to your destination wallet with no custodial account storage.
                     </p>
                 </div>
             </div>
@@ -458,16 +391,11 @@
 
         <div class="text-center max-w-2xl mx-auto mb-12">
             <h2 class="text-3xl md:text-4xl font-bold text-black mb-4">
-                How To Get Started
+                How ZihuBridge Works
             </h2>
             <p class="text-gray-700 leading-relaxed mb-5">
-                Explore sensational features to prepare your best investment in cryptocurrency
+                Complete secure cross-chain swaps in three simple steps with direct wallet delivery.
             </p>
-
-            <button
-                class="px-6 py-3 font-semibold text-white rounded-lg bg-gradient-to-r from-[#365FB5] to-[#9777DB] hover:from-[#9777DB]hover:to-[#365FB5] transform hover:scale-105 transition-all duration-500 ease-in-out shadow-lg hover:shadow-2xl w-1/2">
-                Get Started
-            </button>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -475,12 +403,12 @@
             <div
                 class="rounded-2xl px-5 py-10 border border-[#EAEAEA] bg-white flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4">
                 <div class="bg-[#EDF4FF] p-4 rounded-full shrink-0">
-                    <img src="{{ asset('assets/images/icon7.png') }}" class="w-10 h-10">
+                    <img src="{{ asset('assets/images/icon7.png') }}" class="w-10 h-10" alt="Choose Assets">
                 </div>
                 <div>
-                    <h2 class="text-md font-bold">Create Your Account</h2>
+                    <h2 class="text-md font-bold">Choose Swap Pair</h2>
                     <p class="text-gray-500 mt-2">
-                        Your account and personal identity are guaranteed safe.
+                        Select the asset you want to send and the token you want to receive across supported chains.
                     </p>
                 </div>
             </div>
@@ -488,12 +416,12 @@
             <div
                 class="rounded-2xl px-5 py-10 border border-[#EAEAEA] bg-white flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4">
                 <div class="bg-[#EDF4FF] p-4 rounded-full shrink-0">
-                    <img src="{{ asset('assets/images/icon6.png') }}" class="w-10 h-8">
+                    <img src="{{ asset('assets/images/icon6.png') }}" class="w-10 h-8" alt="Enter Wallet">
                 </div>
                 <div>
-                    <h2 class="text-md font-bold">Connect Bank Account</h2>
+                    <h2 class="text-md font-bold">Enter Destination Wallet</h2>
                     <p class="text-gray-500 mt-2">
-                        Connect the bank account to start transactions.
+                        Provide the receiving wallet address where your swapped assets should be delivered.
                     </p>
                 </div>
             </div>
@@ -501,12 +429,12 @@
             <div
                 class="rounded-2xl px-5 py-10 border border-[#EAEAEA] bg-white flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4">
                 <div class="bg-[#EDF4FF] p-4 rounded-full shrink-0">
-                    <img src="{{ asset('assets/images/icon5.png') }}" class="w-10 h-10">
+                    <img src="{{ asset('assets/images/icon5.png') }}" class="w-10 h-10" alt="Track Swap">
                 </div>
                 <div>
-                    <h2 class="text-md font-bold">Start Build Portfolio</h2>
+                    <h2 class="text-md font-bold">Track & Receive</h2>
                     <p class="text-gray-500 mt-2">
-                        Buy and sell popular currencies and keep track of them.
+                        Monitor the swap status in real time and receive funds directly in your destination wallet.
                     </p>
                 </div>
             </div>

@@ -6,7 +6,9 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
 Route::get('/', function () {
-    return view('index');
+$popularPairs = app(GlobalController::class)->getPopularPairs();
+
+    return view('index-new', compact('popularPairs'));
 })->name('home');
 
 Route::get('/exchange', function (Request $request) {

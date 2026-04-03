@@ -1264,4 +1264,35 @@ class GlobalController extends Controller
 
         return $pairs;
     }
+
+    public function getPopularPairs()
+    {
+        return \App\Models\Swap::query()
+            ->with([
+                'fromToken:id,asset_code,image',
+                'toToken:id,asset_code,image',
+            ])
+            ->selectRaw('
+            from_token_id,
+            to_token_id,
+            COUNT(*) as total_swaps,
+            AVG(to_final_token_amount / NULLIF(from_token_amount, 0)) as avg_quote
+        ')
+            ->where('swap_state_id', 9)
+            ->groupBy('from_token_id', 'to_token_id')
+            ->orderByDesc('total_swaps')
+            ->limit(5)
+            ->get()
+            ->map(function ($swap) {
+                return [
+                    'pair' => $swap->fromToken->asset_code . ' ⇄ ' . $swap->toToken->asset_code,
+                    'from_asset_code' => $swap->fromToken->asset_code,
+                    'to_asset_code' => $swap->toToken->asset_code,
+                    'from_image' => $swap->fromToken->image,
+                    'to_image' => $swap->toToken->image,
+                    'swap_quote' => number_format($swap->avg_quote, 6),
+                    'total_swaps' => $swap->total_swaps,
+                ];
+            });
+    }
 }
