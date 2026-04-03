@@ -1,4 +1,4 @@
-<header class="absolute top-0 left-0 w-full z-50 bg-black py-5">
+<header class="fixed top-0 left-0 w-full z-50 bg-black py-5">
     <nav class="flex max-w-6xl mx-auto items-center justify-between overflow-visible">
 
         <!-- Logo -->
