@@ -3,49 +3,64 @@
 </p>
 
 <p align="center">
-  Swap tokens between <b>Stellar</b> and <b>XRPL</b> — without centralized exchanges.
+  Trustless cross-chain swaps between <b>Stellar</b> and <b>XRPL</b>
 </p>
-
----
 
 # ZihuBridge
 
-ZihuBridge is a cross-chain bridge that allows users to swap tokens between Stellar and XRPL seamlessly.
+ZihuBridge is a cross-chain bridge enabling token swaps between 
+Stellar and XRPL. The platform is live on mainnet with completed 
+end-to-end swap flows running in production.
 
-It enables:
-- Stellar → XRPL token swaps
-- XRPL → Stellar token swaps
-- Automatic routing using on-chain liquidity + ChangeNOW
+We are currently building a trustless atomic swap architecture 
+powered by Soroban smart contracts that replaces centralized 
+settlement with on-chain guarantees.
 
----
+## Current Status
+
+Live on Stellar mainnet and XRPL with real transaction flows.
+
+Soroban HTLC contract deployed to Stellar testnet:
+Contract ID: CCDPW5KIRBXYLM5WKND5M6FCEN3LARRQOH3YVK45DVVCLBA4BBK2ZHLI
+Explorer: https://stellar.expert/explorer/testnet/contract/CCDPW5KIRBXYLM5WKND5M6FCEN3LARRQOH3YVK45DVVCLBA4BBK2ZHLI
+
+Smart contract source and documentation:
+https://github.com/zihubridge/Project/tree/feature/soroban-htlc/contracts/htlc
 
 ## Features
 
-- Cross-chain token swaps (Stellar ↔ XRPL)
-- Memo / Destination Tag based routing
+- Cross-chain token swaps (Stellar to XRPL and XRPL to Stellar)
+- Memo and Destination Tag based routing
 - Automatic deposit detection
-- Internal token conversion (DEX / AMM)
-- External provider integration (ChangeNOW)
+- Internal token conversion via Stellar DEX
+- Real-time 7-step status pipeline
 - Refund system for expired swaps
+- Token Listing Escrow (in development)
 
----
+## Roadmap
 
-## How It Works
+Phase 1 (Completed): Live bridge with real mainnet swap flows
 
-1. User initiates swap
-2. Unique memo / destination tag is generated
-3. User deposits tokens
-4. System detects deposit via blockchain scanner
-5. Internal swap (Token → XLM/XRP)
-6. External swap via ChangeNOW
-7. Final token delivered to destination wallet
+Phase 2 (Completed): Interactive swap interface, trustline 
+validation, multi-asset support
 
----
+Phase 3 (In Progress): Trustless atomic swap mechanism via 
+Soroban HTLC contract, Token Listing Escrow, XRPL native 
+escrow integration, on-chain pricing engine
+
+Phase 4 (Planned): Expanded token pairs, ZihuBridge API, 
+analytics dashboard
 
 ## Tech Stack
 
-- Laravel 12
+- Soroban / Rust (smart contracts)
+- Laravel 12 (backend orchestration)
 - Stellar SDK (PHP)
 - XRPL RPC
-- ChangeNOW API
 - Queue-based architecture
+
+## Links
+
+Website: https://zihubridge.com
+X: https://x.com/ZihuBridge
+GitHub: https://github.com/zihubridge/Project
