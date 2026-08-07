@@ -7,7 +7,6 @@
 /.idea
 /.nova
 /.phpunit.cache
-/.vscode
 /.zed
 /auth.json
 /node_modules
@@ -27,4 +26,3 @@ config.bat
 branch_structure.json
 temp_auto_push.bat
 temp_interactive_push.bat
-.env
