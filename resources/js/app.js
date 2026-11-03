@@ -23,6 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initLayoutAndWalletModal();
     initQuickTrackForm();
     initCopyButtons();
+    initExpandableNetworkDirectory();
+    initRepresentativeNetworkButtons();
 
     if (document.getElementById('swapTerminalApp')) {
         initSwapTerminal();
@@ -260,9 +262,9 @@ async function initSwapTerminal() {
         btn.addEventListener('click', () => {
             appState.slippageBps = parseInt(btn.getAttribute('data-slippage-bps') || '100', 10);
             document.querySelectorAll('.slippage-btn').forEach((b) => {
-                b.className = 'slippage-btn px-2.5 py-1 rounded-lg text-slate-300 hover:text-white cursor-pointer';
+                b.className = 'slippage-btn px-2.5 py-1 rounded-md text-slate-400 hover:text-white transition font-mono text-xs cursor-pointer';
             });
-            btn.className = 'slippage-btn px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 font-semibold cursor-pointer';
+            btn.className = 'slippage-btn px-2.5 py-1 rounded-md bg-white text-[#0B0F19] font-bold font-mono text-xs cursor-pointer';
             scheduleQuoteRefresh();
         });
     });
@@ -284,11 +286,14 @@ async function initSwapTerminal() {
 
         const totalNetworksEl = document.getElementById('statActiveNetworks');
         const totalAssetsEl = document.getElementById('statActiveAssets');
+        const coverageNetworksEl = document.getElementById('coverageNetworksCount');
+        const coverageAssetsEl = document.getElementById('coverageAssetsCount');
+        const sumAssets = appState.networks.reduce((acc, n) => acc + (n.active_assets_count || 0), 0);
+
         if (totalNetworksEl) totalNetworksEl.textContent = String(appState.networks.length);
-        if (totalAssetsEl) {
-            const sumAssets = appState.networks.reduce((acc, n) => acc + (n.active_assets_count || 0), 0);
-            totalAssetsEl.textContent = String(sumAssets);
-        }
+        if (totalAssetsEl) totalAssetsEl.textContent = String(sumAssets);
+        if (coverageNetworksEl) coverageNetworksEl.textContent = String(appState.networks.length);
+        if (coverageAssetsEl) coverageAssetsEl.textContent = String(sumAssets);
 
         if (!appState.networks.length) {
             showSwapError('No supported networks are currently available in the catalog.');
@@ -297,6 +302,9 @@ async function initSwapTerminal() {
 
         populateNetworkSelect(sourceNetSelect, appState.networks, 0);
         populateNetworkSelect(destNetSelect, appState.networks, appState.networks.length > 1 ? 1 : 0);
+
+        renderDynamicNetworksGrid(appState.networks);
+        renderDynamicTokenDiscoveryTable();
 
         await loadAssetsForSide('source', sourceNetSelect.value);
         await loadAssetsForSide('dest', destNetSelect.value);
@@ -660,6 +668,172 @@ function hideSwapError() {
     if (el) {
         el.textContent = '';
         el.classList.add('hidden');
+    }
+}
+
+function initExpandableNetworkDirectory() {
+    const toggleBtn = document.getElementById('toggleNetworkDirectoryBtn');
+    const panel = document.getElementById('fullNetworkDirectoryPanel');
+    const chevron = document.getElementById('networkDirectoryChevron');
+    const toggleText = document.getElementById('toggleNetworkDirectoryText');
+
+    if (toggleBtn && panel) {
+        toggleBtn.addEventListener('click', () => {
+            const isHidden = panel.classList.contains('hidden');
+            if (isHidden) {
+                panel.classList.remove('hidden');
+                if (chevron) chevron.style.transform = 'rotate(180deg)';
+                if (toggleText) toggleText.textContent = 'Hide Full Network Directory';
+            } else {
+                panel.classList.add('hidden');
+                if (chevron) chevron.style.transform = 'rotate(0deg)';
+                if (toggleText) toggleText.textContent = 'Explore Full Network Directory';
+            }
+        });
+    }
+}
+
+function initRepresentativeNetworkButtons() {
+    document.querySelectorAll('.representative-net-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            const slug = btn.getAttribute('data-network-slug');
+            const sourceNetSelect = document.getElementById('sourceNetworkSelect');
+            if (sourceNetSelect && slug) {
+                sourceNetSelect.value = slug;
+                await loadAssetsForSide('source', slug);
+                scheduleQuoteRefresh();
+                const terminal = document.getElementById('swapTerminalApp');
+                if (terminal) {
+                    terminal.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
+        });
+    });
+}
+
+function renderDynamicNetworksGrid(networks) {
+    const container = document.getElementById('dynamicNetworksGrid');
+    if (!container || !networks || !networks.length) return;
+
+    container.innerHTML = `
+        <div class="divide-y divide-[#E8E5DF] border-y border-[#E8E5DF]">
+            ${networks.map((net) => {
+                const family = (net.chain_family || 'EVM').toUpperCase();
+                const activeCount = net.active_assets_count || 0;
+                return `
+                    <div class="py-4 sm:py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 group hover:bg-[#F4F1EA]/60 px-3 -mx-3 rounded-md transition cursor-pointer network-ledger-row" data-network-slug="${net.slug}">
+                        <div class="flex items-center min-w-[200px]">
+                            <div>
+                                <div class="font-medium text-base text-[#121417] group-hover:text-black">${net.display_name}</div>
+                                <div class="text-xs text-[#6B7280] font-normal">${family} · Native ${net.native_symbol || 'asset'}</div>
+                            </div>
+                        </div>
+                        <div class="text-xs sm:text-sm text-[#52565E] hidden md:block">
+                            ${activeCount} verified token${activeCount === 1 ? '' : 's'} available
+                        </div>
+                        <div class="flex items-center justify-between sm:justify-end gap-4">
+                            <span class="text-xs text-emerald-800 font-medium bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded">Active Route</span>
+                            <span class="text-xs font-medium text-[#121417] group-hover:underline flex items-center gap-1">
+                                <span>Select</span>
+                                <span>&rarr;</span>
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+
+    container.querySelectorAll('.network-ledger-row').forEach((row) => {
+        row.addEventListener('click', async () => {
+            const slug = row.getAttribute('data-network-slug');
+            const sourceNetSelect = document.getElementById('sourceNetworkSelect');
+            if (sourceNetSelect && slug) {
+                sourceNetSelect.value = slug;
+                await loadAssetsForSide('source', slug);
+                scheduleQuoteRefresh();
+                const terminal = document.getElementById('swapTerminalApp');
+                if (terminal) {
+                    terminal.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
+        });
+    });
+}
+
+async function renderDynamicTokenDiscoveryTable() {
+    const tbody = document.getElementById('tokenDiscoveryTableBody');
+    if (!tbody) return;
+
+    try {
+        const res = await fetchJson('/api/v1/assets');
+        const assets = res.data || [];
+        if (!assets.length) return;
+
+        const displayAssets = assets.slice(0, 8);
+
+        tbody.innerHTML = displayAssets.map((asset) => {
+            const price = asset.current_price_usd
+                ? `$${parseFloat(asset.current_price_usd).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`
+                : 'Market Oracle Rate';
+            const network = asset.network_name || asset.network_slug || 'Multi-Chain';
+            const family = (asset.chain_family || 'EVM').toUpperCase();
+
+            return `
+                <div class="py-5 px-3 sm:px-4 border-b border-[#E8E5DF] flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-[#F4F1EA]/50 transition group">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-[#EAE7E0] border border-[#DDD9D0] flex items-center justify-center font-semibold text-sm text-[#121417]">
+                            ${asset.symbol ? asset.symbol.slice(0, 4) : '•'}
+                        </div>
+                        <div>
+                            <div class="text-base font-semibold text-[#121417] group-hover:text-black">
+                                ${asset.display_name || asset.symbol}
+                                <span class="text-xs font-mono font-normal text-[#6B7280] ml-1.5">${asset.symbol}</span>
+                            </div>
+                            <div class="text-xs text-[#52565E] mt-0.5">${network} (${family}) · ${asset.is_native ? 'Native Asset' : 'Smart Contract Token'}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap items-center justify-between md:justify-end gap-6 text-sm">
+                        <div class="text-left md:text-right">
+                            <div class="text-xs text-[#8A8F99]">Reference Price</div>
+                            <div class="font-mono text-sm font-medium text-[#121417]">${price}</div>
+                        </div>
+
+                        <div class="text-left md:text-right">
+                            <div class="text-xs text-[#8A8F99]">Route Availability</div>
+                            <div class="inline-flex items-center text-xs text-emerald-800 font-medium">
+                                Active Solver Route
+                            </div>
+                        </div>
+
+                        <button type="button" class="select-token-for-swap-btn px-4 py-2 text-xs font-medium text-[#121417] bg-[#EAE7E0] hover:bg-[#121417] hover:text-white rounded border border-[#DDD9D0] transition cursor-pointer"
+                            data-asset-id="${asset.id}" data-network-slug="${asset.network_slug}">
+                            Select in Swap &rarr;
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        tbody.querySelectorAll('.select-token-for-swap-btn').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const networkSlug = btn.getAttribute('data-network-slug');
+                const assetId = parseInt(btn.getAttribute('data-asset-id'), 10);
+                const sourceNetSelect = document.getElementById('sourceNetworkSelect');
+                if (sourceNetSelect && networkSlug) {
+                    sourceNetSelect.value = networkSlug;
+                    await loadAssetsForSide('source', networkSlug, assetId);
+                    scheduleQuoteRefresh();
+                    const terminal = document.getElementById('swapTerminalApp');
+                    if (terminal) {
+                        terminal.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
+            });
+        });
+    } catch {
+        // Fallback static entries remain if API query fails
     }
 }
 

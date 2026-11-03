@@ -1,75 +1,18 @@
 html,
 body {
-    height: 100%;
-    overflow-y: auto !important;
+    min-height: 100%;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
 }
 
-html::-webkit-scrollbar,
-body::-webkit-scrollbar,
-*::-webkit-scrollbar {
-    width: 0px !important;
-    height: 0px !important;
-    background: transparent !important;
-    display: none !important;
+.hide-scrollbar::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+    background: transparent;
+    display: none;
 }
 
-html,
-body,
-* {
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-}
-
-.hide-scrollbar,
-.hide-scrollbar * {
-    scrollbar-width: none !important;
-}
-
-
-@keyframes float {
-
-    0%,
-    100% {
-        transform: translateY(0px);
-    }
-
-    50% {
-        transform: translateY(-15px);
-    }
-}
-
-.animate-float {
-    animation: float 4s ease-in-out infinite;
-}
-
-/* Step circle base */
-.step-circle {
-    position: relative;
-}
-
-/* rotating loader ring */
-.step-loading::after {
-    content: "";
-    position: absolute;
-    inset: -6px;
-    border-radius: 9999px;
-
-    /* loader ring */
-    border: 2px solid rgba(32, 48, 82, 0.2);
-    border-top-color: #203052;
-    /* visible moving part */
-
-    animation: stepRotate 1s linear infinite;
-}
-
-/* clockwise rotation */
-@keyframes stepRotate {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
+.hide-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
