@@ -31,14 +31,10 @@
         </div>
 
         <div class="flex items-center gap-3">
-            <div class="hidden lg:flex items-center px-2.5 py-1 rounded bg-[#161B26] border border-[#232B3D] text-[11px] font-mono text-slate-300">
-                <span>NEAR Intents · Active</span>
-            </div>
-
             <button id="openWalletModalBtn" type="button"
-                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-medium bg-white text-[#10131A] hover:bg-slate-100 transition cursor-pointer">
+                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-heading font-medium bg-white text-[#10131A] hover:bg-slate-100 transition cursor-pointer">
                 <ion-icon name="wallet-outline" class="text-sm"></ion-icon>
-                <span id="connectedWalletBadgeText" class="font-mono">Connect Wallet</span>
+                <span id="connectedWalletBadgeText">Connect Wallet</span>
             </button>
 
             <button id="mobileMenuBtn" type="button" aria-label="Toggle navigation menu"
