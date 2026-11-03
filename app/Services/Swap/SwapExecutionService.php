@@ -25,6 +25,7 @@ class SwapExecutionService
     public function __construct(
         private readonly SwapProviderRegistry $registry,
         private readonly ChainAddressValidator $addressValidator,
+        private readonly \App\Services\Providers\LocalChainAdapterRegistry $adapterRegistry,
     ) {}
 
     /**
@@ -77,13 +78,17 @@ class SwapExecutionService
 
         $providerService = $this->registry->get($quote->provider->slug);
 
+        $isMultiHop = (bool) $quote->is_multi_hop;
+        $effectiveDestAsset = $isMultiHop ? $quote->intermediateAsset : $quote->destinationAsset;
+        $effectiveDestNetwork = $effectiveDestAsset->network;
+
         $sourceMapping = ProviderSupportedAsset::where('swap_provider_id', $quote->swap_provider_id)
             ->where('crypto_asset_id', $quote->source_asset_id)
             ->where('is_active', true)
             ->first();
 
         $destMapping = ProviderSupportedAsset::where('swap_provider_id', $quote->swap_provider_id)
-            ->where('crypto_asset_id', $quote->destination_asset_id)
+            ->where('crypto_asset_id', $effectiveDestAsset->id)
             ->where('is_active', true)
             ->first();
 
@@ -95,10 +100,10 @@ class SwapExecutionService
             originProviderAssetId: $sourceMapping->provider_asset_id,
             destinationProviderAssetId: $destMapping->provider_asset_id,
             originNetworkSlug: $sourceNetwork->slug,
-            destinationNetworkSlug: $destNetwork->slug,
+            destinationNetworkSlug: $effectiveDestNetwork->slug,
             amountInBaseUnits: $quote->amount_in_base_units,
             originDecimals: $quote->sourceAsset->decimals,
-            destinationDecimals: $quote->destinationAsset->decimals,
+            destinationDecimals: $effectiveDestAsset->decimals,
             slippageBps: $quote->slippage_bps,
             recipientAddress: trim($recipientAddress),
             recipientMemo: $recipientMemo !== null && trim($recipientMemo) !== '' ? trim($recipientMemo) : null,
@@ -129,6 +134,8 @@ class SwapExecutionService
             $quote,
             $sourceNetwork,
             $destNetwork,
+            $isMultiHop,
+            $effectiveDestAsset,
             $intent,
             $recipientAddress,
             $recipientMemo,
@@ -147,12 +154,17 @@ class SwapExecutionService
                 'swap_provider_id' => $quote->swap_provider_id,
                 'source_network_id' => $sourceNetwork->id,
                 'destination_network_id' => $destNetwork->id,
+                'is_multi_hop' => $isMultiHop,
+                'intermediate_asset_id' => $quote->intermediate_asset_id,
+                'intermediate_amount' => $quote->intermediate_amount,
+                'second_leg_adapter_key' => $quote->second_leg_adapter_key,
+                'second_leg_status' => $isMultiHop ? 'PENDING_FIRST_LEG' : 'NONE',
                 'source_asset_id' => $quote->source_asset_id,
                 'destination_asset_id' => $quote->destination_asset_id,
                 'amount_in' => $intent->amountInHuman,
                 'amount_in_base_units' => $intent->amountInBaseUnits,
-                'expected_amount_out' => $intent->expectedAmountOutHuman,
-                'min_amount_out' => $intent->minAmountOutHuman,
+                'expected_amount_out' => $isMultiHop ? $quote->expected_amount_out : $intent->expectedAmountOutHuman,
+                'min_amount_out' => $isMultiHop ? $quote->min_amount_out : $intent->minAmountOutHuman,
                 'slippage_bps' => $quote->slippage_bps,
                 'connected_wallet_address' => $connectedWalletAddress ? trim($connectedWalletAddress) : null,
                 'recipient_address' => trim($recipientAddress),
@@ -167,36 +179,62 @@ class SwapExecutionService
                 'provider_context_json' => $intent->providerContext,
             ]);
 
-            $steps = [
-                [
-                    'step_number' => 1,
-                    'step_key' => 'DEPOSIT',
-                    'label' => "Deposit {$quote->sourceAsset->symbol} on {$sourceNetwork->display_name}",
-                    'status' => 'IN_PROGRESS',
-                    'network_slug' => $sourceNetwork->slug,
-                ],
-                [
-                    'step_number' => 2,
-                    'step_key' => 'CONFIRMATION',
-                    'label' => "Confirm Deposit on {$sourceNetwork->display_name}",
-                    'status' => 'PENDING',
-                    'network_slug' => $sourceNetwork->slug,
-                ],
-                [
-                    'step_number' => 3,
-                    'step_key' => 'EXECUTION',
-                    'label' => "Cross-Chain Execution via {$quote->provider->display_name}",
-                    'status' => 'PENDING',
-                    'network_slug' => null,
-                ],
-                [
-                    'step_number' => 4,
-                    'step_key' => 'SETTLEMENT',
-                    'label' => "Deliver {$quote->destinationAsset->symbol} on {$destNetwork->display_name}",
-                    'status' => 'PENDING',
-                    'network_slug' => $destNetwork->slug,
-                ],
-            ];
+            if ($isMultiHop) {
+                $steps = [
+                    [
+                        'step_number' => 1,
+                        'step_key' => 'DEPOSIT',
+                        'label' => "Deposit {$quote->sourceAsset->symbol} on {$sourceNetwork->display_name}",
+                        'status' => 'IN_PROGRESS',
+                        'network_slug' => $sourceNetwork->slug,
+                    ],
+                    [
+                        'step_number' => 2,
+                        'step_key' => 'BRIDGE_TO_INTERMEDIATE',
+                        'label' => "Bridge to {$effectiveDestAsset->symbol} via {$quote->provider->display_name}",
+                        'status' => 'PENDING',
+                        'network_slug' => $destNetwork->slug,
+                    ],
+                    [
+                        'step_number' => 3,
+                        'step_key' => 'DEX_EXECUTION',
+                        'label' => "Local DEX Swap: {$effectiveDestAsset->symbol} to {$quote->destinationAsset->symbol}",
+                        'status' => 'PENDING',
+                        'network_slug' => $destNetwork->slug,
+                    ],
+                ];
+            } else {
+                $steps = [
+                    [
+                        'step_number' => 1,
+                        'step_key' => 'DEPOSIT',
+                        'label' => "Deposit {$quote->sourceAsset->symbol} on {$sourceNetwork->display_name}",
+                        'status' => 'IN_PROGRESS',
+                        'network_slug' => $sourceNetwork->slug,
+                    ],
+                    [
+                        'step_number' => 2,
+                        'step_key' => 'CONFIRMATION',
+                        'label' => "Confirm Deposit on {$sourceNetwork->display_name}",
+                        'status' => 'PENDING',
+                        'network_slug' => $sourceNetwork->slug,
+                    ],
+                    [
+                        'step_number' => 3,
+                        'step_key' => 'EXECUTION',
+                        'label' => "Cross-Chain Execution via {$quote->provider->display_name}",
+                        'status' => 'PENDING',
+                        'network_slug' => null,
+                    ],
+                    [
+                        'step_number' => 4,
+                        'step_key' => 'SETTLEMENT',
+                        'label' => "Deliver {$quote->destinationAsset->symbol} on {$destNetwork->display_name}",
+                        'status' => 'PENDING',
+                        'network_slug' => $destNetwork->slug,
+                    ],
+                ];
+            }
 
             foreach ($steps as $step) {
                 SwapExecutionStep::create(array_merge($step, ['swap_order_id' => $swapOrder->id]));
@@ -465,5 +503,64 @@ class SwapExecutionService
 
             $step->save();
         }
+    }
+
+    /**
+     * Prepare the unsigned second-leg transaction envelope for user wallet signature.
+     */
+    public function prepareSecondLegTransaction(SwapOrder $order): array
+    {
+        if (!$order->is_multi_hop || empty($order->second_leg_adapter_key)) {
+            return [
+                'success' => false,
+                'error' => 'This swap order is not a multi-hop route.',
+            ];
+        }
+
+        if (!$this->adapterRegistry->has($order->second_leg_adapter_key)) {
+            return [
+                'success' => false,
+                'error' => "Adapter {$order->second_leg_adapter_key} is not registered.",
+            ];
+        }
+
+        $adapter = $this->adapterRegistry->get($order->second_leg_adapter_key);
+        return $adapter->buildUnsignedTransaction($order, $order->recipient_address);
+    }
+
+    /**
+     * Submit user-signed transaction data for the second leg.
+     */
+    public function submitSecondLegTransaction(SwapOrder $order, string $signedTxData): array
+    {
+        if (!$order->is_multi_hop || empty($order->second_leg_adapter_key)) {
+            return [
+                'success' => false,
+                'error' => 'This swap order is not a multi-hop route.',
+            ];
+        }
+
+        $adapter = $this->adapterRegistry->get($order->second_leg_adapter_key);
+        $result = $adapter->submitSignedTransaction($order, $signedTxData);
+
+        if ($result['success']) {
+            $order->update([
+                'second_leg_status' => 'SUBMITTED',
+                'second_leg_tx_hash' => $result['tx_hash'],
+                'second_leg_explorer_url' => $result['explorer_url'],
+            ]);
+
+            // Complete Step 3 in execution steps
+            SwapExecutionStep::where('swap_order_id', $order->id)
+                ->where('step_key', 'DEX_EXECUTION')
+                ->update([
+                    'status' => 'COMPLETED',
+                    'tx_hash' => $result['tx_hash'],
+                    'explorer_url' => $result['explorer_url'],
+                    'completed_at' => now(),
+                ]);
+        }
+
+        return $result;
     }
 }

@@ -15,6 +15,10 @@ class SwapOrder extends Model
         'swap_provider_id',
         'source_network_id',
         'destination_network_id',
+        'is_multi_hop',
+        'intermediate_asset_id',
+        'intermediate_amount',
+        'second_leg_adapter_key',
         'source_asset_id',
         'destination_asset_id',
         'amount_in',
@@ -37,6 +41,9 @@ class SwapOrder extends Model
         'destination_explorer_url',
         'refund_tx_hash',
         'status',
+        'second_leg_status',
+        'second_leg_tx_hash',
+        'second_leg_explorer_url',
         'provider_status',
         'error_code',
         'failure_reason',
@@ -46,9 +53,12 @@ class SwapOrder extends Model
         'completed_at',
         'last_polled_at',
         'provider_context_json',
+        'second_leg_payload_json',
     ];
 
     protected $casts = [
+        'is_multi_hop' => 'boolean',
+        'intermediate_amount' => 'decimal:18',
         'slippage_bps' => 'integer',
         'deposit_expires_at' => 'datetime',
         'deposit_submitted_at' => 'datetime',
@@ -56,6 +66,7 @@ class SwapOrder extends Model
         'completed_at' => 'datetime',
         'last_polled_at' => 'datetime',
         'provider_context_json' => 'array',
+        'second_leg_payload_json' => 'array',
     ];
 
     public function quote(): BelongsTo
@@ -96,6 +107,11 @@ class SwapOrder extends Model
     public function destinationAsset(): BelongsTo
     {
         return $this->belongsTo(CryptoAsset::class, 'destination_asset_id');
+    }
+
+    public function intermediateAsset(): BelongsTo
+    {
+        return $this->belongsTo(CryptoAsset::class, 'intermediate_asset_id');
     }
 
     public function steps(): HasMany

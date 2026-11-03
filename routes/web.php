@@ -32,6 +32,7 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminFeeController;
 use App\Http\Controllers\Admin\AdminListingController;
 use App\Http\Controllers\Admin\AdminRevenueController;
+use App\Http\Controllers\Admin\AdminRoutingController;
 use App\Http\Controllers\Admin\AdminSettingsController;
 use App\Http\Controllers\Admin\AdminSwapController;
 use App\Http\Controllers\Admin\AdminTokenController;
@@ -76,6 +77,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/listings', [AdminListingController::class, 'index'])->name('listings.index');
         Route::get('/listings/{id}', [AdminListingController::class, 'show'])->name('listings.show');
         Route::put('/listings/{id}/status', [AdminListingController::class, 'updateStatus'])->name('listings.updateStatus');
+
+        // Universal Fallback Routing Engine
+        Route::get('/routing', [AdminRoutingController::class, 'index'])->name('routing.index');
+        Route::get('/routing/create', [AdminRoutingController::class, 'create'])->name('routing.create');
+        Route::post('/routing', [AdminRoutingController::class, 'store'])->name('routing.store');
+        Route::get('/routing/{id}/edit', [AdminRoutingController::class, 'edit'])->name('routing.edit');
+        Route::put('/routing/{id}', [AdminRoutingController::class, 'update'])->name('routing.update');
+        Route::post('/routing/{id}/toggle', [AdminRoutingController::class, 'toggle'])->name('routing.toggle');
+        Route::delete('/routing/{id}', [AdminRoutingController::class, 'destroy'])->name('routing.destroy');
 
         // System Settings & Governance
         Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings.index');

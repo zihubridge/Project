@@ -79,6 +79,12 @@
                     <span>Token Registry</span>
                 </a>
 
+                <a href="{{ route('admin.routing.index') }}"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition {{ request()->routeIs('admin.routing.*') ? 'bg-white text-[#10131A] font-semibold' : 'text-slate-300 hover:text-white hover:bg-[#161B26]' }}">
+                    <ion-icon name="git-branch-outline" class="text-base"></ion-icon>
+                    <span>Fallback Routing</span>
+                </a>
+
                 <a href="{{ route('admin.listings.index') }}"
                     class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition {{ request()->routeIs('admin.listings.*') ? 'bg-white text-[#10131A] font-semibold' : 'text-slate-300 hover:text-white hover:bg-[#161B26]' }}">
                     <ion-icon name="list-outline" class="text-base"></ion-icon>

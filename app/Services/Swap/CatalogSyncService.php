@@ -205,9 +205,13 @@ class CatalogSyncService
                     $nq->where('slug', strtolower(trim($networkSlug)));
                 }
             })
-            ->whereHas('providerMappings', function ($mq) {
-                $mq->where('is_active', true)
-                    ->whereHas('provider', fn ($pq) => $pq->where('is_enabled', true));
+            ->where(function ($sub) {
+                $sub->whereHas('providerMappings', function ($mq) {
+                    $mq->where('is_active', true)
+                        ->whereHas('provider', fn ($pq) => $pq->where('is_enabled', true));
+                })->orWhereHas('network.fallbackRoutes', function ($fq) {
+                    $fq->where('is_enabled', true);
+                });
             });
 
         if ($search !== null && trim($search) !== '') {

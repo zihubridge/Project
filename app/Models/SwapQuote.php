@@ -25,18 +25,27 @@ class SwapQuote extends Model
         'amount_out_usd',
         'slippage_bps',
         'platform_fee_bps',
+        'is_multi_hop',
+        'intermediate_asset_id',
+        'intermediate_amount',
+        'intermediate_amount_base_units',
+        'second_leg_adapter_key',
         'estimated_duration_seconds',
         'expires_at',
         'fee_breakdown_json',
+        'routing_metadata_json',
         'provider_quote_payload_json',
     ];
 
     protected $casts = [
+        'is_multi_hop' => 'boolean',
+        'intermediate_amount' => 'decimal:18',
         'slippage_bps' => 'integer',
         'platform_fee_bps' => 'integer',
         'estimated_duration_seconds' => 'integer',
         'expires_at' => 'datetime',
         'fee_breakdown_json' => 'array',
+        'routing_metadata_json' => 'array',
         'provider_quote_payload_json' => 'array',
     ];
 
@@ -53,6 +62,11 @@ class SwapQuote extends Model
     public function destinationAsset(): BelongsTo
     {
         return $this->belongsTo(CryptoAsset::class, 'destination_asset_id');
+    }
+
+    public function intermediateAsset(): BelongsTo
+    {
+        return $this->belongsTo(CryptoAsset::class, 'intermediate_asset_id');
     }
 
     public function order(): HasOne

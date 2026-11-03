@@ -16,6 +16,7 @@ class QuoteService
     public function __construct(
         private readonly SwapProviderRegistry $registry,
         private readonly ChainAddressValidator $addressValidator,
+        private readonly MultiHopRoutingService $multiHopService,
     ) {}
 
     public function createQuote(
@@ -76,67 +77,110 @@ class QuoteService
             ->where('is_active', true)
             ->first();
 
-        if (!$sourceMapping || !$destMapping) {
-            throw new RuntimeException('This token pair is not supported by the active execution provider.');
+        // ---------------------------------------------------------------------
+        // Priority 1: Direct Provider Route
+        // ---------------------------------------------------------------------
+        if ($sourceMapping && $destMapping) {
+            $quoteRequest = new QuoteRequestData(
+                originProviderAssetId: $sourceMapping->provider_asset_id,
+                destinationProviderAssetId: $destMapping->provider_asset_id,
+                originNetworkSlug: $sourceAsset->network->slug,
+                destinationNetworkSlug: $destAsset->network->slug,
+                amountInHuman: AmountNormalizer::trimTrailingZeros($amountInHuman),
+                amountInBaseUnits: $amountBaseUnits,
+                originDecimals: $sourceAsset->decimals,
+                destinationDecimals: $destAsset->decimals,
+                slippageBps: $slippageBps,
+                swapType: 'EXACT_INPUT',
+                recipientAddress: $recipientAddress ? trim($recipientAddress) : null,
+                refundAddress: $refundAddress ? trim($refundAddress) : null,
+            );
+
+            try {
+                $normalizedQuote = $providerService->requestQuote($quoteRequest);
+
+                $quote = SwapQuote::create([
+                    'quote_uuid' => (string) Str::uuid(),
+                    'swap_provider_id' => $sourceMapping->swap_provider_id,
+                    'source_asset_id' => $sourceAsset->id,
+                    'destination_asset_id' => $destAsset->id,
+                    'swap_type' => 'EXACT_INPUT',
+                    'is_multi_hop' => false,
+                    'amount_in' => $normalizedQuote->amountInHuman,
+                    'amount_in_base_units' => $normalizedQuote->amountInBaseUnits,
+                    'expected_amount_out' => $normalizedQuote->expectedAmountOutHuman,
+                    'expected_amount_out_base_units' => $normalizedQuote->expectedAmountOutBaseUnits,
+                    'min_amount_out' => $normalizedQuote->minAmountOutHuman,
+                    'min_amount_out_base_units' => $normalizedQuote->minAmountOutBaseUnits,
+                    'exchange_rate' => $normalizedQuote->exchangeRate,
+                    'amount_in_usd' => $normalizedQuote->amountInUsd,
+                    'amount_out_usd' => $normalizedQuote->amountOutUsd,
+                    'slippage_bps' => $normalizedQuote->slippageBps,
+                    'platform_fee_bps' => $normalizedQuote->platformFeeBps,
+                    'estimated_duration_seconds' => $normalizedQuote->estimatedDurationSeconds,
+                    'expires_at' => $normalizedQuote->expiresAt,
+                    'fee_breakdown_json' => $normalizedQuote->feeBreakdown,
+                    'provider_quote_payload_json' => $normalizedQuote->providerRawPayload,
+                ]);
+
+                return $quote->load(['provider', 'sourceAsset.network', 'destinationAsset.network', 'intermediateAsset.network']);
+            } catch (\Throwable $directException) {
+                // If direct route threw an error, continue to Priority 2 fallback
+            }
         }
 
-        $quoteRequest = new QuoteRequestData(
-            originProviderAssetId: $sourceMapping->provider_asset_id,
-            destinationProviderAssetId: $destMapping->provider_asset_id,
-            originNetworkSlug: $sourceAsset->network->slug,
-            destinationNetworkSlug: $destAsset->network->slug,
-            amountInHuman: AmountNormalizer::trimTrailingZeros($amountInHuman),
-            amountInBaseUnits: $amountBaseUnits,
-            originDecimals: $sourceAsset->decimals,
-            destinationDecimals: $destAsset->decimals,
+        // ---------------------------------------------------------------------
+        // Priority 2: Destination Blockchain Multi-Hop Fallback
+        // ---------------------------------------------------------------------
+        $fallback = $this->multiHopService->discoverBestFallbackRoute(
+            sourceAsset: $sourceAsset,
+            destAsset: $destAsset,
+            amountInHuman: $amountInHuman,
             slippageBps: $slippageBps,
-            swapType: 'EXACT_INPUT',
-            recipientAddress: $recipientAddress ? trim($recipientAddress) : null,
-            refundAddress: $refundAddress ? trim($refundAddress) : null,
+            recipientAddress: $recipientAddress,
+            refundAddress: $refundAddress
         );
 
-        try {
-            $normalizedQuote = $providerService->requestQuote($quoteRequest);
-        } catch (RuntimeException $e) {
-            throw new RuntimeException(
-                AmountNormalizer::humanizeProviderError(
-                    rawMessage: $e->getMessage(),
-                    originSymbol: $sourceAsset->symbol,
-                    originDecimals: $sourceAsset->decimals,
-                    originNetworkName: $sourceAsset->network->display_name,
-                    destSymbol: $destAsset->symbol,
-                    destNetworkName: $destAsset->network->display_name,
-                    recipientAddress: $recipientAddress,
-                ),
-                $e->getCode(),
-                $e
-            );
+        if ($fallback !== null) {
+            $quote = SwapQuote::create([
+                'quote_uuid' => (string) Str::uuid(),
+                'swap_provider_id' => $sourceMapping ? $sourceMapping->swap_provider_id : ($destMapping?->swap_provider_id ?? 1),
+                'source_asset_id' => $sourceAsset->id,
+                'destination_asset_id' => $destAsset->id,
+                'swap_type' => 'EXACT_INPUT',
+                'is_multi_hop' => true,
+                'intermediate_asset_id' => $fallback->intermediateAsset->id,
+                'intermediate_amount' => $fallback->intermediateAmountHuman,
+                'intermediate_amount_base_units' => $fallback->intermediateAmountBaseUnits,
+                'second_leg_adapter_key' => $fallback->secondLegAdapterKey,
+                'amount_in' => $fallback->leg1Quote->amountInHuman,
+                'amount_in_base_units' => $fallback->leg1Quote->amountInBaseUnits,
+                'expected_amount_out' => $fallback->finalExpectedAmountOutHuman,
+                'expected_amount_out_base_units' => $fallback->finalExpectedAmountOutBaseUnits,
+                'min_amount_out' => $fallback->finalMinAmountOutHuman,
+                'min_amount_out_base_units' => $fallback->finalMinAmountOutBaseUnits,
+                'exchange_rate' => $fallback->overallExchangeRate,
+                'amount_in_usd' => $fallback->leg1Quote->amountInUsd,
+                'amount_out_usd' => null,
+                'slippage_bps' => $slippageBps,
+                'platform_fee_bps' => $fallback->platformFeeBps,
+                'estimated_duration_seconds' => $fallback->totalDurationSeconds,
+                'expires_at' => $fallback->leg1Quote->expiresAt,
+                'fee_breakdown_json' => $fallback->leg1Quote->feeBreakdown,
+                'routing_metadata_json' => $fallback->routingMetadata,
+                'provider_quote_payload_json' => [
+                    'leg1' => $fallback->leg1Quote->providerRawPayload,
+                    'leg2' => $fallback->leg2Quote->rawPathPayload,
+                ],
+            ]);
+
+            return $quote->load(['provider', 'sourceAsset.network', 'destinationAsset.network', 'intermediateAsset.network']);
         }
 
-        $quote = SwapQuote::create([
-            'quote_uuid' => (string) Str::uuid(),
-            'swap_provider_id' => $sourceMapping->swap_provider_id,
-            'source_asset_id' => $sourceAsset->id,
-            'destination_asset_id' => $destAsset->id,
-            'swap_type' => 'EXACT_INPUT',
-            'amount_in' => $normalizedQuote->amountInHuman,
-            'amount_in_base_units' => $normalizedQuote->amountInBaseUnits,
-            'expected_amount_out' => $normalizedQuote->expectedAmountOutHuman,
-            'expected_amount_out_base_units' => $normalizedQuote->expectedAmountOutBaseUnits,
-            'min_amount_out' => $normalizedQuote->minAmountOutHuman,
-            'min_amount_out_base_units' => $normalizedQuote->minAmountOutBaseUnits,
-            'exchange_rate' => $normalizedQuote->exchangeRate,
-            'amount_in_usd' => $normalizedQuote->amountInUsd,
-            'amount_out_usd' => $normalizedQuote->amountOutUsd,
-            'slippage_bps' => $normalizedQuote->slippageBps,
-            'platform_fee_bps' => $normalizedQuote->platformFeeBps,
-            'estimated_duration_seconds' => $normalizedQuote->estimatedDurationSeconds,
-            'expires_at' => $normalizedQuote->expiresAt,
-            'fee_breakdown_json' => $normalizedQuote->feeBreakdown,
-            'provider_quote_payload_json' => $normalizedQuote->providerRawPayload,
-        ]);
-
-        return $quote->load(['provider', 'sourceAsset.network', 'destinationAsset.network']);
+        // ---------------------------------------------------------------------
+        // Priority 3: No Valid Route
+        // ---------------------------------------------------------------------
+        throw new RuntimeException("No direct or fallback route currently available to swap {$sourceAsset->symbol} into {$destAsset->symbol}.");
     }
 }
 
