@@ -1,459 +1,117 @@
-<header class="fixed top-0 left-0 w-full z-50 bg-black py-5">
-    <nav class="flex max-w-6xl mx-auto items-center justify-between overflow-visible">
+<header class="w-full py-4 px-6 bg-[#070B19]/90 backdrop-blur-md text-white border-b border-slate-800/80 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <a href="{{ route('home') }}" class="flex items-center gap-3">
+            <img src="{{ asset('assets/images/logo.png') }}" alt="ZihuBridge" class="w-40 md:w-44" />
+        </a>
 
-        <!-- Logo -->
-        <div class="flex items-center">
-            <a href="{{ route('home') }}">
-                <img src="{{ asset('assets/images/logo.png') }}" alt="LOGO" class="h-[40px]">
+        <nav class="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-300">
+            <a href="{{ route('home') }}" class="hover:text-cyan-400 transition {{ request()->routeIs('home', 'swap.index') ? 'text-cyan-400 font-semibold' : '' }}">
+                Swap
             </a>
-        </div>
+            <a href="{{ route('swap.history') }}" class="hover:text-cyan-400 transition {{ request()->routeIs('swap.history') ? 'text-cyan-400 font-semibold' : '' }}">
+                Swap Explorer & History
+            </a>
+            <a href="{{ route('about') }}" class="hover:text-cyan-400 transition {{ request()->routeIs('about') ? 'text-cyan-400 font-semibold' : '' }}">
+                About
+            </a>
+            <a href="{{ route('whitepaper') }}" target="_blank" class="hover:text-cyan-400 transition">
+                Whitepaper
+            </a>
+            <a href="{{ route('contact') }}" class="hover:text-cyan-400 transition {{ request()->routeIs('contact') ? 'text-cyan-400 font-semibold' : '' }}">
+                Support
+            </a>
+        </nav>
 
-        <!-- Desktop Menu -->
-        <div class="hidden md:flex items-center">
-            <ul class="flex items-center gap-8 text-gray-200 font-medium">
+        <div class="flex items-center gap-3">
+            <button id="openWalletModalBtn" type="button"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs md:text-sm font-semibold bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white shadow-lg shadow-cyan-500/20 transition cursor-pointer">
+                <ion-icon name="wallet-outline" class="text-base"></ion-icon>
+                <span id="connectedWalletBadgeText">Connect Wallet</span>
+            </button>
 
-                <li>
-                    <a href="/"
-                        class="hover:text-[#2b68e0] hover:underline underline-offset-4 transition-all duration-300 font-light text-sm">
-                        Home
-                    </a>
-                </li>
-                <li>
-                    <a href="/whitepaper"
-                        class="hover:text-[#2b68e0] hover:underline underline-offset-4 transition-all duration-300 font-light text-sm">
-                        Whitepaper
-                    </a>
-                </li>
-                <li>
-                    <a href="/about"
-                        class="hover:text-[#2b68e0] hover:underline underline-offset-4 transition-all duration-300 font-light text-sm">
-                        About Us
-                    </a>
-                </li>
-                <li>
-                    <a href="contact"
-                        class="hover:text-[#2b68e0] hover:underline underline-offset-4 transition-all duration-300 font-light text-sm">
-                        Contact
-                    </a>
-                </li>
-
-                <!-- Customer Benefits -->
-                {{-- <li class="relative dropdown-menu">
-                    <a href="#"
-                        class="flex items-center gap-1 hover:text-[#2b68e0] hover:underline underline-offset-4 transition-all duration-300 font-light text-sm">
-                        Customer Benefits
-                        <ion-icon class="chevron text-[#B3B3B3] text-lg transition-transform duration-300"
-                            name="chevron-down-outline"></ion-icon>
-                    </a>
-                    <ul class="dropdown absolute left-0 top-full bg-white shadow-xl rounded-md z-[9999]"
-                        style="width:180px; opacity:0; visibility:hidden; pointer-events:none; transition: opacity 0.3s ease, visibility 0.3s ease;">
-                        <li><a href="#" class="block px-4 py-2 text-black hover:bg-gray-100 text-sm">Option 1</a>
-                        </li>
-                        <li><a href="#" class="block px-4 py-2 text-black hover:bg-gray-100 text-sm">Option 2</a>
-                        </li>
-                        <li><a href="#" class="block px-4 py-2 text-black hover:bg-gray-100 text-sm">Option 3</a>
-                        </li>
-                    </ul>
-                </li> --}}
-
-                <!-- Analytics -->
-                {{-- <li class="relative dropdown-menu">
-                    <a href="#"
-                        class="flex items-center gap-1 hover:text-[#2b68e0] hover:underline underline-offset-4 transition-all duration-300 font-light text-sm">
-                        Analytics
-                        <ion-icon class="chevron text-[#B3B3B3] text-lg transition-transform duration-300"
-                            name="chevron-down-outline"></ion-icon>
-                    </a>
-                    <ul class="dropdown absolute left-0 top-full bg-white shadow-xl rounded-md z-[9999]"
-                        style="width:160px; opacity:0; visibility:hidden; pointer-events:none; transition: opacity 0.3s ease, visibility 0.3s ease;">
-                        <li><a href="#" class="block px-4 py-2 text-black hover:bg-gray-100 text-sm">Overview</a>
-                        </li>
-                        <li><a href="#" class="block px-4 py-2 text-black hover:bg-gray-100 text-sm">Reports</a></li>
-                        <li><a href="#" class="block px-4 py-2 text-black hover:bg-gray-100 text-sm">Insights</a>
-                        </li>
-                    </ul>
-                </li> --}}
-
-                <!-- Currencies -->
-                {{-- <li class="relative dropdown-menu">
-                    <a href="#"
-                        class="flex items-center gap-1 hover:text-[#2b68e0] hover:underline underline-offset-4 transition-all duration-300 font-light text-sm">
-                        Currencies
-                        <ion-icon class="chevron text-[#B3B3B3] text-lg transition-transform duration-300"
-                            name="chevron-down-outline"></ion-icon>
-                    </a>
-                    <ul class="dropdown absolute left-0 top-full bg-white shadow-xl rounded-md z-[9999]"
-                        style="width:160px; opacity:0; visibility:hidden; pointer-events:none; transition: opacity 0.3s ease, visibility 0.3s ease;">
-                        <li><a href="#" class="block px-4 py-2 text-black hover:bg-gray-100 text-sm">USD</a></li>
-                        <li><a href="#" class="block px-4 py-2 text-black hover:bg-gray-100 text-sm">EUR</a></li>
-                        <li><a href="#" class="block px-4 py-2 text-black hover:bg-gray-100 text-sm">GBP</a></li>
-                    </ul>
-                </li> --}}
-
-                <!-- Business -->
-                {{-- <li class="relative dropdown-menu">
-                    <a href="#"
-                        class="flex items-center gap-1 hover:text-[#2b68e0] hover:underline underline-offset-4 transition-all duration-300 font-light text-sm">
-                        Business
-                        <ion-icon class="chevron text-[#B3B3B3] text-lg transition-transform duration-300"
-                            name="chevron-down-outline"></ion-icon>
-                    </a>
-                    <ul class="dropdown absolute left-0 top-full bg-white shadow-xl rounded-md z-[9999]"
-                        style="width:160px; opacity:0; visibility:hidden; pointer-events:none; transition: opacity 0.3s ease, visibility 0.3s ease;">
-                        <li><a href="#" class="block px-4 py-2 text-black hover:bg-gray-100 text-sm">Startups</a>
-                        </li>
-                        <li><a href="#" class="block px-4 py-2 text-black hover:bg-gray-100 text-sm">Enterprise</a>
-                        </li>
-                        <li><a href="#" class="block px-4 py-2 text-black hover:bg-gray-100 text-sm">Partners</a>
-                        </li>
-                    </ul>
-                </li> --}}
-
-                <!-- Language Selector -->
-                {{-- <li class="relative dropdown-menu">
-                    <button id="langBtn"
-                        class="flex items-center gap-2 text-gray-200 hover:text-[#2b68e0] transition-all duration-300 font-light">
-                        <img id="activeFlagImg" src="https://flagcdn.com/w20/us.png" alt="EN"
-                            class="w-5 h-4 rounded-sm object-cover">
-                        <span id="activeLangLabel" class="text-sm">EN</span>
-                        <ion-icon class="chevron text-[#B3B3B3] text-lg transition-transform duration-300"
-                            name="chevron-down-outline"></ion-icon>
-                    </button>
-                    <ul class="dropdown absolute right-0 top-full bg-white shadow-xl rounded-md z-[9999]"
-                        style="width:160px; opacity:0; visibility:hidden; pointer-events:none; transition: opacity 0.3s ease, visibility 0.3s ease;">
-                        <li>
-                            <a href="#"
-                                class="lang-option flex items-center gap-3 px-4 py-2 text-black hover:bg-gray-100 text-sm"
-                                data-flag="https://flagcdn.com/w20/us.png" data-label="EN">
-                                <img src="https://flagcdn.com/w20/us.png" class="w-5 h-4 rounded-sm object-cover">
-                                English
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#"
-                                class="lang-option flex items-center gap-3 px-4 py-2 text-black hover:bg-gray-100 text-sm"
-                                data-flag="https://flagcdn.com/w20/fr.png" data-label="FR">
-                                <img src="https://flagcdn.com/w20/fr.png" class="w-5 h-4 rounded-sm object-cover">
-                                French
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#"
-                                class="lang-option flex items-center gap-3 px-4 py-2 text-black hover:bg-gray-100 text-sm"
-                                data-flag="https://flagcdn.com/w20/es.png" data-label="ES">
-                                <img src="https://flagcdn.com/w20/es.png" class="w-5 h-4 rounded-sm object-cover">
-                                Spanish
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#"
-                                class="lang-option flex items-center gap-3 px-4 py-2 text-black hover:bg-gray-100 text-sm"
-                                data-flag="https://flagcdn.com/w20/de.png" data-label="DE">
-                                <img src="https://flagcdn.com/w20/de.png" class="w-5 h-4 rounded-sm object-cover">
-                                German
-                            </a>
-                        </li>
-                    </ul>
-                </li> --}}
-
-            </ul>
-        </div>
-
-        <!-- RIGHT SIDE: Mobile Menu Button -->
-        <div class="flex items-center md:hidden">
-            <button id="menuBtn" class="text-3xl text-white z-30 relative">
+            <button id="mobileMenuBtn" type="button" class="md:hidden text-2xl text-slate-300 hover:text-white p-1">
                 <ion-icon name="menu-outline"></ion-icon>
             </button>
         </div>
+    </div>
 
-    </nav>
-
-    <!-- MOBILE MENU OVERLAY -->
-    <div id="mobileMenu" class="fixed inset-0 bg-black bg-opacity-60 z-40 hidden">
-        <div id="mobileMenuInner"
-            class="fixed top-0 left-0 w-full h-full bg-[#0a0a0a] transform transition-transform duration-500 ease-in-out -translate-x-full shadow-xl overflow-y-auto">
-
-            <!-- Top Section -->
-            <div class="flex justify-between items-center px-5 py-10 border-b border-gray-800">
-                <img src="{{ asset('assets/images/logo.png') }}" alt="Logo" class="h-[36px]">
-                <button id="closeMenu" class="text-3xl text-white">
-                    <ion-icon name="close-outline"></ion-icon>
-                </button>
-            </div>
-
-            <!-- Mobile Menu Items -->
-            <ul class="flex flex-col gap-1 py-6 px-4 text-gray-200">
-
-                <li>
-                    <a href="#"
-                        class="block px-4 py-3 rounded-lg hover:bg-gray-800 hover:text-[#2b68e0] transition-all duration-200 font-light">
-                        How It Works
-                    </a>
-                </li>
-
-                <li>
-                    <a href="/"
-                        class="block px-4 py-3 rounded-lg hover:bg-gray-800 hover:text-[#2b68e0] transition-all duration-200 font-light">
-                        Home
-                    </a>
-                </li>
-                <li>
-                    <a href="/whitepaper"
-                        class="block px-4 py-3 rounded-lg hover:bg-gray-800 hover:text-[#2b68e0] transition-all duration-200 font-light">
-                        Whitepaper
-                    </a>
-                </li>
-                <li>
-                    <a href="/about"
-                        class="block px-4 py-3 rounded-lg hover:bg-gray-800 hover:text-[#2b68e0] transition-all duration-200 font-light">
-                        About Us
-                    </a>
-                </li>
-                <li>
-                    <a href="contact"
-                        class="block px-4 py-3 rounded-lg hover:bg-gray-800 hover:text-[#2b68e0] transition-all duration-200 font-light">
-                        Contact
-                    </a>
-                </li>
-
-                <!-- Mobile Accordion: Customer Benefits -->
-                {{-- <li class="mobile-accordion">
-                    <button
-                        class="accordion-trigger w-full flex justify-between items-center px-4 py-3 rounded-lg hover:bg-gray-800 transition-all duration-200 font-light text-left">
-                        Customer Benefits
-                        <ion-icon class="mobile-chevron text-[#B3B3B3] text-lg transition-transform duration-300"
-                            name="chevron-down-outline"></ion-icon>
-                    </button>
-                    <ul class="accordion-content hidden flex-col gap-1 pl-4 mt-1">
-                        <li><a href="#"
-                                class="block px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all">Option
-                                1</a></li>
-                        <li><a href="#"
-                                class="block px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all">Option
-                                2</a></li>
-                        <li><a href="#"
-                                class="block px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all">Option
-                                3</a></li>
-                    </ul>
-                </li> --}}
-
-                <!-- Mobile Accordion: Analytics -->
-                {{-- <li class="mobile-accordion">
-                    <button
-                        class="accordion-trigger w-full flex justify-between items-center px-4 py-3 rounded-lg hover:bg-gray-800 transition-all duration-200 font-light text-left">
-                        Analytics
-                        <ion-icon class="mobile-chevron text-[#B3B3B3] text-lg transition-transform duration-300"
-                            name="chevron-down-outline"></ion-icon>
-                    </button>
-                    <ul class="accordion-content hidden flex-col gap-1 pl-4 mt-1">
-                        <li><a href="#"
-                                class="block px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all">Overview</a>
-                        </li>
-                        <li><a href="#"
-                                class="block px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all">Reports</a>
-                        </li>
-                        <li><a href="#"
-                                class="block px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all">Insights</a>
-                        </li>
-                    </ul>
-                </li> --}}
-
-                <!-- Mobile Accordion: Currencies -->
-                {{-- <li class="mobile-accordion">
-                    <button
-                        class="accordion-trigger w-full flex justify-between items-center px-4 py-3 rounded-lg hover:bg-gray-800 transition-all duration-200 font-light text-left">
-                        Currencies
-                        <ion-icon class="mobile-chevron text-[#B3B3B3] text-lg transition-transform duration-300"
-                            name="chevron-down-outline"></ion-icon>
-                    </button>
-                    <ul class="accordion-content hidden flex-col gap-1 pl-4 mt-1">
-                        <li><a href="#"
-                                class="block px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all">USD</a>
-                        </li>
-                        <li><a href="#"
-                                class="block px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all">EUR</a>
-                        </li>
-                        <li><a href="#"
-                                class="block px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all">GBP</a>
-                        </li>
-                    </ul>
-                </li> --}}
-
-                <!-- Mobile Accordion: Business -->
-                {{-- <li class="mobile-accordion">
-                    <button
-                        class="accordion-trigger w-full flex justify-between items-center px-4 py-3 rounded-lg hover:bg-gray-800 transition-all duration-200 font-light text-left">
-                        Business
-                        <ion-icon class="mobile-chevron text-[#B3B3B3] text-lg transition-transform duration-300"
-                            name="chevron-down-outline"></ion-icon>
-                    </button>
-                    <ul class="accordion-content hidden flex-col gap-1 pl-4 mt-1">
-                        <li><a href="#"
-                                class="block px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all">Startups</a>
-                        </li>
-                        <li><a href="#"
-                                class="block px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all">Enterprise</a>
-                        </li>
-                        <li><a href="#"
-                                class="block px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all">Partners</a>
-                        </li>
-                    </ul>
-                </li> --}}
-
-                <!-- Mobile Accordion: Language -->
-                {{-- <li class="mobile-accordion">
-                    <button
-                        class="accordion-trigger w-full flex justify-between items-center px-4 py-3 rounded-lg hover:bg-gray-800 transition-all duration-200 font-light text-left">
-                        <span class="flex items-center gap-2">
-                            <img id="mobileFlagImg" src="https://flagcdn.com/w20/us.png"
-                                class="w-5 h-4 rounded-sm object-cover">
-                            <span id="mobileLangLabel">English</span>
-                        </span>
-                        <ion-icon class="mobile-chevron text-[#B3B3B3] text-lg transition-transform duration-300"
-                            name="chevron-down-outline"></ion-icon>
-                    </button>
-                    <ul class="accordion-content hidden flex-col gap-1 pl-4 mt-1">
-                        <li>
-                            <a href="#"
-                                class="mobile-lang flex items-center gap-3 px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all"
-                                data-flag="https://flagcdn.com/w20/us.png" data-label="EN" data-name="English">
-                                <img src="https://flagcdn.com/w20/us.png" class="w-5 h-4 rounded-sm object-cover">
-                                English
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#"
-                                class="mobile-lang flex items-center gap-3 px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all"
-                                data-flag="https://flagcdn.com/w20/fr.png" data-label="FR" data-name="French">
-                                <img src="https://flagcdn.com/w20/fr.png" class="w-5 h-4 rounded-sm object-cover">
-                                French
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#"
-                                class="mobile-lang flex items-center gap-3 px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all"
-                                data-flag="https://flagcdn.com/w20/sa.png" data-label="AR" data-name="Arabic">
-                                <img src="https://flagcdn.com/w20/sa.png" class="w-5 h-4 rounded-sm object-cover">
-                                Arabic
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#"
-                                class="mobile-lang flex items-center gap-3 px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all"
-                                data-flag="https://flagcdn.com/w20/es.png" data-label="ES" data-name="Spanish">
-                                <img src="https://flagcdn.com/w20/es.png" class="w-5 h-4 rounded-sm object-cover">
-                                Spanish
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#"
-                                class="mobile-lang flex items-center gap-3 px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all"
-                                data-flag="https://flagcdn.com/w20/de.png" data-label="DE" data-name="German">
-                                <img src="https://flagcdn.com/w20/de.png" class="w-5 h-4 rounded-sm object-cover">
-                                German
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#"
-                                class="mobile-lang flex items-center gap-3 px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 text-sm transition-all"
-                                data-flag="https://flagcdn.com/w20/pk.png" data-label="UR" data-name="Urdu">
-                                <img src="https://flagcdn.com/w20/pk.png" class="w-5 h-4 rounded-sm object-cover"> Urdu
-                            </a>
-                        </li>
-                    </ul>
-                </li> --}}
-
-            </ul>
-        </div>
+    <!-- Mobile Menu -->
+    <div id="mobileMenuDrawer" class="hidden md:hidden mt-4 pt-4 border-t border-slate-800 space-y-3 text-sm">
+        <a href="{{ route('home') }}" class="block py-2 text-slate-200 hover:text-cyan-400">Swap</a>
+        <a href="{{ route('swap.history') }}" class="block py-2 text-slate-200 hover:text-cyan-400">Swap Explorer & History</a>
+        <a href="{{ route('about') }}" class="block py-2 text-slate-200 hover:text-cyan-400">About</a>
+        <a href="{{ route('whitepaper') }}" target="_blank" class="block py-2 text-slate-200 hover:text-cyan-400">Whitepaper</a>
+        <a href="{{ route('contact') }}" class="block py-2 text-slate-200 hover:text-cyan-400">Support</a>
     </div>
 </header>
 
-<script>
-    // ── Mobile Menu ──────────────────────────────────────────
-    const menuBtn = document.getElementById('menuBtn');
-    const closeMenu = document.getElementById('closeMenu');
-    const mobileMenu = document.getElementById('mobileMenu');
-    const mobileMenuInner = document.getElementById('mobileMenuInner');
+<!-- Non-Custodial Multi-Chain Wallet Modal -->
+<div id="walletConnectModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-[#0F172A] border border-slate-700/80 rounded-2xl max-w-md w-full p-6 text-white shadow-2xl">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h3 class="text-lg font-bold">Connect Non-Custodial Wallet</h3>
+                <p class="text-xs text-slate-400 mt-0.5">Your keys never leave your wallet. Or swap directly via self-custody deposit address.</p>
+            </div>
+            <button type="button" id="closeWalletModalBtn" class="text-slate-400 hover:text-white text-2xl cursor-pointer">&times;</button>
+        </div>
 
-    function openMenu() {
-        mobileMenu.classList.remove('hidden');
-        setTimeout(() => mobileMenuInner.classList.remove('-translate-x-full'), 10);
-        document.body.style.overflow = 'hidden';
-    }
+        <div id="walletConnectedCard" class="hidden mb-4 p-3.5 rounded-xl bg-emerald-950/50 border border-emerald-500/40">
+            <div class="flex items-center justify-between">
+                <div>
+                    <span id="walletConnectedProviderName" class="text-xs uppercase tracking-wider text-emerald-400 font-semibold">Connected</span>
+                    <p id="walletConnectedAddressDisplay" class="font-mono text-sm text-white mt-0.5 break-all"></p>
+                </div>
+                <button type="button" id="disconnectWalletBtn" class="text-xs px-3 py-1.5 rounded-lg bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 transition cursor-pointer">
+                    Disconnect
+                </button>
+            </div>
+        </div>
 
-    function closeMenuFunc() {
-        mobileMenuInner.classList.add('-translate-x-full');
-        setTimeout(() => mobileMenu.classList.add('hidden'), 500);
-        document.body.style.overflow = 'auto';
-    }
+        <div class="space-y-2.5">
+            <button type="button" data-wallet-connect="evm"
+                class="w-full flex items-center justify-between p-3.5 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-700/70 transition cursor-pointer">
+                <div class="flex items-center gap-3 text-left">
+                    <span class="w-9 h-9 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-xl">
+                        <ion-icon name="cube-outline"></ion-icon>
+                    </span>
+                    <div>
+                        <div class="text-sm font-semibold">EVM Browser Wallet</div>
+                        <div class="text-xs text-slate-400">MetaMask, Rabby, Coinbase, Brave (ETH, ARB, BASE, OP, POL, BSC)</div>
+                    </div>
+                </div>
+                <ion-icon name="chevron-forward-outline" class="text-slate-400"></ion-icon>
+            </button>
 
-    menuBtn.addEventListener('click', openMenu);
-    closeMenu.addEventListener('click', closeMenuFunc);
-    mobileMenu.addEventListener('click', (e) => { if (e.target === mobileMenu) closeMenuFunc(); });
+            <button type="button" data-wallet-connect="solana"
+                class="w-full flex items-center justify-between p-3.5 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-700/70 transition cursor-pointer">
+                <div class="flex items-center gap-3 text-left">
+                    <span class="w-9 h-9 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center text-xl">
+                        <ion-icon name="flash-outline"></ion-icon>
+                    </span>
+                    <div>
+                        <div class="text-sm font-semibold">Solana Wallet</div>
+                        <div class="text-xs text-slate-400">Phantom, Solflare, Backpack</div>
+                    </div>
+                </div>
+                <ion-icon name="chevron-forward-outline" class="text-slate-400"></ion-icon>
+            </button>
 
-    // ── Desktop Dropdowns (hover) ────────────────────────────
-    document.querySelectorAll('.dropdown-menu').forEach(menu => {
-        const dropdown = menu.querySelector('.dropdown');
-        const chevron = menu.querySelector('.chevron');
+            <button type="button" data-wallet-connect="stellar"
+                class="w-full flex items-center justify-between p-3.5 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-700/70 transition cursor-pointer">
+                <div class="flex items-center gap-3 text-left">
+                    <span class="w-9 h-9 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xl">
+                        <ion-icon name="planet-outline"></ion-icon>
+                    </span>
+                    <div>
+                        <div class="text-sm font-semibold">Freighter (Stellar)</div>
+                        <div class="text-xs text-slate-400">Non-custodial Stellar browser extension</div>
+                    </div>
+                </div>
+                <ion-icon name="chevron-forward-outline" class="text-slate-400"></ion-icon>
+            </button>
+        </div>
 
-        menu.addEventListener('mouseenter', () => {
-            dropdown.style.opacity = '1';
-            dropdown.style.visibility = 'visible';
-            dropdown.style.pointerEvents = 'auto';
-            chevron.style.transform = 'rotate(180deg)';
-        });
-
-        menu.addEventListener('mouseleave', () => {
-            dropdown.style.opacity = '0';
-            dropdown.style.visibility = 'hidden';
-            dropdown.style.pointerEvents = 'none';
-            chevron.style.transform = 'rotate(0deg)';
-        });
-    });
-
-    // ── Desktop Language Selector ────────────────────────────
-    document.querySelectorAll('.lang-option').forEach(option => {
-        option.addEventListener('click', (e) => {
-            e.preventDefault();
-            document.getElementById('activeFlagImg').src = option.dataset.flag;
-            document.getElementById('activeLangLabel').textContent = option.dataset.label;
-        });
-    });
-
-    // ── Mobile Accordions ────────────────────────────────────
-    document.querySelectorAll('.mobile-accordion').forEach(item => {
-        const trigger = item.querySelector('.accordion-trigger');
-        const content = item.querySelector('.accordion-content');
-        const chevron = item.querySelector('.mobile-chevron');
-
-        trigger.addEventListener('click', () => {
-            const isOpen = !content.classList.contains('hidden');
-
-            // Close all other accordions
-            document.querySelectorAll('.mobile-accordion').forEach(other => {
-                other.querySelector('.accordion-content').classList.add('hidden');
-                other.querySelector('.accordion-content').classList.remove('flex');
-                other.querySelector('.mobile-chevron').style.transform = 'rotate(0deg)';
-            });
-
-            // Toggle current
-            if (!isOpen) {
-                content.classList.remove('hidden');
-                content.classList.add('flex');
-                chevron.style.transform = 'rotate(180deg)';
-            }
-        });
-    });
-
-    // ── Mobile Language Selector ─────────────────────────────
-    document.querySelectorAll('.mobile-lang').forEach(option => {
-        option.addEventListener('click', (e) => {
-            e.preventDefault();
-            document.getElementById('mobileFlagImg').src = option.dataset.flag;
-            document.getElementById('mobileLangLabel').textContent = option.dataset.name;
-            // Also sync desktop
-            document.getElementById('activeFlagImg').src = option.dataset.flag;
-            document.getElementById('activeLangLabel').textContent = option.dataset.label;
-        });
-    });
-</script>
+        <p id="walletModalError" class="hidden mt-3 text-xs text-rose-400 bg-rose-950/50 border border-rose-500/30 rounded-lg p-2.5"></p>
+    </div>
+</div>

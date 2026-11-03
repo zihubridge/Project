@@ -35,48 +35,23 @@ return [
         ],
     ],
 
-    'stellar' => [
-        'horizon_url' => env('ENVIRONMENT') === 'public'
-            ? env('STELLAR_HORIZON_MAINNET')
-            : env('STELLAR_HORIZON_TESTNET'),
-
-        'wallet' => env('ENVIRONMENT') === 'public'
-            ? env('STELLAR_PUBLIC_ADDRESS')
-            : env('STELLAR_TESTNET_PUBLIC_ADDRESS'),
-
-        'seed' => env('ENVIRONMENT') === 'public'
-            ? env('STELLAR_SECRET_KEY')
-            : env('STELLAR_TESTNET_SECRET_KEY'),
+    /*
+    |--------------------------------------------------------------------------
+    | Cross-Chain Swap Execution Providers
+    |--------------------------------------------------------------------------
+    */
+    'swap' => [
+        'default_provider' => env('SWAP_DEFAULT_PROVIDER', 'near_intents'),
+        'quote_ttl_minutes' => (int) env('NEAR_INTENTS_QUOTE_TTL_MINUTES', 15),
     ],
 
-    'xrpl' => [
-        'rpc' => env('ENVIRONMENT') === 'public'
-            ? env('XRPL_RPC_MAINNET')
-            : env('XRPL_RPC_TESTNET'),
-
-        'wallet' => env('ENVIRONMENT') === 'public'
-            ? env('XRPL_PUBLIC_ADDRESS')
-            : env('XRPL_TESTNET_PUBLIC_ADDRESS'),
-
-        'seed' => env('ENVIRONMENT') === 'public'
-            ? env('XRPL_SECRET_KEY')
-            : env('XRPL_TESTNET_SECRET_KEY'),
+    'near_intents' => [
+        'base_url' => rtrim((string) env('NEAR_INTENTS_BASE_URL', 'https://1click.chaindefuser.com'), '/'),
+        'api_key' => env('NEAR_INTENTS_API_KEY', env('NEAR_INTENTS_JWT')),
+        'partner_fee_bps' => (int) env('NEAR_INTENTS_PARTNER_FEE_BPS', 0),
+        'partner_fee_recipient' => env('NEAR_INTENTS_PARTNER_FEE_RECIPIENT'),
+        'timeout_seconds' => (int) env('NEAR_INTENTS_TIMEOUT_SECONDS', 20),
+        'referral' => env('NEAR_INTENTS_REFERRAL', 'zihubridge'),
     ],
-
-    'changenow' => [
-        'base_url' => env('CHANGENOW_BASE_URL', 'https://api.changenow.io'),
-        'api_key'  => env('CHANGENOW_API_KEY'),
-    ],
-
-    'explorers' => [
-    'stellar' => [
-        'mainnet' => 'https://stellar.expert/explorer/public/account/',
-        'testnet' => 'https://stellar.expert/explorer/testnet/account/',
-    ],
-    'xrpl' => [
-        'mainnet' => 'https://xrpscan.com/account/',
-        'testnet' => 'https://testnet.xrpl.org/accounts/',
-    ],
-],
 
 ];
