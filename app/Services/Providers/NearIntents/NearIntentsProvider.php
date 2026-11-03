@@ -63,7 +63,8 @@ class NearIntentsProvider implements SwapExecutionProviderInterface
                 ? trim((string) $item['contractAddress'])
                 : null;
 
-            $isNative = $contractAddress === null && strtoupper((string) $chainMeta['native_symbol']) === $symbol;
+            $isNative = ($contractAddress === null && strtoupper((string) $chainMeta['native_symbol']) === $symbol)
+                || ($chainKey === 'near' && in_array($symbol, ['NEAR', 'WNEAR'], true));
             $priceUsd = isset($item['price']) && is_numeric($item['price'])
                 ? number_format((float) $item['price'], 8, '.', '')
                 : null;

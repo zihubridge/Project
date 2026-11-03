@@ -278,7 +278,9 @@ async function initSwapTerminal() {
 
     try {
         const netRes = await fetchJson('/api/v1/networks');
-        appState.networks = netRes.data || [];
+        appState.networks = (netRes.data || []).sort(
+            (a, b) => (b.active_assets_count || 0) - (a.active_assets_count || 0)
+        );
 
         const totalNetworksEl = document.getElementById('statActiveNetworks');
         const totalAssetsEl = document.getElementById('statActiveAssets');
@@ -400,14 +402,21 @@ async function loadAssetsForSide(side, networkSlug, preferredAssetId = null) {
         appState.destAssets = assets;
     }
 
+    let defaultAssetId = preferredAssetId;
+    if (!defaultAssetId && assets.length) {
+        const preferred =
+            assets.find((a) => a.is_native) ||
+            assets.find((a) => ['USDC', 'USDT', 'WNEAR', 'ETH', 'SOL', 'BTC'].includes((a.symbol || '').toUpperCase())) ||
+            assets[0];
+        defaultAssetId = preferred.id;
+    }
+
     selectEl.innerHTML = '';
-    assets.forEach((asset, idx) => {
+    assets.forEach((asset) => {
         const opt = document.createElement('option');
         opt.value = String(asset.id);
         opt.textContent = `${asset.symbol} — ${asset.display_name}`;
-        if (preferredAssetId && asset.id === preferredAssetId) {
-            opt.selected = true;
-        } else if (!preferredAssetId && idx === 0) {
+        if (defaultAssetId && asset.id === defaultAssetId) {
             opt.selected = true;
         }
         selectEl.appendChild(opt);

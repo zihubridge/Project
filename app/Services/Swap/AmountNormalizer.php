@@ -105,6 +105,10 @@ class AmountNormalizer
             return "Destination wallet address is not valid for {$destNetworkName}.";
         }
 
+        if (stripos($msg, 'No liquidity available') !== false || stripos($msg, 'Failed to get quote') !== false) {
+            return "No liquidity is currently available to swap {$originSymbol} ({$originNetworkName}) to {$destSymbol} ({$destNetworkName}). Please try a different token pair or amount.";
+        }
+
         return $msg;
     }
 }
