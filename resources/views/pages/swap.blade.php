@@ -197,11 +197,19 @@
                                     <label for="recipientAddressInput" class="text-slate-300 font-medium">
                                         Destination Recipient (<span id="recipientNetworkLabel" class="text-slate-100 font-mono">Destination Chain</span>)
                                     </label>
-                                    <span id="recipientValidationBadge" class="font-mono text-xs"></span>
+                                    <div class="flex items-center gap-2">
+                                        <span id="recipientValidationBadge" class="font-mono text-xs"></span>
+                                        <button type="button" data-copy-target="#recipientAddressInput"
+                                            class="text-white hover:text-slate-200 transition text-[11px] font-mono inline-flex items-center gap-1 cursor-pointer"
+                                            title="Copy Destination Recipient Address">
+                                            <ion-icon name="copy-outline" class="text-white text-xs"></ion-icon>
+                                            <span class="text-white">Copy</span>
+                                        </button>
+                                    </div>
                                 </div>
                                 <input id="recipientAddressInput" type="text"
                                     placeholder="Enter destination wallet address"
-                                    class="w-full bg-[#151922] border border-[#222938] rounded-lg px-3 py-2.5 text-xs sm:text-sm text-white font-mono placeholder-slate-500 focus:outline-none focus:border-slate-400" />
+                                    class="w-full bg-[#151922] border border-[#222938] rounded-lg px-3 py-2.5 text-xs sm:text-sm text-white font-mono placeholder-slate-500 focus:outline-none focus:border-slate-400 selection:bg-blue-600 selection:text-white" />
                             </div>
 
                             <!-- Optional Memo / Destination Tag -->
@@ -211,7 +219,7 @@
                                 </label>
                                 <input id="recipientMemoInput" type="text"
                                     placeholder="Required memo or numeric tag"
-                                    class="w-full bg-[#151922] border border-[#222938] rounded-lg px-3 py-2 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-slate-400" />
+                                    class="w-full bg-[#151922] border border-[#222938] rounded-lg px-3 py-2 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-slate-400 selection:bg-blue-600 selection:text-white" />
                             </div>
 
                             <!-- Origin Refund Address -->
@@ -220,14 +228,22 @@
                                     <label for="refundAddressInput" class="text-slate-300 font-medium">
                                         Origin Refund Address (<span id="refundNetworkLabel" class="text-slate-100 font-mono">Source Chain</span>)
                                     </label>
-                                    <button type="button" id="useConnectedWalletForRefundBtn"
-                                        class="hidden text-slate-300 hover:text-white underline cursor-pointer font-mono">
-                                        Use Connected Wallet
-                                    </button>
+                                    <div class="flex items-center gap-2">
+                                        <button type="button" id="useConnectedWalletForRefundBtn"
+                                            class="hidden text-slate-300 hover:text-white underline cursor-pointer font-mono">
+                                            Use Connected Wallet
+                                        </button>
+                                        <button type="button" data-copy-target="#refundAddressInput"
+                                            class="text-white hover:text-slate-200 transition text-[11px] font-mono inline-flex items-center gap-1 cursor-pointer"
+                                            title="Copy Origin Refund Address">
+                                            <ion-icon name="copy-outline" class="text-white text-xs"></ion-icon>
+                                            <span class="text-white">Copy</span>
+                                        </button>
+                                    </div>
                                 </div>
                                 <input id="refundAddressInput" type="text"
                                     placeholder="Source address for automatic refund protection"
-                                    class="w-full bg-[#151922] border border-[#222938] rounded-lg px-3 py-2.5 text-xs sm:text-sm text-white font-mono placeholder-slate-500 focus:outline-none focus:border-slate-400" />
+                                    class="w-full bg-[#151922] border border-[#222938] rounded-lg px-3 py-2.5 text-xs sm:text-sm text-white font-mono placeholder-slate-500 focus:outline-none focus:border-slate-400 selection:bg-blue-600 selection:text-white" />
                                 <p id="refundValidationMessage" class="text-[11px] text-[#8A8F99] mt-1 font-mono">
                                     Origin refund target if solver order exceeds slippage or expiration window.
                                 </p>

@@ -61,8 +61,15 @@
                     <span class="ml-2 text-[#8A8F99] font-mono">(Min: {{ rtrim(rtrim((string) $order->min_amount_out, '0'), '.') }})</span>
                 </div>
                 <div class="text-xs text-[#6B7280] mt-3 break-all font-mono bg-[#FAF8F5] p-2.5 rounded border border-[#E8E5DF]">
-                    <span class="text-[#8A8F99] block text-[11px] uppercase tracking-wider font-sans mb-0.5">Recipient Address:</span>
-                    {{ $order->recipient_address }}
+                    <div class="flex items-center justify-between mb-0.5">
+                        <span class="text-[#8A8F99] block text-[11px] uppercase tracking-wider font-sans">Recipient Address:</span>
+                        <button type="button" data-copy-target="#recipientAddressText"
+                            class="text-[#52565E] hover:text-[#121417] text-[11px] font-sans inline-flex items-center gap-1 cursor-pointer">
+                            <ion-icon name="copy-outline"></ion-icon>
+                            <span>Copy</span>
+                        </button>
+                    </div>
+                    <span id="recipientAddressText">{{ $order->recipient_address }}</span>
                     @if($order->recipient_memo)
                         <span class="block text-amber-800 font-semibold mt-1">Memo/Tag: {{ $order->recipient_memo }}</span>
                     @endif

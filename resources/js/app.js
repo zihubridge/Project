@@ -1168,16 +1168,23 @@ function initCopyButtons() {
         btn.addEventListener('click', async () => {
             const selector = btn.getAttribute('data-copy-target');
             const target = selector ? document.querySelector(selector) : null;
-            const text = target?.textContent?.trim() || '';
+            let text = '';
+            if (target) {
+                if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+                    text = target.value.trim();
+                } else {
+                    text = target.textContent?.trim() || '';
+                }
+            }
             if (!text) return;
 
             try {
                 await navigator.clipboard.writeText(text);
                 const prev = btn.innerHTML;
-                btn.textContent = 'Copied!';
+                btn.innerHTML = '<span class="text-white font-medium inline-flex items-center gap-1"><ion-icon name="checkmark-outline" class="text-white text-xs"></ion-icon><span class="text-white">Copied!</span></span>';
                 setTimeout(() => {
                     btn.innerHTML = prev;
-                }, 1400);
+                }, 1500);
             } catch {
                 // Ignore clipboard errors
             }

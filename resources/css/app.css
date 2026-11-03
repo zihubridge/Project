@@ -23,6 +23,27 @@
         font-family: var(--font-mono);
         font-variant-numeric: tabular-nums;
     }
+
+    ::selection {
+        background-color: #2563EB;
+        color: #FFFFFF !important;
+    }
+
+    ::-moz-selection {
+        background-color: #2563EB;
+        color: #FFFFFF !important;
+    }
+
+    input::selection, textarea::selection {
+        background-color: #2563EB;
+        color: #FFFFFF !important;
+    }
+
+    #swapTerminalApp ::selection,
+    #swapTerminalApp input::selection {
+        background-color: #3B82F6;
+        color: #FFFFFF !important;
+    }
 }
 
 .tabular-nums {
