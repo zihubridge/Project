@@ -89,9 +89,9 @@
             <div class="pt-8 border-t border-[#E8E5DF]">
                 <div class="bg-[#F7F5F0] border border-[#E8E5DF] rounded-xl p-6 md:p-8">
                     <span class="text-xs font-heading font-medium tracking-wide text-[#6B7280] uppercase block mb-1">Engineering</span>
-                    <h2 class="text-lg md:text-xl font-heading font-semibold text-[#121417] mb-2">Built by CoreHives</h2>
+                    <h2 class="text-lg md:text-xl font-heading font-semibold text-[#121417] mb-2">Built for Reliability</h2>
                     <p class="text-sm text-[#52565E] leading-relaxed">
-                        ZihuBridge is engineered by CoreHives, a team focused on resilient fintech and decentralized infrastructure. Our commitment is strictly towards predictable routing, minimal surface area, transparent execution data, and user sovereignty.
+                        ZihuBridge is engineered with a strict focus on resilient fintech and decentralized infrastructure. The protocol is committed to predictable routing, minimal attack surface, transparent execution data, and user sovereignty.
                     </p>
                 </div>
             </div>

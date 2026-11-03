@@ -63,7 +63,7 @@
             <section class="pt-8 border-t border-[#E8E5DF]">
                 <h2 class="text-lg md:text-xl font-heading font-semibold text-[#121417] mb-2">6. Limitation of Liability</h2>
                 <p>
-                    In no event shall ZihuBridge, CoreHives, or its developers be held liable for losses arising from smart contract failures, third-party RPC downtimes, wallet incompatibility, or user address errors.
+                    In no event shall ZihuBridge or its developers be held liable for losses arising from smart contract failures, third-party RPC downtimes, wallet incompatibility, or user address errors.
                 </p>
             </section>
 
