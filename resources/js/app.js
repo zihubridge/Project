@@ -1104,34 +1104,34 @@ async function initSwapHistoryPage() {
             const rows = res.data || [];
 
             if (!rows.length) {
-                tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-500">No swap records found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="py-12 text-center text-[#8A8F99] font-sans">No swap records found for this query.</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = rows.map((item) => `
-                <tr class="hover:bg-slate-900/50 transition">
-                    <td class="py-3.5 px-4 font-mono text-cyan-400">${item.swap_uuid.slice(0, 12)}...</td>
+                <tr class="hover:bg-[#FAF8F5] transition">
+                    <td class="py-3.5 px-4 font-mono text-xs font-medium text-[#121417]">${item.swap_uuid.slice(0, 12)}...</td>
                     <td class="py-3.5 px-4">
-                        <span class="font-bold text-white">${item.source.amount_in} ${item.source.symbol}</span>
-                        <span class="block text-xs text-slate-400">${item.source.network_name}</span>
+                        <span class="font-semibold text-[#121417] font-sans">${item.source.amount_in} ${item.source.symbol}</span>
+                        <span class="block text-xs text-[#6B7280] font-sans">${item.source.network_name}</span>
                     </td>
                     <td class="py-3.5 px-4">
-                        <span class="font-bold text-emerald-400">${item.destination.actual_amount_out || item.destination.expected_amount_out} ${item.destination.symbol}</span>
-                        <span class="block text-xs text-slate-400">${item.destination.network_name}</span>
+                        <span class="font-semibold text-[#0F6B48] font-sans">${item.destination.actual_amount_out || item.destination.expected_amount_out} ${item.destination.symbol}</span>
+                        <span class="block text-xs text-[#6B7280] font-sans">${item.destination.network_name}</span>
                     </td>
                     <td class="py-3.5 px-4">
-                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-200">${item.status_label}</span>
+                        <span class="inline-block px-2.5 py-0.5 rounded text-[11px] font-heading font-medium bg-[#F0ECE1] text-[#2D3139] border border-[#DDD9D0]">${item.status_label}</span>
                     </td>
-                    <td class="py-3.5 px-4 text-xs text-slate-400">${item.created_at ? new Date(item.created_at).toLocaleString() : '-'}</td>
+                    <td class="py-3.5 px-4 text-xs text-[#6B7280] font-mono">${item.created_at ? new Date(item.created_at).toLocaleString() : '-'}</td>
                     <td class="py-3.5 px-4 text-right">
-                        <a href="/swap/${encodeURIComponent(item.swap_uuid)}" class="text-xs px-3 py-1.5 rounded-lg bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 font-semibold">
+                        <a href="/swap/${encodeURIComponent(item.swap_uuid)}" class="inline-flex items-center text-xs px-3 py-1.5 rounded-md bg-[#121417] text-white hover:bg-black font-heading font-medium transition">
                             View
                         </a>
                     </td>
                 </tr>
             `).join('');
         } catch (err) {
-            tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-rose-400">${err.message || 'Failed to load swap history.'}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="py-12 text-center text-rose-600 font-sans">${err.message || 'Failed to load swap history.'}</td></tr>`;
         }
     }
 

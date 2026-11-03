@@ -1,115 +1,79 @@
 @extends('layout.master')
 
 @section('content')
-    <section class="bg-[#0B0F1A] text-gray-300">
-        <div class="max-w-6xl mx-auto py-30 px-10 lg:px-0 xl:px-0">
+<main class="min-h-screen bg-[#FBF9F5] text-[#121417] font-sans antialiased selection:bg-[#121417] selection:text-white py-16 md:py-24 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto">
+        <header class="mb-14 pb-8 border-b border-[#E8E5DF]">
+            <span class="text-xs font-heading font-medium tracking-wide text-[#6B7280] uppercase block mb-3">
+                Legal & Governance
+            </span>
+            <h1 class="text-3xl sm:text-4xl md:text-5xl font-heading font-semibold tracking-[-0.03em] text-[#121417] mb-3">
+                Terms of Service
+            </h1>
+            <p class="text-sm font-mono text-[#6B7280]">
+                Last updated: {{ date('F d, Y') }}
+            </p>
+        </header>
 
-            <!-- Header -->
-            <div class="mb-10">
-                <h1 class="text-2xl md:text-4xl font-bold text-white mb-3">Terms & Conditions</h1>
-                <p class="text-gray-400">Last updated: {{ date('F d, Y') }}</p>
+        <div class="space-y-10 text-[15px] md:text-base text-[#52565E] leading-relaxed">
+            <section>
+                <h2 class="text-lg md:text-xl font-heading font-semibold text-[#121417] mb-2">1. Acceptance of Terms</h2>
+                <p>
+                    By connecting a wallet, submitting a swap intent, or using ZihuBridge, you agree to be bound by these Terms of Service. If you do not accept these terms in their entirety, you must discontinue platform use immediately.
+                </p>
+            </section>
+
+            <section class="pt-8 border-t border-[#E8E5DF]">
+                <h2 class="text-lg md:text-xl font-heading font-semibold text-[#121417] mb-2">2. Nature of the Protocol</h2>
+                <p>
+                    ZihuBridge is a non-custodial decentralized interface coordinating cross-chain token swaps via intent solvers. ZihuBridge does not custody, escrow, or take control of digital assets at any stage of execution. Users interact directly with smart contracts and decentralized solver networks.
+                </p>
+            </section>
+
+            <div class="bg-[#F7F5F0] border border-[#E8E5DF] rounded-xl p-6">
+                <h3 class="text-base font-heading font-semibold text-[#121417] mb-2">Risk Notice</h3>
+                <p class="text-xs md:text-sm text-[#52565E] leading-relaxed">
+                    Cryptocurrency transactions are irreversible once broadcast to a blockchain network. Market volatility, network congestion, and slippage can affect final output amounts. By submitting a swap, you acknowledge that you bear sole responsibility for transaction parameters.
+                </p>
             </div>
 
-            <!-- Content -->
-            <div class="space-y-10">
+            <section class="pt-8 border-t border-[#E8E5DF]">
+                <h2 class="text-lg md:text-xl font-heading font-semibold text-[#121417] mb-2">3. User Responsibilities</h2>
+                <ul class="list-disc list-inside space-y-2 text-[#52565E]">
+                    <li>Ensure accurate recipient and origin refund addresses prior to depositing funds.</li>
+                    <li>Verify all deposit parameters, including minimum required amounts and network selection.</li>
+                    <li>Ensure compliance with applicable laws and sanctions regulations in your jurisdiction.</li>
+                </ul>
+            </section>
 
-                <div>
-                    <h2 class="text-xl font-semibold text-white mb-3">1. Acceptance of Terms</h2>
-                    <p class="text-gray-400 leading-relaxed">
-                        By accessing or using ZihuBridge, you agree to be bound by these Terms and Conditions.
-                        If you do not agree, you must not use the platform.
-                    </p>
-                </div>
+            <section class="pt-8 border-t border-[#E8E5DF]">
+                <h2 class="text-lg md:text-xl font-heading font-semibold text-[#121417] mb-2">4. Memo & Destination Tag Requirements</h2>
+                <p>
+                    Certain networks (including XRP, Stellar, and Cosmos ecosystems) require a numeric memo or destination tag to credit deposits. It is the user's explicit responsibility to supply and attach the required memo. Omission or corruption of memo values may result in irreversible settlement failure.
+                </p>
+            </section>
 
-                <div>
-                    <h2 class="text-xl font-semibold text-white mb-3">2. Nature of Service</h2>
-                    <p class="text-gray-400 leading-relaxed">
-                        ZihuBridge provides a non-custodial cryptocurrency swapping service. We do not hold,
-                        store, or control user funds at any point during the transaction process.
-                    </p>
-                </div>
+            <section class="pt-8 border-t border-[#E8E5DF]">
+                <h2 class="text-lg md:text-xl font-heading font-semibold text-[#121417] mb-2">5. Protocol Fees & Slippage Floors</h2>
+                <p>
+                    Swap quotes display all applicable protocol and solver fees transparently prior to order generation. All quotes incorporate a deterministic minimum output floor (<code class="font-mono text-xs text-[#121417]">min_amount_out</code>). If competitive routing cannot meet this floor, execution will cease and the deposit will be returned to the origin refund address.
+                </p>
+            </section>
 
-                <!-- Important -->
-                <div class="bg-[#111827] border border-gray-800 rounded-2xl p-6">
-                    <h2 class="text-lg font-semibold text-white mb-2">⚠️ Risk Disclaimer</h2>
-                    <p class="text-gray-400 text-sm leading-relaxed">
-                        Cryptocurrency transactions are irreversible and involve significant risk. Prices are volatile,
-                        and users may experience losses. By using this platform, you accept full responsibility.
-                    </p>
-                </div>
+            <section class="pt-8 border-t border-[#E8E5DF]">
+                <h2 class="text-lg md:text-xl font-heading font-semibold text-[#121417] mb-2">6. Limitation of Liability</h2>
+                <p>
+                    In no event shall ZihuBridge, CoreHives, or its developers be held liable for losses arising from smart contract failures, third-party RPC downtimes, wallet incompatibility, or user address errors.
+                </p>
+            </section>
 
-                <div>
-                    <h2 class="text-xl font-semibold text-white mb-3">3. User Responsibilities</h2>
-                    <ul class="space-y-2 text-gray-400">
-                        <li>• Provide accurate wallet addresses</li>
-                        <li>• Verify all transaction details before confirming</li>
-                        <li>• Do not use the platform for illegal activities</li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h2 class="text-xl font-semibold text-white mb-3">4. Transactions</h2>
-                    <p class="text-gray-400 leading-relaxed">
-                        All transactions are irreversible. ZihuBridge is not responsible for losses due to user errors,
-                        incorrect addresses, or network issues.
-                    </p>
-                </div>
-
-                <div>
-                    <h2 class="text-xl font-semibold text-white mb-3">5. Memo / Destination Tag Requirements</h2>
-                    <p class="text-gray-400 leading-relaxed">
-                        Certain blockchain networks (including but not limited to XRP and XLM) require a memo,
-                        destination tag, or similar identifier to correctly route transactions.
-                    </p>
-
-                    <p class="text-gray-400 leading-relaxed mt-2">
-                        It is the sole responsibility of the user to include the correct memo or destination tag
-                        when sending funds. Failure to provide accurate routing information may result in permanent
-                        loss of funds.
-                    </p>
-
-                    <p class="text-gray-400 leading-relaxed mt-2">
-                        ZihuBridge is not responsible for any loss of funds caused by missing, incorrect, or improperly
-                        formatted memo or destination tag information.
-                    </p>
-                </div>
-
-                <div>
-                    <h2 class="text-xl font-semibold text-white mb-3">6. Fees</h2>
-                    <p class="text-gray-400 leading-relaxed">
-                        Fees may apply and are shown before confirmation. They may change based on network conditions.
-                    </p>
-                </div>
-
-                <div>
-                    <h2 class="text-xl font-semibold text-white mb-3">7. Limitation of Liability</h2>
-                    <p class="text-gray-400 leading-relaxed">
-                        We are not liable for any direct or indirect losses resulting from use of the platform.
-                    </p>
-                </div>
-
-                <div>
-                    <h2 class="text-xl font-semibold text-white mb-3">8. Service Availability</h2>
-                    <p class="text-gray-400 leading-relaxed">
-                        Services may be interrupted or modified at any time without notice.
-                    </p>
-                </div>
-
-                <div>
-                    <h2 class="text-xl font-semibold text-white mb-3">9. Changes to Terms</h2>
-                    <p class="text-gray-400 leading-relaxed">
-                        Continued use of the platform means you accept updated terms.
-                    </p>
-                </div>
-
-                <div>
-                    <h2 class="text-xl font-semibold text-white mb-3">10. Contact</h2>
-                    <p class="text-gray-400">
-                        support@zihubridge.com
-                    </p>
-                </div>
-
-            </div>
+            <section class="pt-8 border-t border-[#E8E5DF]">
+                <h2 class="text-lg md:text-xl font-heading font-semibold text-[#121417] mb-2">7. Support Inquiries</h2>
+                <p>
+                    For questions concerning these terms or order verifications, contact <a href="mailto:support@zihubridge.com" class="font-mono text-[#121417] hover:underline">support@zihubridge.com</a>.
+                </p>
+            </section>
         </div>
-    </section>
+    </div>
+</main>
 @endsection
