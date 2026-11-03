@@ -31,6 +31,11 @@ class BlockchainNetwork extends Model
         return $this->hasMany(CryptoAsset::class, 'blockchain_network_id');
     }
 
+    public function cryptoAssets(): HasMany
+    {
+        return $this->hasMany(CryptoAsset::class, 'blockchain_network_id');
+    }
+
     public function formatTxExplorerUrl(?string $txHash): ?string
     {
         if (!$txHash || !$this->explorer_tx_url_pattern) {

@@ -63,7 +63,17 @@ class SwapOrder extends Model
         return $this->belongsTo(SwapQuote::class, 'swap_quote_id');
     }
 
+    public function swapQuote(): BelongsTo
+    {
+        return $this->belongsTo(SwapQuote::class, 'swap_quote_id');
+    }
+
     public function provider(): BelongsTo
+    {
+        return $this->belongsTo(SwapProvider::class, 'swap_provider_id');
+    }
+
+    public function swapProvider(): BelongsTo
     {
         return $this->belongsTo(SwapProvider::class, 'swap_provider_id');
     }
@@ -94,6 +104,11 @@ class SwapOrder extends Model
     }
 
     public function histories(): HasMany
+    {
+        return $this->hasMany(SwapStatusHistory::class, 'swap_order_id')->orderBy('id');
+    }
+
+    public function statusHistories(): HasMany
     {
         return $this->hasMany(SwapStatusHistory::class, 'swap_order_id')->orderBy('id');
     }

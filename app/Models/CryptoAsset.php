@@ -33,7 +33,17 @@ class CryptoAsset extends Model
         return $this->belongsTo(BlockchainNetwork::class, 'blockchain_network_id');
     }
 
+    public function blockchainNetwork(): BelongsTo
+    {
+        return $this->belongsTo(BlockchainNetwork::class, 'blockchain_network_id');
+    }
+
     public function providerMappings(): HasMany
+    {
+        return $this->hasMany(ProviderSupportedAsset::class, 'crypto_asset_id');
+    }
+
+    public function providerSupportedAssets(): HasMany
     {
         return $this->hasMany(ProviderSupportedAsset::class, 'crypto_asset_id');
     }

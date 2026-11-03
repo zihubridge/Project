@@ -384,7 +384,7 @@ class NearIntentsProvider implements SwapExecutionProviderInterface
         ];
 
         $feeBps = $this->getConfiguredPartnerFeeBps();
-        $feeRecipient = config('services.near_intents.partner_fee_recipient');
+        $feeRecipient = $this->getEffectiveFeeRecipient();
 
         if ($feeBps > 0 && is_string($feeRecipient) && trim($feeRecipient) !== '') {
             $payload['appFees'] = [
@@ -418,6 +418,15 @@ class NearIntentsProvider implements SwapExecutionProviderInterface
 
     private function getConfiguredPartnerFeeBps(): int
     {
+        try {
+            $dbConfig = \App\Models\PlatformFeeConfiguration::getActive();
+            if ($dbConfig) {
+                return $dbConfig->is_enabled ? (int) $dbConfig->fee_bps : 0;
+            }
+        } catch (\Throwable) {
+            // Fall back to config if table not reachable
+        }
+
         $feeBps = (int) config('services.near_intents.partner_fee_bps', 0);
         $feeRecipient = config('services.near_intents.partner_fee_recipient');
 
@@ -426,6 +435,21 @@ class NearIntentsProvider implements SwapExecutionProviderInterface
         }
 
         return 0;
+    }
+
+    private function getEffectiveFeeRecipient(): ?string
+    {
+        try {
+            $dbConfig = \App\Models\PlatformFeeConfiguration::getActive();
+            if ($dbConfig && $dbConfig->is_enabled && !empty($dbConfig->fee_recipient)) {
+                return trim($dbConfig->fee_recipient);
+            }
+        } catch (\Throwable) {
+            // Fall back
+        }
+
+        $envRecipient = config('services.near_intents.partner_fee_recipient');
+        return is_string($envRecipient) && trim($envRecipient) !== '' ? trim($envRecipient) : null;
     }
 
     private function mapProviderStatus(string $rawStatus, SwapOrder $order): SwapStatus
