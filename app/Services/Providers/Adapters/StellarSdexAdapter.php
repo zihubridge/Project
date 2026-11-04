@@ -117,7 +117,7 @@ class StellarSdexAdapter implements LocalChainExecutionAdapterInterface
                 ],
                 'message' => $hasTrustline
                     ? null
-                    : "Recipient doesn't have an established trustline for {$destAsset->symbol}. Please add the trustline in your Stellar wallet before executing.",
+                    : "Missing {$destAsset->symbol} trustline on recipient wallet",
             ];
         } catch (\Throwable $e) {
             Log::warning("Stellar account check failed: {$e->getMessage()}");
