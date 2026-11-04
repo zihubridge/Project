@@ -49,7 +49,7 @@ class ChainAddressValidator
                 return [
                     'valid' => false,
                     'requires_memo_or_tag' => $network->requires_memo_or_tag,
-                    'message' => 'Invalid Stellar address checksum. Please verify the public key.',
+                    'message' => 'Invalid Stellar address',
                 ];
             }
         }
