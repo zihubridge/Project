@@ -281,7 +281,7 @@ async function initSwapTerminal() {
     try {
         const netRes = await fetchJson('/api/v1/networks');
         appState.networks = (netRes.data || []).sort(
-            (a, b) => (b.active_assets_count || 0) - (a.active_assets_count || 0)
+            (a, b) => (a.display_name || '').localeCompare(b.display_name || '', undefined, { sensitivity: 'base' })
         );
 
         const totalNetworksEl = document.getElementById('statActiveNetworks');
@@ -300,8 +300,15 @@ async function initSwapTerminal() {
             return;
         }
 
-        populateNetworkSelect(sourceNetSelect, appState.networks, 0);
-        populateNetworkSelect(destNetSelect, appState.networks, appState.networks.length > 1 ? 1 : 0);
+        const defaultSourceIndex = Math.max(0, appState.networks.findIndex((n) => n.slug === 'base'));
+        const defaultDestIndex = Math.max(0, appState.networks.findIndex((n) => n.slug === 'stellar'));
+
+        populateNetworkSelect(sourceNetSelect, appState.networks, defaultSourceIndex !== -1 ? defaultSourceIndex : 0);
+        populateNetworkSelect(
+            destNetSelect,
+            appState.networks,
+            defaultDestIndex !== -1 && defaultDestIndex !== defaultSourceIndex ? defaultDestIndex : (appState.networks.length > 1 ? 1 : 0)
+        );
 
         renderDynamicNetworksGrid(appState.networks);
         renderDynamicTokenDiscoveryTable();
@@ -418,7 +425,14 @@ async function loadAssetsForSide(side, networkSlug, preferredAssetId = null) {
 
     selectEl.innerHTML = '<option value="">Loading tokens...</option>';
     const res = await fetchJson(`/api/v1/assets?network=${encodeURIComponent(networkSlug)}`);
-    const assets = res.data || [];
+    const assets = (res.data || []).sort((a, b) => {
+        const symA = (a.symbol || '').toUpperCase();
+        const symB = (b.symbol || '').toUpperCase();
+        if (symA !== symB) {
+            return symA.localeCompare(symB);
+        }
+        return (a.display_name || '').localeCompare(b.display_name || '');
+    });
 
     if (side === 'source') {
         appState.sourceAssets = assets;

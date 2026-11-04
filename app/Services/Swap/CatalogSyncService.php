@@ -231,8 +231,8 @@ class CatalogSyncService
         }
 
         return $query
-            ->orderByDesc('is_native')
             ->orderBy('symbol')
+            ->orderBy('display_name')
             ->get();
     }
 }
