@@ -1201,7 +1201,7 @@ async function fetchJson(url, options = {}) {
         ...(options.headers || {}),
     };
 
-    const response = await fetch(url, { ...options, headers });
+    const response = await fetch(url, { cache: options.cache || 'no-cache', ...options, headers });
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok || data.status === 0) {

@@ -31,7 +31,10 @@ class CatalogController extends Controller
                 'logo_url' => $net->logo_url,
                 'active_assets_count' => (int) ($net->active_assets_count ?? 0),
             ])->values(),
-        ]);
+        ])
+        ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+        ->header('Pragma', 'no-cache')
+        ->header('Expires', '0');
     }
 
     public function assets(Request $request): JsonResponse
@@ -69,7 +72,10 @@ class CatalogController extends Controller
                     ->unique()
                     ->values(),
             ])->values(),
-        ]);
+        ])
+        ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+        ->header('Pragma', 'no-cache')
+        ->header('Expires', '0');
     }
 }
 

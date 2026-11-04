@@ -174,14 +174,21 @@ class CatalogSyncService
             ->where('is_enabled', true)
             ->whereHas('assets', function ($q) {
                 $q->where('is_enabled', true)
-                    ->whereHas('providerMappings', function ($mq) {
-                        $mq->where('is_active', true)
-                            ->whereHas('provider', fn ($pq) => $pq->where('is_enabled', true));
+                    ->where(function ($sub) {
+                        $sub->whereHas('providerMappings', function ($mq) {
+                            $mq->where('is_active', true)
+                                ->whereHas('provider', fn ($pq) => $pq->where('is_enabled', true));
+                        })->orWhereHas('network.fallbackRoutes', function ($fq) {
+                            $fq->where('is_enabled', true);
+                        });
                     });
             })
             ->withCount(['assets as active_assets_count' => function ($q) {
                 $q->where('is_enabled', true)
-                    ->whereHas('providerMappings', fn ($mq) => $mq->where('is_active', true));
+                    ->where(function ($sub) {
+                        $sub->whereHas('providerMappings', fn ($mq) => $mq->where('is_active', true))
+                            ->orWhereHas('network.fallbackRoutes', fn ($fq) => $fq->where('is_enabled', true));
+                    });
             }])
             ->orderBy('display_name')
             ->get();
