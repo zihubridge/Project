@@ -147,6 +147,16 @@ class AdminPanelTest extends TestCase
         $this->assertNotNull($activeConfig);
         $this->assertEquals(100, $activeConfig->fee_bps);
         $this->assertEquals('treasury.near', $activeConfig->fee_recipient);
+
+        // Test updating fee directly in percentage (e.g. 0.1 for 0.1%)
+        $pctResponse = $this->post('/admin/platform-fees', [
+            'fee_percentage' => 0.1,
+            'fee_recipient' => 'treasury.near',
+            'is_enabled' => 1,
+            'reason' => 'Lowered protocol fee to 0.10%',
+        ]);
+        $pctResponse->assertRedirect('/admin/platform-fees');
+        $this->assertEquals(10, PlatformFeeConfiguration::getActive()->fee_bps);
     }
 
     public function test_admin_can_view_swaps_ledger(): void

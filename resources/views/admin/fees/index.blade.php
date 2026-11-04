@@ -100,15 +100,22 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-heading font-semibold uppercase tracking-wider text-[#52565E] mb-1.5">
-                            Fee in Basis Points (BPS)
+                        <label class="text-xs font-heading font-semibold uppercase tracking-wider text-[#52565E] mb-1.5 flex justify-between items-center">
+                            <span>Platform Fee (%)</span>
+                            <span id="fee_bps_indicator" class="text-xs font-mono text-[#6B7280]">
+                                = {{ $currentConfig ? $currentConfig->fee_bps : 100 }} BPS
+                            </span>
                         </label>
                         <div class="relative">
-                            <input type="number" name="fee_bps" min="0" max="1000" step="5"
-                                value="{{ old('fee_bps', $currentConfig ? $currentConfig->fee_bps : 100) }}" required
-                                class="w-full bg-[#FAF8F5] border border-[#DDD9D0] rounded-lg px-3.5 py-2.5 text-sm font-mono text-[#121417] focus:outline-none focus:border-[#121417] focus:bg-white transition" />
+                            <input type="number" name="fee_percentage" id="fee_percentage_input" min="0" max="10" step="any"
+                                value="{{ old('fee_percentage', $currentConfig ? ($currentConfig->fee_bps / 100) : 1) }}" required
+                                placeholder="e.g. 0.1 for 0.1%, 1 for 1%"
+                                class="w-full bg-[#FAF8F5] border border-[#DDD9D0] rounded-lg pl-3.5 pr-8 py-2.5 text-sm font-mono text-[#121417] focus:outline-none focus:border-[#121417] focus:bg-white transition" />
+                            <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-bold font-mono text-[#6B7280] pointer-events-none">%</span>
                         </div>
-                        <span class="text-[11px] text-[#6B7280] mt-1 block">100 BPS = 1.00% &bull; 50 BPS = 0.50%</span>
+                        <span class="text-[11px] text-[#6B7280] mt-1 block">
+                            Enter percentage directly: e.g. <strong>0.1</strong> for 0.1%, <strong>1</strong> for 1%, <strong>0.5</strong> for 0.5%, <strong>0</strong> for 0%.
+                        </span>
                     </div>
 
                     <div>
@@ -212,4 +219,22 @@
     </div>
 
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const input = document.getElementById('fee_percentage_input');
+        const bpsIndicator = document.getElementById('fee_bps_indicator');
+        if (input && bpsIndicator) {
+            input.addEventListener('input', function () {
+                const val = parseFloat(input.value);
+                if (!isNaN(val) && val >= 0) {
+                    const bps = Math.round(val * 100);
+                    bpsIndicator.textContent = `= ${bps} BPS`;
+                } else {
+                    bpsIndicator.textContent = '';
+                }
+            });
+        }
+    });
+</script>
 @endsection
