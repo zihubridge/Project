@@ -68,7 +68,7 @@ class AddressValidationController extends Controller
                             'trustline_missing' => !($accountCheck['requirements']['trustline_present'] ?? true),
                             'account_activated' => $accountCheck['requirements']['account_activated'] ?? true,
                             'requires_memo_or_tag' => $result['requires_memo_or_tag'],
-                            'message' => $accountCheck['message'] ?: "Recipient wallet lacks an established trustline for {$asset->symbol}.",
+                            'message' => $accountCheck['message'] ?: "Missing {$asset->symbol} trustline on recipient wallet.",
                         ]);
                     }
                 }

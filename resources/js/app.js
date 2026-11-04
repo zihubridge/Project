@@ -639,7 +639,8 @@ async function validateAddressField(type) {
         });
 
         if (badgeEl) {
-            badgeEl.textContent = res.valid ? '✓ Valid address' : `✗ ${res.message}`;
+            const cleanMsg = res.message ? res.message.replace(/^[✗✕✖xX✓✔]\s*/, '').trim() : '';
+            badgeEl.textContent = res.valid ? 'Valid address' : (cleanMsg || 'Invalid address');
             badgeEl.className = res.valid ? 'text-xs text-emerald-400 font-mono' : 'text-xs text-rose-400 font-mono';
         }
 
@@ -654,7 +655,8 @@ async function validateAddressField(type) {
         return Boolean(res.valid);
     } catch (err) {
         if (badgeEl) {
-            badgeEl.textContent = `✗ ${err.message || 'Invalid address'}`;
+            const raw = err.message || 'Invalid address';
+            badgeEl.textContent = raw.replace(/^[✗✕✖xX✓✔]\s*/, '').trim();
             badgeEl.className = 'text-xs text-rose-400 font-mono';
         }
         inputEl.classList.add('border-rose-500');
@@ -688,7 +690,7 @@ async function handleInitiateSwap() {
     const recipientOk = await validateAddressField('recipient');
     if (!recipientOk) {
         const badge = document.getElementById('recipientValidationBadge');
-        showSwapError(badge?.textContent ? badge.textContent.replace(/^✗\s*/, '') : 'Destination recipient wallet address is invalid or lacks required trustline.');
+        showSwapError(badge?.textContent ? badge.textContent.trim() : 'Destination recipient wallet lacks required trustline.');
         return;
     }
 
