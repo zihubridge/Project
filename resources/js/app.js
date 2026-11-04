@@ -335,6 +335,9 @@ async function initSwapTerminal() {
         const id = parseInt(destAssetSelect.value, 10);
         appState.selectedDestAsset = appState.destAssets.find((a) => a.id === id) || null;
         updateSelectedAssetLabels();
+        if (recipientInput && recipientInput.value.trim()) {
+            validateAddressField('recipient');
+        }
         scheduleQuoteRefresh();
     });
 
@@ -367,7 +370,12 @@ async function initSwapTerminal() {
         });
         recipientInput.addEventListener('input', () => {
             clearTimeout(window._recipTimer);
-            window._recipTimer = setTimeout(() => validateAddressField('recipient'), 250);
+            window._recipTimer = setTimeout(async () => {
+                const ok = await validateAddressField('recipient');
+                if (ok && recipientInput.value.trim()) {
+                    scheduleQuoteRefresh();
+                }
+            }, 300);
         });
     }
 
@@ -447,6 +455,13 @@ async function loadAssetsForSide(side, networkSlug, preferredAssetId = null) {
 
     updateSelectedAssetLabels();
     autoPopulateWalletAddresses();
+
+    if (side === 'dest') {
+        const recipInput = document.getElementById('recipientAddressInput');
+        if (recipInput && recipInput.value.trim()) {
+            validateAddressField('recipient');
+        }
+    }
 }
 
 function updateSelectedAssetLabels() {
@@ -596,12 +611,17 @@ async function validateAddressField(type) {
     }
 
     try {
+        const payload = {
+            network_slug: asset.network_slug,
+            address: inputEl.value.trim(),
+        };
+        if (isRecipient && asset.id) {
+            payload.asset_id = asset.id;
+        }
+
         const res = await fetchJson('/api/v1/addresses/validate', {
             method: 'POST',
-            body: JSON.stringify({
-                network_slug: asset.network_slug,
-                address: inputEl.value.trim(),
-            }),
+            body: JSON.stringify(payload),
         });
 
         if (badgeEl) {
@@ -653,7 +673,8 @@ async function handleInitiateSwap() {
 
     const recipientOk = await validateAddressField('recipient');
     if (!recipientOk) {
-        showSwapError('Destination recipient wallet address is invalid. Please check the address format and checksum.');
+        const badge = document.getElementById('recipientValidationBadge');
+        showSwapError(badge?.textContent ? badge.textContent.replace(/^✗\s*/, '') : 'Destination recipient wallet address is invalid or lacks required trustline.');
         return;
     }
 

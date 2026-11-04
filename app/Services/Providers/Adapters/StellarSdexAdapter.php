@@ -101,7 +101,7 @@ class StellarSdexAdapter implements LocalChainExecutionAdapterInterface
             foreach ($balances as $b) {
                 $bCode = $b['asset_code'] ?? null;
                 $bIssuer = $b['asset_issuer'] ?? null;
-                if ($bCode === $destAsset->symbol && (!$destAsset->contract_or_issuer || $bIssuer === $destAsset->contract_or_issuer)) {
+                if ($bCode && strcasecmp((string) $bCode, (string) $destAsset->symbol) === 0 && (!$destAsset->contract_or_issuer || (string) $bIssuer === (string) $destAsset->contract_or_issuer)) {
                     $hasTrustline = true;
                     break;
                 }
@@ -117,7 +117,7 @@ class StellarSdexAdapter implements LocalChainExecutionAdapterInterface
                 ],
                 'message' => $hasTrustline
                     ? null
-                    : "Recipient account lacks an established trustline for {$destAsset->symbol}. Please add the trustline in your Stellar wallet before executing.",
+                    : "Recipient doesn't have an established trustline for {$destAsset->symbol}. Please add the trustline in your Stellar wallet before executing.",
             ];
         } catch (\Throwable $e) {
             Log::warning("Stellar account check failed: {$e->getMessage()}");

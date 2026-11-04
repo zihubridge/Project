@@ -76,6 +76,19 @@ class SwapExecutionService
             throw new InvalidArgumentException('Refund address invalid: ' . $refundValidation['message']);
         }
 
+        // Enforce destination chain account prerequisites (e.g. Stellar trustline)
+        if ($destNetwork->chain_family === 'stellar' || strtolower($destNetwork->slug) === 'stellar') {
+            $stellarAdapter = $this->adapterRegistry->has('stellar_sdex')
+                ? $this->adapterRegistry->get('stellar_sdex')
+                : app(\App\Services\Providers\Adapters\StellarSdexAdapter::class);
+            $check = $stellarAdapter->checkAccountRequirements($destNetwork, $recipientAddress, $quote->destinationAsset);
+            if (isset($check['prerequisites_met']) && !$check['prerequisites_met']) {
+                throw new RuntimeException(
+                    $check['message'] ?: "Recipient wallet lacks an established trustline for {$quote->destinationAsset->symbol}."
+                );
+            }
+        }
+
         $providerService = $this->registry->get($quote->provider->slug);
 
         $isMultiHop = (bool) $quote->is_multi_hop;

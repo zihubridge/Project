@@ -125,21 +125,46 @@ class QuoteService
 
                 return $quote->load(['provider', 'sourceAsset.network', 'destinationAsset.network', 'intermediateAsset.network']);
             } catch (\Throwable $directException) {
-                // If direct route threw an error, continue to Priority 2 fallback
+                $directMsg = $directException->getMessage();
+                // If the provider specifically reported that the recipient wallet lacks a required trustline,
+                // do NOT silently fall back to multi-hop (a fallback route cannot bypass the destination chain's trustline rule).
+                if (stripos($directMsg, 'trustline') !== false) {
+                    throw new RuntimeException(
+                        AmountNormalizer::humanizeProviderError(
+                            rawMessage: $directMsg,
+                            originSymbol: $sourceAsset->symbol,
+                            originDecimals: $sourceAsset->decimals,
+                            originNetworkName: $sourceAsset->network->display_name,
+                            destSymbol: $destAsset->symbol,
+                            destNetworkName: $destAsset->network->display_name,
+                            recipientAddress: $recipientAddress,
+                        ),
+                        0,
+                        $directException
+                    );
+                }
+                // If direct route threw any other error (liquidity, unsupported, etc.), continue to Priority 2 fallback
             }
         }
 
         // ---------------------------------------------------------------------
         // Priority 2: Destination Blockchain Multi-Hop Fallback
         // ---------------------------------------------------------------------
-        $fallback = $this->multiHopService->discoverBestFallbackRoute(
-            sourceAsset: $sourceAsset,
-            destAsset: $destAsset,
-            amountInHuman: $amountInHuman,
-            slippageBps: $slippageBps,
-            recipientAddress: $recipientAddress,
-            refundAddress: $refundAddress
-        );
+        try {
+            $fallback = $this->multiHopService->discoverBestFallbackRoute(
+                sourceAsset: $sourceAsset,
+                destAsset: $destAsset,
+                amountInHuman: $amountInHuman,
+                slippageBps: $slippageBps,
+                recipientAddress: $recipientAddress,
+                refundAddress: $refundAddress
+            );
+        } catch (\Throwable $fallbackException) {
+            if (stripos($fallbackException->getMessage(), 'trustline') !== false) {
+                throw $fallbackException;
+            }
+            $fallback = null;
+        }
 
         if ($fallback !== null) {
             $quote = SwapQuote::create([

@@ -154,6 +154,13 @@ class MultiHopRoutingService
                 continue;
             }
 
+            // Verify account prerequisites if recipient address is provided
+            if ($recipientAddress && isset($leg2Quote->accountRequirements['prerequisites_met']) && !$leg2Quote->accountRequirements['prerequisites_met']) {
+                $prereqMsg = $leg2Quote->accountRequirements['message']
+                    ?? "Recipient wallet lacks an established trustline for {$destAsset->symbol}.";
+                throw new \RuntimeException($prereqMsg);
+            }
+
             // Overall exchange rate from source asset to final destination asset
             $overallRate = AmountNormalizer::calculateExchangeRate($amountInHuman, $finalOutHuman);
 

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\SwapStatus;
+use App\Models\BlockchainNetwork;
 use App\Models\CryptoAsset;
 use App\Models\SwapOrder;
 use App\Models\SwapQuote;
@@ -450,5 +451,64 @@ class CrossChainSwapFlowTest extends TestCase
         $swapResp->assertCreated()
             ->assertJsonPath('data.deposit_instructions.deposit_address', 'GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN')
             ->assertJsonPath('data.deposit_instructions.deposit_memo', '10948572');
+    }
+
+    public function test_stellar_destination_trustline_validation(): void
+    {
+        $this->fakeNearIntentsEndpoints();
+
+        /** @var CatalogSyncService $syncService */
+        $syncService = $this->app->make(CatalogSyncService::class);
+        $syncService->syncAllProviders();
+
+        $stellarNetwork = BlockchainNetwork::where('slug', 'stellar')->firstOrFail();
+        $stellarUsdc = CryptoAsset::create([
+            'blockchain_network_id' => $stellarNetwork->id,
+            'symbol' => 'USDC',
+            'display_name' => 'USD Coin',
+            'contract_or_issuer' => 'GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN',
+            'decimals' => 7,
+            'is_native' => false,
+            'is_enabled' => true,
+        ]);
+
+        $wallet = 'GDBY24O7XLV5HN56D4O24F6G6RHXL7EVJVEQFPYYEW4RA5RBPXYOBKA4';
+
+        Http::fake([
+            'https://horizon.stellar.org/accounts/*' => Http::sequence()
+                ->push([
+                    'balances' => [
+                        ['asset_type' => 'native', 'balance' => '5.0000000'],
+                        ['asset_type' => 'credit_alphanum4', 'asset_code' => 'TKG', 'asset_issuer' => 'GAM3PID2IOBTNCBMJXHIAS4EO3GQXAGRX4UB6HTQY2DUOVL3AQRB4UKQ', 'balance' => '10.0000000'],
+                    ],
+                ], 200)
+                ->push([
+                    'balances' => [
+                        ['asset_type' => 'native', 'balance' => '5.0000000'],
+                        ['asset_type' => 'credit_alphanum4', 'asset_code' => 'USDC', 'asset_issuer' => $stellarUsdc->contract_or_issuer, 'balance' => '100.0000000'],
+                    ],
+                ], 200),
+        ]);
+
+        $respMissingTrustline = $this->postJson('/api/v1/addresses/validate', [
+            'network_slug' => 'stellar',
+            'address' => $wallet,
+            'asset_id' => $stellarUsdc->id,
+        ]);
+
+        $respMissingTrustline->assertOk()
+            ->assertJsonPath('status', 1)
+            ->assertJsonPath('valid', false)
+            ->assertJsonPath('trustline_missing', true);
+
+        $respHasTrustline = $this->postJson('/api/v1/addresses/validate', [
+            'network_slug' => 'stellar',
+            'address' => $wallet,
+            'asset_id' => $stellarUsdc->id,
+        ]);
+
+        $respHasTrustline->assertOk()
+            ->assertJsonPath('status', 1)
+            ->assertJsonPath('valid', true);
     }
 }
