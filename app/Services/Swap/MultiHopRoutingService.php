@@ -157,7 +157,7 @@ class MultiHopRoutingService
             // Verify account prerequisites if recipient address is provided
             if ($recipientAddress && isset($leg2Quote->accountRequirements['prerequisites_met']) && !$leg2Quote->accountRequirements['prerequisites_met']) {
                 $prereqMsg = $leg2Quote->accountRequirements['message']
-                    ?? "Recipient wallet lacks an established trustline for {$destAsset->symbol}.";
+                    ?? "Missing {$destAsset->symbol} trustline on recipient wallet.";
                 throw new \RuntimeException($prereqMsg);
             }
 

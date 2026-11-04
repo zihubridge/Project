@@ -84,7 +84,7 @@ class SwapExecutionService
             $check = $stellarAdapter->checkAccountRequirements($destNetwork, $recipientAddress, $quote->destinationAsset);
             if (isset($check['prerequisites_met']) && !$check['prerequisites_met']) {
                 throw new RuntimeException(
-                    $check['message'] ?: "Recipient wallet lacks an established trustline for {$quote->destinationAsset->symbol}."
+                    $check['message'] ?: "Missing {$quote->destinationAsset->symbol} trustline on recipient wallet."
                 );
             }
         }
