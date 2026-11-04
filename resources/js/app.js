@@ -365,6 +365,10 @@ async function initSwapTerminal() {
                 scheduleQuoteRefresh();
             }
         });
+        recipientInput.addEventListener('input', () => {
+            clearTimeout(window._recipTimer);
+            window._recipTimer = setTimeout(() => validateAddressField('recipient'), 250);
+        });
     }
 
     if (refundInput) {
@@ -373,6 +377,10 @@ async function initSwapTerminal() {
             if (ok && refundInput.value.trim()) {
                 scheduleQuoteRefresh();
             }
+        });
+        refundInput.addEventListener('input', () => {
+            clearTimeout(window._refTimer);
+            window._refTimer = setTimeout(() => validateAddressField('refund'), 250);
         });
     }
 
@@ -581,7 +589,11 @@ async function validateAddressField(type) {
     const inputEl = document.getElementById(isRecipient ? 'recipientAddressInput' : 'refundAddressInput');
     const badgeEl = document.getElementById(isRecipient ? 'recipientValidationBadge' : 'refundValidationMessage');
 
-    if (!asset || !inputEl || !inputEl.value.trim()) return true;
+    if (!asset || !inputEl || !inputEl.value.trim()) {
+        if (inputEl) inputEl.classList.remove('border-rose-500', 'border-emerald-500');
+        if (badgeEl && isRecipient) badgeEl.textContent = '';
+        return true;
+    }
 
     try {
         const res = await fetchJson('/api/v1/addresses/validate', {
@@ -593,15 +605,26 @@ async function validateAddressField(type) {
         });
 
         if (badgeEl) {
-            badgeEl.textContent = res.valid ? '✓ Valid address' : res.message;
-            badgeEl.className = res.valid ? 'text-xs text-emerald-400' : 'text-xs text-rose-400';
+            badgeEl.textContent = res.valid ? '✓ Valid address' : `✗ ${res.message}`;
+            badgeEl.className = res.valid ? 'text-xs text-emerald-400 font-mono' : 'text-xs text-rose-400 font-mono';
         }
+
+        if (res.valid) {
+            inputEl.classList.remove('border-rose-500');
+            inputEl.classList.add('border-[#222938]');
+        } else {
+            inputEl.classList.add('border-rose-500');
+            inputEl.classList.remove('border-[#222938]');
+        }
+
         return Boolean(res.valid);
     } catch (err) {
         if (badgeEl) {
-            badgeEl.textContent = err.message || 'Invalid address';
-            badgeEl.className = 'text-xs text-rose-400';
+            badgeEl.textContent = `✗ ${err.message || 'Invalid address'}`;
+            badgeEl.className = 'text-xs text-rose-400 font-mono';
         }
+        inputEl.classList.add('border-rose-500');
+        inputEl.classList.remove('border-[#222938]');
         return false;
     }
 }
@@ -625,6 +648,18 @@ async function handleInitiateSwap() {
 
     if (!refundAddress) {
         showSwapError('Please enter your origin refund wallet address for automatic refund protection.');
+        return;
+    }
+
+    const recipientOk = await validateAddressField('recipient');
+    if (!recipientOk) {
+        showSwapError('Destination recipient wallet address is invalid. Please check the address format and checksum.');
+        return;
+    }
+
+    const refundOk = await validateAddressField('refund');
+    if (!refundOk) {
+        showSwapError('Origin refund wallet address is invalid. Please check the address format and checksum.');
         return;
     }
 

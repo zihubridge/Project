@@ -344,6 +344,10 @@ class NearIntentsProvider implements SwapExecutionProviderInterface
             return [$intentsPreviewAccount, 'INTENTS'];
         }
 
+        if (($networkMeta['chain_family'] ?? '') === 'stellar' && !\App\Services\Swap\ChainAddressValidator::isValidStellarAddress($trimmed)) {
+            return [$intentsPreviewAccount, 'INTENTS'];
+        }
+
         return [$trimmed, $chainPartyType];
     }
 

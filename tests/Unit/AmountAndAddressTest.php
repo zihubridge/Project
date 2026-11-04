@@ -59,6 +59,21 @@ class AmountAndAddressTest extends TestCase
 
         $this->assertTrue($validator->validate($xrp, 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', '123456')['valid']);
         $this->assertFalse($validator->validate($xrp, 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh', 'non-numeric-tag')['valid']);
+
+        $stellar = new BlockchainNetwork([
+            'slug' => 'stellar',
+            'display_name' => 'Stellar',
+            'chain_family' => 'stellar',
+            'requires_memo_or_tag' => true,
+            'address_regex' => '/^[GM][A-Z2-7]{55,68}$/',
+        ]);
+
+        // Valid Stellar addresses
+        $this->assertTrue($validator->validate($stellar, 'GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN')['valid']);
+        $this->assertTrue($validator->validate($stellar, 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5')['valid']);
+
+        // Invalid Stellar address with invalid CRC checksum (must be rejected)
+        $this->assertFalse($validator->validate($stellar, 'GDBY24O7XLV5HN56D4O24F6G6RHXL7EVJVEQFPYYEW4RA5RBPXYOBKA3')['valid']);
     }
 
     public function test_humanizes_provider_trustline_and_minimum_amount_errors(): void

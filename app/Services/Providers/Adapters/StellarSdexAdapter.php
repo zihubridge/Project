@@ -47,12 +47,12 @@ class StellarSdexAdapter implements LocalChainExecutionAdapterInterface
     public function checkAccountRequirements(BlockchainNetwork $network, string $recipientAddress, CryptoAsset $destAsset): array
     {
         $recipient = trim($recipientAddress);
-        if ($recipient === '' || @preg_match('/^G[A-Z0-9]{55}$/', $recipient) !== 1) {
+        if ($recipient === '' || !\App\Services\Swap\ChainAddressValidator::isValidStellarAddress($recipient)) {
             return [
                 'account_exists' => false,
                 'prerequisites_met' => false,
                 'requirements' => ['valid_stellar_address' => false],
-                'message' => 'Invalid Stellar public key format (must start with G and be 56 characters).',
+                'message' => 'Invalid Stellar public key format or checksum (must be a valid 56-character G... address).',
             ];
         }
 
